@@ -1,21 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import {
-    PartyPopper,
     CheckCircle2,
     Calendar as CalendarIcon,
-    LayoutDashboard,
     FileText,
     Bell,
     Users,
-    ChevronRight,
     ExternalLink,
-    Clock
+    Clock,
+    User,
+    ArrowRight,
+    Trophy,
+    Target
 } from "lucide-react";
 import { Suspense } from "react";
 import { getDashboardData } from "@/app/actions/dashboard";
@@ -23,22 +23,33 @@ import { cn } from "@/lib/utils";
 
 function DashboardHeader({ nickname, term, dDay }: { nickname: string, term: number, dDay: number }) {
     return (
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-            <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-                    반갑습니다, <span className="text-orange-600">{nickname}</span>님!
-                </h1>
-                <p className="text-gray-600 mt-1">
-                    {term}기 활동의 <span className="font-bold text-gray-900">{dDay}</span>일째입니다.
-                </p>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+            <div className="flex items-center gap-6">
+                <div className="w-16 h-16 rounded-2xl bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-400">
+                    <User className="w-8 h-8" />
+                </div>
+                <div>
+                    <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">
+                        반갑습니다, <span className="text-[#FF5C00]">{nickname}</span>님!
+                    </h1>
+                    <div className="flex items-center gap-3 mt-2">
+                        <span className="px-3 py-1 rounded-full bg-[#F0F5FF] text-[#0052CC] text-xs font-bold border border-[#D6E4FF]">
+                            {term}기 공식 크루
+                        </span>
+                        <p className="text-slate-500 text-sm font-medium">
+                            활동 <span className="text-slate-800 font-bold">{dDay}</span>일차입니다
+                        </p>
+                    </div>
+                </div>
             </div>
-            <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="bg-white border-orange-200 text-orange-700 hover:bg-orange-50">
+            <div className="flex gap-3">
+                <Button variant="outline" className="h-12 rounded-2xl border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 hover:text-slate-900 shadow-sm transition-all">
                     <Bell className="w-4 h-4 mr-2" />
                     공지사항
                 </Button>
-                <Button size="sm" className="bg-orange-600 hover:bg-orange-700 text-white">
-                    오늘의 투두
+                <Button className="h-12 rounded-2xl bg-[#FF5C00] hover:bg-[#E65300] text-white font-bold shadow-lg shadow-orange-100 transition-all hover:scale-[1.02]">
+                    미션 제출하기
+                    <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
             </div>
         </div>
@@ -47,35 +58,50 @@ function DashboardHeader({ nickname, term, dDay }: { nickname: string, term: num
 
 function ActivityStepper({ missions }: { missions: any[] }) {
     return (
-        <Card className="mb-8 border-orange-100 shadow-sm overflow-hidden bg-white">
-            <CardHeader className="pb-2 border-b border-gray-50 flex flex-row items-center justify-between">
-                <CardTitle className="text-lg font-bold flex items-center">
-                    <CheckCircle2 className="w-5 h-5 mr-2 text-orange-600" />
+        <Card className="mb-8 shadow-[0_4px_24px_rgba(0,0,0,0.04)] border-none rounded-[32px] overflow-hidden bg-white p-2">
+            <CardHeader className="p-8 pb-4 flex flex-row items-center justify-between">
+                <CardTitle className="text-xl font-extrabold text-slate-800 flex items-center tracking-tight">
+                    <Target className="w-6 h-6 mr-3 text-[#FF5C00]" />
                     3 Essential Missions
                 </CardTitle>
-                <span className="text-sm text-gray-500 font-normal">필수 미션 현황</span>
+                <div className="px-4 py-1.5 rounded-full bg-slate-50 text-slate-400 text-xs font-bold border border-slate-100 uppercase tracking-wider">
+                    Progress
+                </div>
             </CardHeader>
-            <CardContent className="pt-6">
-                <div className="relative flex justify-between">
-                    <div className="absolute top-5 left-0 w-full h-0.5 bg-gray-100 -z-0" />
-                    {missions.map((mission, idx) => (
-                        <div key={mission.id} className="relative z-10 flex flex-col items-center group">
-                            <div className={cn(
-                                "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300",
-                                mission.completed
-                                    ? "bg-orange-600 border-orange-600 text-white"
-                                    : "bg-white border-gray-200 text-gray-400 group-hover:border-orange-300"
-                            )}>
-                                {mission.completed ? <CheckCircle2 className="w-5 h-5" /> : idx + 1}
+            <CardContent className="p-8 pt-4">
+                <div className="relative flex justify-between items-start pt-4 px-4 pb-2">
+                    <div className="absolute top-[36px] left-[10%] w-[80%] h-1 bg-slate-50 -z-0 rounded-full overflow-hidden">
+                        <div
+                            className="h-full bg-gradient-to-r from-[#FFD6E0] to-[#D6E4FF] transition-all duration-1000"
+                            style={{ width: `${(missions.filter(m => m.completed).length / Math.max(missions.length, 1)) * 100}%` }}
+                        />
+                    </div>
+                    {missions.map((mission, idx) => {
+                        const pastelColors = ["bg-[#FFD6E0]", "bg-[#F0F5FF]", "bg-[#D6E4FF]"];
+                        const accentColors = ["text-[#E63946]", "text-[#0052CC]", "text-[#0052CC]"];
+
+                        return (
+                            <div key={mission.id} className="relative z-10 flex flex-col items-center group max-w-[100px] text-center">
+                                <div className={cn(
+                                    "w-14 h-14 rounded-2xl flex items-center justify-center border-4 border-white shadow-md transition-all duration-500",
+                                    mission.completed
+                                        ? cn(pastelColors[idx % 3], "scale-110")
+                                        : "bg-slate-50 border-white text-slate-300 group-hover:bg-white group-hover:border-slate-100"
+                                )}>
+                                    {mission.completed
+                                        ? <CheckCircle2 className={cn("w-6 h-6", accentColors[idx % 3])} />
+                                        : <span className="font-black text-lg">{idx + 1}</span>
+                                    }
+                                </div>
+                                <span className={cn(
+                                    "mt-4 text-sm font-bold leading-tight line-clamp-2",
+                                    mission.completed ? "text-slate-800" : "text-slate-400"
+                                )}>{mission.title}</span>
                             </div>
-                            <span className={cn(
-                                "mt-2 text-sm font-medium",
-                                mission.completed ? "text-orange-600" : "text-gray-500"
-                            )}>{mission.title}</span>
-                        </div>
-                    ))}
+                        );
+                    })}
                     {missions.length === 0 && (
-                        <div className="w-full text-center py-4 text-gray-400 italic">
+                        <div className="w-full text-center py-8 text-slate-400 italic bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
                             등록된 필수 미션이 없습니다.
                         </div>
                     )}
@@ -106,34 +132,55 @@ function EventCalendar({ schedules }: { schedules: any[] }) {
     };
 
     return (
-        <Card className="border-orange-100 shadow-sm bg-white">
-            <CardHeader className="pb-4 border-b border-gray-50 flex flex-row items-center justify-between">
-                <CardTitle className="text-lg font-bold flex items-center">
-                    <CalendarIcon className="w-5 h-5 mr-2 text-orange-600" />
+        <Card className="shadow-[0_4px_24px_rgba(0,0,0,0.04)] border-none rounded-[32px] overflow-hidden bg-white p-2">
+            <CardHeader className="p-8 pb-4 flex flex-row items-center justify-between">
+                <CardTitle className="text-xl font-extrabold text-slate-800 flex items-center tracking-tight">
+                    <CalendarIcon className="w-6 h-6 mr-3 text-[#FF5C00]" />
                     활동 캘린더
                 </CardTitle>
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1.5 overflow-hidden">
-                        <div className="w-2.5 h-2.5 rounded-full bg-orange-500" />
-                        <span className="text-xs text-gray-500">필수</span>
+                <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full bg-[#FFD6E0]" />
+                        <span className="text-xs text-slate-400 font-bold">필수</span>
                     </div>
-                    <div className="flex items-center gap-1.5 overflow-hidden">
-                        <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-                        <span className="text-xs text-gray-500">일반</span>
+                    <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full bg-[#D6E4FF]" />
+                        <span className="text-xs text-slate-400 font-bold">이벤트</span>
                     </div>
                 </div>
             </CardHeader>
-            <CardContent className="pt-6 px-4">
-                <div className="text-center mb-4 font-bold text-gray-700">
-                    {viewDate.getFullYear()}년 {viewDate.getMonth() + 1}월
+            <CardContent className="p-8 pt-4">
+                <div className="flex items-center justify-between mb-8">
+                    <div className="text-2xl font-black text-slate-800 tracking-tighter">
+                        {viewDate.getFullYear()}. {String(viewDate.getMonth() + 1).padStart(2, '0')}
+                    </div>
+                    <div className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-10 h-10 p-0 rounded-xl border-slate-100 text-slate-400 hover:text-slate-800 transition-all font-bold"
+                            onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))}
+                        >
+                            &lt;
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-10 h-10 p-0 rounded-xl border-slate-100 text-slate-400 hover:text-slate-800 transition-all font-bold"
+                            onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))}
+                        >
+                            &gt;
+                        </Button>
+                    </div>
                 </div>
-                <div className="grid grid-cols-7 gap-px mb-2">
-                    {['일', '월', '화', '수', '목', '금', '토'].map(day => (
-                        <div key={day} className="text-center text-xs font-bold text-gray-400 py-2">{day}</div>
+
+                <div className="grid grid-cols-7 gap-px mb-4 border-b border-slate-50 pb-2">
+                    {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => (
+                        <div key={day} className="text-center text-[10px] font-black text-slate-300 py-2 tracking-widest">{day}</div>
                     ))}
                 </div>
-                <div className="grid grid-cols-7 gap-1">
-                    {blanks.map(i => <div key={`blank-${i}`} className="h-14 md:h-20" />)}
+                <div className="grid grid-cols-7 gap-3">
+                    {blanks.map(i => <div key={`blank-${i}`} className="h-20" />)}
                     {days.map(day => {
                         const dayEvents = getEventsForDay(day);
                         const isToday = today.getDate() === day &&
@@ -144,24 +191,23 @@ function EventCalendar({ schedules }: { schedules: any[] }) {
                             <div
                                 key={day}
                                 className={cn(
-                                    "h-14 md:h-20 border border-gray-50 rounded-lg p-1 transition-all cursor-pointer hover:bg-orange-50/30",
-                                    isToday && "bg-orange-50/50 border-orange-200"
+                                    "h-20 border border-slate-50 rounded-2xl p-2 transition-all cursor-pointer group hover:bg-slate-50 hover:shadow-inner",
+                                    isToday && "bg-[#F0F5FF]/50 border-[#D6E4FF]"
                                 )}
                                 onClick={() => dayEvents.length > 0 && setSelectedEvent(dayEvents[0])}
                             >
                                 <span className={cn(
-                                    "text-xs font-medium ml-1",
-                                    isToday ? "text-orange-600 font-bold" : "text-gray-500"
+                                    "text-sm font-bold block mb-1",
+                                    isToday ? "text-[#0052CC]" : "text-slate-400 group-hover:text-slate-600"
                                 )}>{day}</span>
-                                <div className="mt-1 flex flex-col gap-0.5">
+                                <div className="space-y-1">
                                     {dayEvents.map(event => (
                                         <div
                                             key={event.id}
                                             className={cn(
-                                                "h-1.5 md:h-2 rounded-full mx-0.5",
-                                                event.is_essential ? "bg-orange-500" : "bg-blue-400"
+                                                "h-1.5 rounded-full w-full",
+                                                event.is_essential ? "bg-[#FFD6E0]" : "bg-[#D6E4FF]"
                                             )}
-                                            title={event.title}
                                         />
                                     ))}
                                 </div>
@@ -171,26 +217,32 @@ function EventCalendar({ schedules }: { schedules: any[] }) {
                 </div>
 
                 {selectedEvent && (
-                    <div className="mt-6 p-4 bg-orange-50 rounded-xl border border-orange-100 animate-in fade-in slide-in-from-top-2 duration-300">
-                        <div className="flex items-center justify-between mb-2">
+                    <div className="mt-8 p-6 bg-slate-50 rounded-[28px] border border-slate-100 animate-in fade-in slide-in-from-top-4 duration-500 relative overflow-hidden group">
+                        <div className={cn(
+                            "absolute top-0 left-0 w-2 h-full",
+                            selectedEvent.is_essential ? "bg-[#FFD6E0]" : "bg-[#D6E4FF]"
+                        )} />
+                        <div className="flex items-center justify-between mb-4">
                             <span className={cn(
-                                "px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider",
-                                selectedEvent.is_essential ? "bg-orange-200 text-orange-800" : "bg-blue-200 text-blue-800"
+                                "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border",
+                                selectedEvent.is_essential
+                                    ? "bg-[#FFF0F3] border-[#FFD6E0] text-[#E63946]"
+                                    : "bg-[#F0F5FF] border-[#D6E4FF] text-[#0052CC]"
                             )}>
-                                {selectedEvent.type === 'mission' ? '필수 미션' : '이벤트'}
+                                {selectedEvent.type === 'mission' ? 'Essential Mission' : 'General Event'}
                             </span>
                             <button
                                 onClick={() => setSelectedEvent(null)}
-                                className="text-gray-400 hover:text-gray-600"
+                                className="text-slate-300 hover:text-slate-500 transition-colors p-1"
                             >
-                                <Clock className="w-4 h-4" />
+                                <X className="w-5 h-5" />
                             </button>
                         </div>
-                        <h4 className="font-bold text-gray-900">{selectedEvent.title}</h4>
-                        <p className="text-sm text-gray-600 mt-1">{selectedEvent.description}</p>
-                        <div className="mt-3 flex items-center text-xs text-orange-700 font-medium">
-                            <Clock className="w-3.5 h-3.5 mr-1.5" />
-                            마감일: {new Date(selectedEvent.scheduled_at).toLocaleDateString()}
+                        <h4 className="text-lg font-black text-slate-800 leading-tight">{selectedEvent.title}</h4>
+                        <p className="text-slate-500 font-medium text-sm mt-2 leading-relaxed">{selectedEvent.description}</p>
+                        <div className="mt-6 flex items-center text-xs text-slate-400 font-bold bg-white/50 w-fit px-4 py-2 rounded-xl backdrop-blur-sm">
+                            <Clock className="w-4 h-4 mr-2 text-slate-300" />
+                            Deadline: <span className="text-slate-600 ml-1">{new Date(selectedEvent.scheduled_at).toLocaleDateString()}</span>
                         </div>
                     </div>
                 )}
@@ -201,25 +253,25 @@ function EventCalendar({ schedules }: { schedules: any[] }) {
 
 function QuickLinks() {
     const links = [
-        { title: "활동 가이드", desc: "미션 제출 및 활동 주의사항", icon: FileText, href: "#" },
-        { title: "공식 커뮤니티", desc: "크루들간의 소통 공간", icon: Users, href: "#" },
-        { title: "관리자 문의", desc: "활동 중 궁금한 점 문의", icon: ExternalLink, href: "#" }
+        { title: "활동 가이드", desc: "미션 제출 및 주의사항", icon: FileText, href: "#", color: "bg-[#FFF0F3] text-[#E63946]" },
+        { title: "공식 커뮤니티", desc: "크루들간의 소통 공간", icon: Users, href: "#", color: "bg-[#F0F5FF] text-[#0052CC]" },
+        { title: "관리자 문의", desc: "궁금한 점 실시간 문의", icon: ExternalLink, href: "#", color: "bg-slate-100 text-slate-500" }
     ];
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
             {links.map(link => (
-                <Link href={link.href} key={link.title} className="group">
-                    <Card className="hover:border-orange-300 transition-all duration-300 bg-white shadow-sm h-full">
-                        <CardContent className="p-5 flex items-start space-x-4">
-                            <div className="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600 group-hover:bg-orange-600 group-hover:text-white transition-colors shrink-0">
+                <Link href={link.href} key={link.title} className="group outline-none">
+                    <Card className="hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transform hover:-translate-y-1 transition-all duration-500 border-none rounded-[28px] bg-white h-full p-2">
+                        <CardContent className="p-6 flex items-center gap-5">
+                            <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center transition-all group-hover:scale-110", link.color)}>
                                 <link.icon className="w-5 h-5" />
                             </div>
                             <div>
-                                <h4 className="font-bold text-gray-900 group-hover:text-orange-600 transition-colors">
+                                <h4 className="font-extrabold text-slate-800 text-base leading-tight">
                                     {link.title}
                                 </h4>
-                                <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                                <p className="text-xs text-slate-400 font-medium mt-1">
                                     {link.desc}
                                 </p>
                             </div>
@@ -228,6 +280,14 @@ function QuickLinks() {
                 </Link>
             ))}
         </div>
+    );
+}
+
+function X({ className }: { className?: string }) {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+            <path d="M18 6 6 18" /><path d="m6 6 12 12" />
+        </svg>
     );
 }
 
@@ -250,54 +310,73 @@ function DashboardContent() {
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center py-20">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mb-4" />
-                <p className="text-orange-900/60 font-medium">대시보드를 불러오는 중...</p>
+            <div className="flex flex-col items-center justify-center py-32 bg-[#F8F9FA] rounded-[40px] border border-slate-100 shadow-inner">
+                <div className="relative w-16 h-16 mb-6">
+                    <div className="absolute inset-0 rounded-2xl bg-[#FFD6E0] animate-pulse" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-full border-4 border-white border-t-transparent animate-spin" />
+                    </div>
+                </div>
+                <p className="text-slate-400 font-black text-xs uppercase tracking-widest">Initializing Dashboard</p>
             </div>
         );
     }
 
     if (!data) {
         return (
-            <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-200">
-                <LayoutDashboard className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-bold text-gray-900">대시보드 접근 오류</h3>
-                <p className="text-gray-500 mt-1">로그인 정보가 없거나 프로필을 찾을 수 없습니다.</p>
-                <Button asChild className="mt-6 bg-orange-600 hover:bg-orange-700">
-                    <Link href="/">홈으로 가기</Link>
+            <div className="text-center py-24 bg-white rounded-[40px] shadow-[0_4px_24px_rgba(0,0,0,0.02)] border border-slate-50 flex flex-col items-center">
+                <div className="w-20 h-20 rounded-[32px] bg-slate-50 flex items-center justify-center mb-6">
+                    <Trophy className="w-10 h-10 text-slate-200" />
+                </div>
+                <h3 className="text-2xl font-black text-slate-800">접근할 수 없습니다</h3>
+                <p className="text-slate-400 font-medium mt-2 max-w-sm">로그인 세션이 만료되었거나<br />등록된 프로필 정보를 찾을 수 없습니다.</p>
+                <Button asChild className="mt-10 h-14 px-10 rounded-2xl bg-slate-900 hover:bg-black text-white font-bold transition-all hover:scale-105">
+                    <Link href="/login">다시 로그인하기</Link>
                 </Button>
             </div>
         );
     }
 
     return (
-        <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto px-6 py-12">
             <DashboardHeader
                 nickname={data.nickname}
                 term={data.term}
                 dDay={data.dDay}
             />
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-1 space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                <div className="lg:col-span-4 space-y-10">
                     <ActivityStepper missions={data.essentialMissions} />
-                    <Card className="border-orange-100 shadow-sm bg-white overflow-hidden">
-                        <div className="h-2 bg-orange-500" />
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-lg font-bold">내 활동 요약</CardTitle>
+                    <Card className="shadow-[0_4px_24px_rgba(0,0,0,0.04)] border-none rounded-[32px] overflow-hidden bg-white p-2">
+                        <div className="h-2 bg-gradient-to-r from-[#FFD6E0] via-[#F0F5FF] to-[#D6E4FF]" />
+                        <CardHeader className="p-8 pb-4">
+                            <CardTitle className="text-xl font-extrabold text-slate-800 tracking-tight">내 활동 현황</CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex justify-between items-center py-2 border-b border-gray-50">
-                                <span className="text-sm text-gray-500">진행한 미션</span>
-                                <span className="font-bold text-gray-900 text-lg">0 / 3</span>
+                        <CardContent className="px-8 pb-8 space-y-6">
+                            <div className="p-4 rounded-[24px] bg-slate-50 flex justify-between items-center transition-all hover:bg-slate-100/50">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center text-[#E63946] shadow-sm">
+                                        <Target className="w-4 h-4" />
+                                    </div>
+                                    <span className="text-sm font-bold text-slate-500 tracking-tight">미션 진행률</span>
+                                </div>
+                                <span className="font-black text-slate-800 text-lg">
+                                    {data.essentialMissions.filter((m: any) => m.completed).length} / {data.essentialMissions.length}
+                                </span>
                             </div>
-                            <div className="flex justify-between items-center py-2 border-b border-gray-50">
-                                <span className="text-sm text-gray-500">포인트</span>
-                                <span className="font-bold text-orange-600 text-lg">1,200 P</span>
+                            <div className="p-4 rounded-[24px] bg-slate-50 flex justify-between items-center transition-all hover:bg-slate-100/50">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-xl bg-white flex items-center justify-center text-[#0052CC] shadow-sm">
+                                        <Trophy className="w-4 h-4" />
+                                    </div>
+                                    <span className="text-sm font-bold text-slate-500 tracking-tight">보유 크루 포인트</span>
+                                </div>
+                                <span className="font-black text-[#FF5C00] text-lg">1,200 P</span>
                             </div>
                         </CardContent>
                     </Card>
                 </div>
-                <div className="lg:col-span-2">
+                <div className="lg:col-span-8">
                     <EventCalendar schedules={data.schedules} />
                     <QuickLinks />
                 </div>
@@ -308,10 +387,15 @@ function DashboardContent() {
 
 export default function DashboardPage() {
     return (
-        <div className="min-h-screen bg-orange-50/20">
+        <div className="min-h-screen bg-[#F8F9FA] selection:bg-[#FF5C00] selection:text-white">
             <Suspense fallback={
-                <div className="flex items-center justify-center min-h-screen">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600" />
+                <div className="flex items-center justify-center min-h-screen bg-[#F8F9FA]">
+                    <div className="relative w-20 h-20">
+                        <div className="absolute inset-0 rounded-[32px] bg-white shadow-xl animate-pulse" />
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-6 h-6 rounded-full border-4 border-[#FF5C00] border-t-transparent animate-spin" />
+                        </div>
+                    </div>
                 </div>
             }>
                 <DashboardContent />
