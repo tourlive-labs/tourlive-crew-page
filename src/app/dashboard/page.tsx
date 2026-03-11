@@ -557,25 +557,31 @@ function EventCalendar({ schedules }: { schedules: any[] }) {
 
 function QuickLinks() {
     const links = [
-        { title: "활동 가이드", desc: "미션 제출 및 주의사항", icon: FileText, href: "#", color: "bg-[#FFF0F3] text-[#E63946]" },
-        { title: "공식 커뮤니티", desc: "크루들간의 소통 공간", icon: Users, href: "#", color: "bg-[#F0F5FF] text-[#0052CC]" },
-        { title: "관리자 문의", desc: "궁금한 점 실시간 문의", icon: ExternalLink, href: "#", color: "bg-slate-100 text-slate-500" }
+        { title: "활동 가이드", desc: "미션 가이드라인", icon: FileText, href: "/dashboard/guide" },
+        { title: "공식 커뮤니티", desc: "지식카페 바로가기", icon: Users, href: "https://cafe.naver.com/jisiktravel", external: true },
+        { title: "관리자 문의", desc: "이메일 문의하기", icon: ExternalLink, href: "mailto:root@tourlive.co.kr" }
     ];
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             {links.map(link => (
-                <Link href={link.href} key={link.title} className="group outline-none">
-                    <Card className="hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] transform hover:-translate-y-1 transition-all duration-500 border-none rounded-[28px] bg-white h-full p-2">
-                        <CardContent className="p-6 flex items-center gap-5">
-                            <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center transition-all group-hover:scale-110", link.color)}>
+                <Link
+                    href={link.href}
+                    key={link.title}
+                    className="group"
+                    target={link.external ? "_blank" : undefined}
+                    rel={link.external ? "noopener noreferrer" : undefined}
+                >
+                    <Card className="hover:shadow-md transition-all duration-300 border border-slate-100 rounded-2xl bg-white p-1 h-full overflow-hidden">
+                        <CardContent className="p-4 flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all shrink-0">
                                 <link.icon className="w-5 h-5" />
                             </div>
-                            <div>
-                                <h4 className="font-extrabold text-slate-800 text-base leading-tight">
+                            <div className="overflow-hidden">
+                                <h4 className="font-extrabold text-slate-800 text-sm whitespace-nowrap truncate tracking-tight">
                                     {link.title}
                                 </h4>
-                                <p className="text-xs text-slate-400 font-medium mt-1">
+                                <p className="text-[10px] text-slate-400 font-bold whitespace-nowrap truncate tracking-tight">
                                     {link.desc}
                                 </p>
                             </div>
@@ -686,9 +692,9 @@ function DashboardContent() {
                         </CardContent>
                     </Card>
                 </div>
-                <div className="lg:col-span-8">
-                    <EventCalendar schedules={data.schedules} />
+                <div className="lg:col-span-8 space-y-8">
                     <QuickLinks />
+                    <EventCalendar schedules={data.schedules} />
                 </div>
             </div>
         </div>
