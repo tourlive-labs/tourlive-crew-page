@@ -153,6 +153,7 @@ function TeamMissionList({ team }: { team: string }) {
     const isCafe = team === 'Naver Cafe';
     const currentMonth = new Date().getMonth() + 1;
     const teamName = isCafe ? "네이버 지식카페 활동" : "네이버 블로그 활동";
+    const [showGuidelines, setShowGuidelines] = useState(false);
 
     return (
         <Card className="shadow-[0_4px_24px_rgba(0,0,0,0.04)] border-none rounded-[32px] overflow-hidden bg-white p-2">
@@ -166,11 +167,53 @@ function TeamMissionList({ team }: { team: string }) {
                         {teamName}
                     </span>
                 </div>
-                <CardDescription className="text-slate-500 font-medium mt-1 truncate">
-                    기한 내에 지정된 미션을 완료해 주세요.
-                </CardDescription>
+                <div className="flex items-center justify-between mt-1">
+                    <CardDescription className="text-slate-500 font-medium truncate">
+                        기한 내에 지정된 미션을 완료해 주세요.
+                    </CardDescription>
+                    <button
+                        onClick={() => setShowGuidelines(!showGuidelines)}
+                        className="text-[10px] font-black text-[#FF5C00] hover:underline flex items-center gap-1 whitespace-nowrap"
+                    >
+                        <AlertCircle className="w-3 h-3" />
+                        {showGuidelines ? "가이드 접기" : "가이드라인 보기"}
+                    </button>
+                </div>
             </CardHeader>
             <CardContent className="px-8 pb-8 space-y-4">
+                {showGuidelines && (
+                    <div className="p-4 rounded-2xl bg-orange-50 border border-orange-100 mb-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <h4 className="text-xs font-black text-orange-800 mb-2 flex items-center gap-2 uppercase tracking-widest">
+                            <Target className="w-3 h-3 text-orange-500" />
+                            Activity Guidelines
+                        </h4>
+                        <ul className="space-y-1.5">
+                            {isCafe ? (
+                                <>
+                                    <li className="text-[11px] text-orange-700 font-bold flex items-start gap-2">
+                                        <div className="w-1 h-1 rounded-full bg-orange-400 mt-1.5 shrink-0" />
+                                        정보글 5건 및 댓글 30건 필수 참여
+                                    </li>
+                                    <li className="text-[11px] text-orange-700 font-bold flex items-start gap-2">
+                                        <div className="w-1 h-1 rounded-full bg-orange-400 mt-1.5 shrink-0" />
+                                        가이드북 후기 작성 시 이미지 5장 이상
+                                    </li>
+                                </>
+                            ) : (
+                                <>
+                                    <li className="text-[11px] text-orange-700 font-bold flex items-start gap-2">
+                                        <div className="w-1 h-1 rounded-full bg-orange-400 mt-1.5 shrink-0" />
+                                        월 2건 오디오가이드/가이드북 후기 작성
+                                    </li>
+                                    <li className="text-[11px] text-orange-700 font-bold flex items-start gap-2">
+                                        <div className="w-1 h-1 rounded-full bg-orange-400 mt-1.5 shrink-0" />
+                                        필수 멘트 및 UTM 소스 링크 삽입 필수
+                                    </li>
+                                </>
+                            )}
+                        </ul>
+                    </div>
+                )}
                 {isCafe ? (
                     <>
                         <div className="p-4 rounded-2xl bg-slate-50/50 border border-slate-100 flex items-center justify-between group hover:bg-white hover:shadow-sm transition-all duration-300">
@@ -209,7 +252,7 @@ function TeamMissionList({ team }: { team: string }) {
                         <span className="font-black text-xl ml-4 shrink-0 whitespace-nowrap">0 / 2개</span>
                     </div>
                 )}
-                <p className="text-[10px] text-slate-400 font-medium text-center pt-2 tracking-tight">
+                <p className="text-[10px] text-slate-400 font-medium text-center pt-2 tracking-tight whitespace-nowrap">
                     * 활동 현황은 매일 오전 6시에 최종 업데이트됩니다.
                 </p>
             </CardContent>
@@ -323,8 +366,12 @@ function SubmissionDialog({ mission, idx }: { mission: any, idx: number }) {
                             <Input
                                 value={link}
                                 onChange={(e) => setLink(e.target.value)}
-                                placeholder="https://blog.naver.com/..."
-                                className="h-14 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white text-base shadow-none"
+                                disabled={isReviewMission && !allChecked}
+                                placeholder={isReviewMission && !allChecked ? "체크리스트를 먼저 완료해 주세요" : "https://blog.naver.com/..."}
+                                className={cn(
+                                    "h-14 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white text-base shadow-none transition-all",
+                                    isReviewMission && !allChecked && "opacity-50 grayscale cursor-not-allowed"
+                                )}
                             />
                         </div>
 
