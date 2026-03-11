@@ -16,6 +16,7 @@ CREATE TABLE public.batches (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     year INT NOT NULL,
     term INT NOT NULL, -- e.g., 14
+    start_date TIMESTAMPTZ, -- Start of the term for D-Day
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -129,7 +130,28 @@ CREATE POLICY "Admins can delete submissions" ON public.submissions FOR DELETE U
 --     crew_id IN (SELECT id FROM public.crews WHERE user_id = auth.uid())
 -- );
 
--- 5. Storage
+-- 6. Activity Schedules Table
+-- Tracks missions, events, and surveys for each batch
+CREATE TABLE public.activity_schedules (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    batch_id UUID REFERENCES public.batches(id) ON DELETE CASCADE,
+    type TEXT NOT NULL CHECK (type IN ('mission', 'event', 'survey')),
+    title TEXT NOT NULL,
+    description TEXT,
+    scheduled_at TIMESTAMPTZ NOT NULL,
+    is_essential BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.activity_schedules ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Activity schedules are viewable by everyone" ON public.activity_schedules FOR SELECT USING (true);
+CREATE POLICY "Admins can insert activity schedules" ON public.activity_schedules FOR INSERT WITH CHECK (public.is_admin());
+CREATE POLICY "Admins can update activity schedules" ON public.activity_schedules FOR UPDATE USING (public.is_admin());
+CREATE POLICY "Admins can delete activity schedules" ON public.activity_schedules FOR DELETE USING (public.is_admin());
+
+-- Storage
 -- Insert 'banners' bucket
 INSERT INTO storage.buckets (id, name, public) 
 VALUES ('banners', 'banners', true) 
