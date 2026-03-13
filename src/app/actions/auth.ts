@@ -27,8 +27,8 @@ export async function signIn(formData: FormData) {
 
         // Ensure app_metadata role is 'admin'
         if (user.app_metadata?.role !== 'admin') {
-            await adminSupabase.auth.admin.updateUserById(user.id, { 
-                app_metadata: { role: 'admin' } 
+            await adminSupabase.auth.admin.updateUserById(user.id, {
+                app_metadata: { role: 'admin' }
             });
         }
 
@@ -41,7 +41,7 @@ export async function signIn(formData: FormData) {
 
         if (!profile) {
             console.log(`[Auth] Creating auto-profile for admin: ${email}`);
-            
+
             // Get latest batch to assign
             const { data: latestBatch } = await adminSupabase
                 .from('batches')
@@ -76,7 +76,7 @@ export async function signIn(formData: FormData) {
                 }
             }
         }
-        
+
         return redirect("/manage");
     }
 
@@ -88,4 +88,7 @@ export async function signOut() {
     const supabase = await createClient();
     await supabase.auth.signOut();
     redirect("/login");
+}
+await supabase.auth.signOut();
+redirect("/login");
 }

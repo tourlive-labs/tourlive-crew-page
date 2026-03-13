@@ -69,7 +69,7 @@ export async function submitOnboardingForm(formData: FormData) {
         // 2. Auth user handling
         let userId: string;
         const { data: listData, error: listError } = await adminSupabase.auth.admin.listUsers();
-        
+
         if (listError) {
             console.error("[Onboarding] List users error:", listError);
             return { error: "계정 확인 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요." };
@@ -113,8 +113,8 @@ export async function submitOnboardingForm(formData: FormData) {
 
         // Update app_metadata with role
         const role = isAdmin ? 'admin' : 'crew';
-        await adminSupabase.auth.admin.updateUserById(userId, { 
-            app_metadata: { role } 
+        await adminSupabase.auth.admin.updateUserById(userId, {
+            app_metadata: { role }
         });
         console.log(`[Onboarding] Assigned role [${role}] for ${userId}`);
 

@@ -10,7 +10,7 @@ export default async function ManagePage() {
 
     // 1. Check auth and role
     const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
+
     if (authError || !user) {
         redirect("/login");
     }
@@ -144,5 +144,11 @@ export default async function ManagePage() {
                 </Card>
             </div>
         </div>
+    );
+}
+                    </CardContent >
+                </Card >
+            </div >
+        </div >
     );
 }
