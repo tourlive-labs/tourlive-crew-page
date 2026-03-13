@@ -29,16 +29,17 @@ export async function submitOnboardingForm(formData: FormData) {
         // Check for admin role based on email domain
         const isAdmin = tourliveEmail.endsWith("@tourlive.co.kr");
 
-        // 0. Find current active batch
+        // 0. Find current latest batch (Unlimited Registration Mode)
         const { data: activeBatch, error: activeBatchError } = await supabase
             .from('batches')
             .select('id, term')
-            .eq('is_active', true)
+            .order('term', { ascending: false })
+            .limit(1)
             .single();
 
         if (activeBatchError || !activeBatch) {
-            console.error("[Onboarding] Active batch error:", activeBatchError);
-            return { error: "현재 진행 중인 크루 모집 기간이 아닙니다." };
+            console.error("[Onboarding] No batch found:", activeBatchError);
+            return { error: "등록된 활동 기수 정보가 없습니다. 관리자에게 문의하세요." };
         }
 
         // 1. Global email duplicate check
@@ -110,11 +111,12 @@ export async function submitOnboardingForm(formData: FormData) {
             console.warn("[Onboarding] Sign In Warning after Admin Create/Link:", signInError.message);
         }
 
-        // Update admin role if needed
-        if (isAdmin) {
-            await adminSupabase.auth.admin.updateUserById(userId, { app_metadata: { role: 'admin' } });
-            console.log(`[Onboarding] Set admin role for ${userId}`);
-        }
+        // Update app_metadata with role
+        const role = isAdmin ? 'admin' : 'crew';
+        await adminSupabase.auth.admin.updateUserById(userId, { 
+            app_metadata: { role } 
+        });
+        console.log(`[Onboarding] Assigned role [${role}] for ${userId}`);
 
         // 3. Insert Crew for the ACTIVE batch
         console.log("[Onboarding] Inserting crew record");
