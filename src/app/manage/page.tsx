@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { User, Mail, Calendar, MapPin, Tag } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { MarkPaidButton } from "@/components/MarkPaidButton";
 
 export default async function ManagePage() {
     const supabase = await createClient();
@@ -39,6 +41,9 @@ export default async function ManagePage() {
 
 
     // 2. Fetch all profiles with their crew/batch info
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
     const { data: crewMembers, error: fetchError } = await supabase
         .from('profiles')
         .select(`
@@ -55,6 +60,12 @@ export default async function ManagePage() {
                 batches (
                     term
                 )
+            ),
+            missions (
+                id,
+                status,
+                points_granted,
+                mission_month
             )
         `)
         .order('created_at', { ascending: false });
@@ -86,51 +97,69 @@ export default async function ManagePage() {
                                     <TableRow className="hover:bg-transparent border-none">
                                         <TableHead className="px-8 py-5 text-slate-500 font-bold text-xs uppercase tracking-wider">이름 / 닉네임</TableHead>
                                         <TableHead className="px-6 py-5 text-slate-500 font-bold text-xs uppercase tracking-wider">기수 / 분야</TableHead>
+                                        <TableHead className="px-6 py-5 text-slate-500 font-bold text-xs uppercase tracking-wider">미션 현황 ({now.getMonth() + 1}월)</TableHead>
                                         <TableHead className="px-6 py-5 text-slate-500 font-bold text-xs uppercase tracking-wider">투어라이브 계정</TableHead>
-                                        <TableHead className="px-6 py-5 text-slate-500 font-bold text-xs uppercase tracking-wider">활동 예정지</TableHead>
                                         <TableHead className="px-8 py-5 text-slate-500 font-bold text-xs uppercase tracking-wider">가입 일자</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {crewMembers && crewMembers.length > 0 ? (
-                                        crewMembers.map((member) => (
-                                            <TableRow key={member.id} className="hover:bg-slate-50/50 transition-colors border-b border-slate-50 group">
-                                                <TableCell className="px-8 py-6">
-                                                    <div className="flex flex-col gap-0.5">
-                                                        <span className="font-bold text-slate-800 text-base">{member.full_name}</span>
-                                                        <span className="text-slate-400 text-sm">{member.nickname}</span>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="px-6 py-6">
-                                                    <div className="flex flex-col gap-1.5">
-                                                        <Badge variant="secondary" className="w-fit px-2 py-0 border-none bg-orange-50 text-orange-600 font-bold text-[10px]">
-                                                            {(member.crews as any)?.batches?.term}기
-                                                        </Badge>
-                                                        <span className="text-slate-600 text-sm font-medium">
-                                                            {member.selected_activity === 'naver_cafe' ? "지식여행 카페" : "개인 블로그"}
-                                                        </span>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="px-6 py-6 font-medium text-slate-600">
-                                                    <div className="flex flex-col gap-0.5">
-                                                        <div className="flex items-center gap-1.5">
-                                                            <Mail className="w-3.5 h-3.5 text-slate-300" />
-                                                            <span className="text-sm truncate max-w-[180px]">{member.tourlive_email}</span>
+                                        crewMembers.map((member) => {
+                                            const currentMission = member.missions?.find(m => m.mission_month === currentMonth);
+                                            const status = currentMission?.status || 'none';
+                                            const statusText = status === 'checking' ? '검토 중' : 
+                                                              status === 'completed' ? '완료' : 
+                                                              status === 'rejected' ? '반려' : '미제출';
+                                            
+                                            return (
+                                                <TableRow key={member.id} className="hover:bg-slate-50/50 transition-colors border-b border-slate-50 group">
+                                                    <TableCell className="px-8 py-6">
+                                                        <div className="flex flex-col gap-0.5">
+                                                            <span className="font-bold text-slate-800 text-base">{member.full_name}</span>
+                                                            <span className="text-slate-400 text-sm">{member.nickname}</span>
                                                         </div>
-                                                        <span className="text-slate-400 text-xs ml-5">{member.contact_email}</span>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="px-6 py-6">
-                                                    <div className="flex items-center gap-2 text-slate-600">
-                                                        <MapPin className="w-4 h-4 text-slate-300" />
-                                                        <span className="text-sm font-medium">{member.travel_country}, {member.travel_city}</span>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell className="px-8 py-6 text-slate-400 text-sm tabular-nums">
-                                                    {new Date(member.created_at).toLocaleDateString()}
-                                                </TableCell>
-                                            </TableRow>
-                                        ))
+                                                    </TableCell>
+                                                    <TableCell className="px-6 py-6">
+                                                        <div className="flex flex-col gap-1.5">
+                                                            <Badge variant="secondary" className="w-fit px-2 py-0 border-none bg-orange-50 text-orange-600 font-bold text-[10px]">
+                                                                {(member.crews as any)?.batches?.term}기
+                                                            </Badge>
+                                                            <span className="text-slate-600 text-sm font-medium">
+                                                                {member.selected_activity === 'naver_cafe' ? "지식여행 카페" : "개인 블로그"}
+                                                            </span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="px-6 py-6">
+                                                        <div className="flex flex-col gap-2">
+                                                            <Badge className={cn(
+                                                                "w-fit px-2 py-0.5 rounded-md font-bold text-[10px]",
+                                                                status === 'checking' ? "bg-orange-100 text-orange-600" :
+                                                                status === 'completed' ? "bg-blue-100 text-blue-600" :
+                                                                status === 'rejected' ? "bg-red-100 text-red-600" :
+                                                                "bg-slate-100 text-slate-400"
+                                                            )}>
+                                                                {statusText}
+                                                            </Badge>
+                                                            {status === 'completed' && currentMission && (
+                                                                <MarkPaidButton missionId={currentMission.id} isPaid={currentMission.points_granted} />
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="px-6 py-6 font-medium text-slate-600">
+                                                        <div className="flex flex-col gap-0.5">
+                                                            <div className="flex items-center gap-1.5">
+                                                                <Mail className="w-3.5 h-3.5 text-slate-300" />
+                                                                <span className="text-sm truncate max-w-[180px]">{member.tourlive_email}</span>
+                                                            </div>
+                                                            <span className="text-slate-400 text-xs ml-5">{member.contact_email}</span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="px-8 py-6 text-slate-400 text-sm tabular-nums">
+                                                        {new Date(member.created_at).toLocaleDateString()}
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })
                                     ) : (
                                         <TableRow>
                                             <TableCell colSpan={5} className="h-40 text-center text-slate-400 font-medium">
@@ -147,4 +176,5 @@ export default async function ManagePage() {
         </div>
     );
 }
+
 

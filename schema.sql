@@ -162,6 +162,34 @@ ON CONFLICT (id) DO NOTHING;
 CREATE POLICY "Public Access" ON storage.objects 
 FOR SELECT USING (bucket_id = 'banners');
 
--- Policy to allow authenticated users to insert
-CREATE POLICY "Auth Insert" ON storage.objects 
-FOR INSERT WITH CHECK (bucket_id = 'banners' AND auth.role() = 'authenticated');
+
+-- 7. Missions Table
+-- Tracks monthly mission submissions and status
+CREATE TYPE mission_status AS ENUM ('none', 'checking', 'rejected', 'completed');
+
+CREATE TABLE public.missions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    profile_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    mission_month TEXT NOT NULL, -- Format: YYYY-MM
+    post_url TEXT,
+    status mission_status DEFAULT 'none',
+    ai_feedback TEXT,
+    points_granted BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(profile_id, mission_month)
+);
+
+ALTER TABLE public.missions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Missions are viewable by everyone" ON public.missions FOR SELECT USING (true);
+CREATE POLICY "Users can insert/update their own missions" ON public.missions 
+FOR ALL USING (
+    profile_id IN (
+        SELECT p.id FROM public.profiles p
+        JOIN public.crews c ON p.crew_id = c.id
+        WHERE c.user_id = auth.uid()
+    )
+);
+CREATE POLICY "Admins can manage all missions" ON public.missions FOR ALL USING (public.is_admin());
+

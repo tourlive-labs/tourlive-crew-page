@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import {
     Dialog,
     DialogContent,
@@ -37,8 +38,107 @@ import {
 } from "lucide-react";
 import { Suspense } from "react";
 import { getDashboardData } from "@/app/actions/dashboard";
+import { submitMission } from "@/app/actions/mission";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+
+function MonthlyMissionCard({ currentMission }: { currentMission: any }) {
+    const [link, setLink] = useState(currentMission?.post_url || "");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const router = useRouter();
+
+    const currentMonth = new Date().getMonth() + 1;
+    const isSubmitted = currentMission?.status && currentMission.status !== 'none';
+    const statusText = currentMission?.status === 'checking' ? 'AI 검토 중' : 
+                      currentMission?.status === 'completed' ? '검토 완료' : 
+                      currentMission?.status === 'rejected' ? '반려됨' : '미제출';
+
+    const handleLinkSubmit = async () => {
+        if (!link) return;
+        setIsSubmitting(true);
+        const res = await submitMission(link);
+        if (res.error) {
+            toast.error(res.error);
+        } else {
+            toast.success("미션이 제출되었습니다! AI 검토가 시작됩니다.");
+            router.refresh();
+        }
+        setIsSubmitting(false);
+    };
+
+    return (
+        <Card className="shadow-[0_4px_24px_rgba(0,0,0,0.04)] border-none rounded-[32px] overflow-hidden bg-white p-2 mb-8">
+            <CardHeader className="p-8 pb-4 flex flex-row items-center justify-between">
+                <div>
+                    <CardTitle className="text-xl font-extrabold text-slate-800 flex items-center tracking-tight">
+                        <Trophy className="w-6 h-6 mr-3 text-[#FF5C00]" />
+                        {currentMonth}월 정기 미션 제출
+                    </CardTitle>
+                    <CardDescription className="text-slate-500 font-medium mt-1">
+                        매달 1개의 활동 링크를 제출해 주세요.
+                    </CardDescription>
+                </div>
+                {isSubmitted && (
+                    <Badge className={cn(
+                        "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest",
+                        currentMission.status === 'checking' ? "bg-orange-50 text-orange-600 border border-orange-100" :
+                        currentMission.status === 'completed' ? "bg-blue-50 text-blue-600 border border-blue-100" :
+                        "bg-red-50 text-red-600 border border-red-100"
+                    )}>
+                        {statusText}
+                    </Badge>
+                )}
+            </CardHeader>
+            <CardContent className="px-8 pb-8">
+                {isSubmitted ? (
+                    <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between group">
+                        <div className="flex items-center gap-3 overflow-hidden">
+                            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-slate-400 shadow-sm shrink-0">
+                                <ExternalLink className="w-5 h-5" />
+                            </div>
+                            <div className="overflow-hidden">
+                                <span className="text-xs font-bold text-slate-400 block uppercase tracking-wider">제출된 링크</span>
+                                <span className="text-sm font-bold text-slate-700 truncate block">{currentMission.post_url}</span>
+                            </div>
+                        </div>
+                        <Button variant="ghost" size="sm" asChild className="text-slate-400 hover:text-slate-800">
+                             <a href={currentMission.post_url} target="_blank" rel="noopener noreferrer">
+                                <ArrowRight className="w-4 h-4" />
+                             </a>
+                        </Button>
+                    </div>
+                ) : (
+                    <div className="flex flex-col md:flex-row gap-3">
+                        <div className="relative flex-1">
+                            <Input
+                                value={link}
+                                onChange={(e) => setLink(e.target.value)}
+                                placeholder="블로그 또는 카페 게시글 링크를 입력하세요"
+                                className="h-12 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white text-sm shadow-none transition-all pr-10"
+                            />
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300">
+                                <span title="필수 준수 사항: 앱 캡처 5장 이상, 직접 찍은 사진 5장 이상, UTM 링크 포함, 크루 배너 삽입, 하단 필수 멘트 포함">
+                                    <AlertCircle className="w-4 h-4 cursor-help" />
+                                </span>
+                            </div>
+                        </div>
+                        <Button 
+                            onClick={handleLinkSubmit}
+                            disabled={!link || isSubmitting}
+                            className="h-12 px-8 rounded-2xl bg-[#FF5C00] hover:bg-[#E63900] text-white font-black shadow-lg shadow-orange-100/50 whitespace-nowrap"
+                        >
+                            {isSubmitting ? (
+                                <div className="w-4 h-4 border-2 border-white border-t-transparent animate-spin rounded-full" />
+                            ) : "Submit for AI Review"}
+                        </Button>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
 
 function DashboardHeader({ nickname, term, dDay, teamName }: { nickname: string, term: number, dDay: number, teamName: string }) {
     return (
@@ -643,6 +743,7 @@ function DashboardContent() {
 
     return (
         <div className="max-w-[1400px] mx-auto px-10 py-16">
+            <MonthlyMissionCard currentMission={data.currentMission} />
             <DashboardHeader
                 nickname={data.nickname}
                 term={data.term}

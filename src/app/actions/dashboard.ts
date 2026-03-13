@@ -16,6 +16,7 @@ export async function getDashboardData() {
     const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select(`
+            id,
             nickname,
             selected_activity,
             created_at,
@@ -88,6 +89,15 @@ export async function getDashboardData() {
             };
         });
 
+    // 5. Get current monthly mission
+    const missionMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+    const { data: currentMission } = await supabase
+        .from('missions')
+        .select('*')
+        .eq('profile_id', profile.id)
+        .eq('mission_month', missionMonth)
+        .maybeSingle();
+
     return {
         nickname: profile.nickname,
         team: profile.selected_activity,
@@ -95,5 +105,6 @@ export async function getDashboardData() {
         dDay,
         essentialMissions,
         schedules: schedules || [],
+        currentMission: currentMission || { status: 'none' }
     };
 }
