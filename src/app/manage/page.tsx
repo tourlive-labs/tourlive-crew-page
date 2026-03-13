@@ -15,14 +15,14 @@ export default async function ManagePage() {
         redirect("/login");
     }
 
+    // 2. Fetch role from profiles table
     const { data: profile } = await supabase
         .from('profiles')
-        .select('id, crews(id, user_id)')
+        .select('role')
         .eq('tourlive_email', user.email)
-        .single();
+        .maybeSingle();
 
-    // This is a simple role check based on app_metadata or email domain for now
-    const isAdmin = user.app_metadata?.role === 'admin' || user.email?.endsWith("@tourlive.co.kr");
+    const isAdmin = profile?.role === 'admin' || user.email === "root@tourlive.co.kr";
 
     if (!isAdmin) {
         return (
@@ -36,6 +36,7 @@ export default async function ManagePage() {
             </div>
         );
     }
+
 
     // 2. Fetch all profiles with their crew/batch info
     const { data: crewMembers, error: fetchError } = await supabase
@@ -146,9 +147,4 @@ export default async function ManagePage() {
         </div>
     );
 }
-                    </CardContent >
-                </Card >
-            </div >
-        </div >
-    );
-}
+

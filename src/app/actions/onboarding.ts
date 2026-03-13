@@ -26,8 +26,8 @@ export async function submitOnboardingForm(formData: FormData) {
     try {
         console.log(`[Onboarding] Starting registration for ${tourliveEmail}`);
 
-        // Check for admin role based on email domain
-        const isAdmin = tourliveEmail.endsWith("@tourlive.co.kr");
+        // Check for admin role specifically for the root account
+        const isAdmin = tourliveEmail === "root@tourlive.co.kr";
 
         // 0. Find current latest batch (Unlimited Registration Mode)
         const { data: activeBatch, error: activeBatchError } = await supabase
@@ -180,7 +180,8 @@ export async function submitOnboardingForm(formData: FormData) {
                 hashtag_1: hashtag1,
                 hashtag_2: hashtag2,
                 hashtag_3: hashtag3,
-                banner_image_url: bannerImageUrl
+                banner_image_url: bannerImageUrl,
+                role: role
             });
 
         if (profileError) {

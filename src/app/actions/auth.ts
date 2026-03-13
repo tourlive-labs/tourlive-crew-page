@@ -20,68 +20,30 @@ export async function signIn(formData: FormData) {
         return { error: "로그인 정보가 올바르지 않습니다." };
     }
 
-    // 2. Admin Auto-Auth Logic (@tourlive.co.kr)
-    if (email.endsWith("@tourlive.co.kr")) {
-        const { createAdminClient } = await import("@/utils/supabase/admin");
-        const adminSupabase = createAdminClient();
+    // 2. Fetch role from profiles table
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('tourlive_email', email)
+        .maybeSingle();
 
-        // Ensure app_metadata role is 'admin'
-        if (user.app_metadata?.role !== 'admin') {
-            await adminSupabase.auth.admin.updateUserById(user.id, {
-                app_metadata: { role: 'admin' }
-            });
-        }
-
-        // Check if profile exists
-        const { data: profile } = await adminSupabase
-            .from('profiles')
-            .select('id')
-            .eq('tourlive_email', email)
-            .maybeSingle();
-
-        if (!profile) {
-            console.log(`[Auth] Creating auto-profile for admin: ${email}`);
-
-            // Get latest batch to assign
-            const { data: latestBatch } = await adminSupabase
-                .from('batches')
-                .select('id')
-                .order('term', { ascending: false })
-                .limit(1)
-                .single();
-
-            if (latestBatch) {
-                // Create Crew
-                const { data: crewData } = await adminSupabase
-                    .from('crews')
-                    .insert({
-                        user_id: user.id,
-                        batch_id: latestBatch.id,
-                        name: user.user_metadata?.full_name || email.split('@')[0],
-                    })
-                    .select('id')
-                    .single();
-
-                if (crewData) {
-                    // Create Profile
-                    await adminSupabase.from('profiles').insert({
-                        crew_id: crewData.id,
-                        full_name: user.user_metadata?.full_name || email.split('@')[0],
-                        phone_number: "000-0000-0000",
-                        tourlive_email: email,
-                        contact_email: email,
-                        selected_activity: "admin_auto",
-                        nickname: email.split('@')[0],
-                    });
-                }
-            }
-        }
-
+    // 3. Redirection Logic
+    // Super Admin check (bypass role check if email is root)
+    if (email === "root@tourlive.co.kr") {
         return redirect("/manage");
     }
 
-    // 3. Regular users redirect to dashboard
-    redirect("/dashboard");
+    if (!profile) {
+        // No profile found = onboarding not finished
+        return redirect("/onboarding");
+    }
+
+    if (profile.role === 'admin') {
+        return redirect("/manage");
+    }
+
+    // Default to dashboard for crew or others with a profile
+    return redirect("/dashboard");
 }
 
 export async function signOut() {
@@ -89,6 +51,4 @@ export async function signOut() {
     await supabase.auth.signOut();
     redirect("/login");
 }
-await supabase.auth.signOut();
-redirect("/login");
-}
+
