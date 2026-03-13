@@ -92,8 +92,8 @@ function MonthlyMissionCard({ currentMission }: { currentMission: any }) {
 function DashboardHeader({ nickname }: { nickname: string }) {
     return (
         <div className="flex items-center justify-between mb-16">
-            <h1 className="text-4xl font-black text-slate-900 tracking-tight">
-                투어라이브 크루 <span className="text-[#FF5C00] font-black">{nickname}</span>님의 대시보드
+            <h1 className="text-[25px] font-black text-slate-900 tracking-tight leading-tight">
+                투어라이브 크루 <span className="text-[#FF5C00]">{nickname}</span>님의 대시보드
             </h1>
             <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/80 backdrop-blur-sm border border-slate-100 shadow-sm">
                 <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none">Tourlive Crew</span>

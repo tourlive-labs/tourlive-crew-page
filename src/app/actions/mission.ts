@@ -90,3 +90,33 @@ export async function markPointsPaid(missionId: string) {
     revalidatePath("/manage");
     return { success: true };
 }
+
+/**
+ * Registers one's Naver ID in the profile.
+ */
+export async function registerNaverId(naverId: string) {
+    const supabase = await createClient();
+
+    // 1. Get current user
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+        return { error: "로그인이 필요합니다." };
+    }
+
+    // 2. Update profiles table
+    const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ 
+            naver_id: naverId,
+            updated_at: new Date().toISOString()
+        })
+        .eq('tourlive_email', user.email);
+
+    if (updateError) {
+        console.error("[Profile] Register Naver ID Error:", updateError);
+        return { error: "네이버 ID 등록 중 오류가 발생했습니다." };
+    }
+
+    revalidatePath("/dashboard/mission");
+    return { success: true };
+}

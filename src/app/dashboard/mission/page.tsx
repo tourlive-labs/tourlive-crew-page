@@ -18,10 +18,11 @@ import {
     BookOpen,
     MessageSquare,
     RefreshCcw,
-    ClipboardList
+    ClipboardList,
+    Smartphone
 } from "lucide-react";
 import { getDashboardData } from "@/app/actions/dashboard";
-import { submitMission } from "@/app/actions/mission";
+import { submitMission, registerNaverId } from "@/app/actions/mission";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -188,6 +189,112 @@ function MissionSubmissionCard({ currentMission }: { currentMission: any }) {
     );
 }
 
+function CafeActivityCard({ profile, currentMission }: { profile: any, currentMission: any }) {
+    const [naverIdInput, setNaverIdInput] = useState("");
+    const [isRegistering, setIsRegistering] = useState(false);
+    const router = useRouter();
+
+    const postCount = currentMission?.cafe_post_count || 0;
+    const commentCount = currentMission?.cafe_comment_count || 0;
+    const postProgress = Math.min((postCount / 5) * 100, 100);
+    const commentProgress = Math.min((commentCount / 30) * 100, 100);
+
+    const handleRegister = async () => {
+        if (!naverIdInput) return;
+        setIsRegistering(true);
+        const res = await registerNaverId(naverIdInput);
+        if (res.error) {
+            toast.error(res.error);
+        } else {
+            toast.success("네이버 ID가 성공적으로 등록되었습니다!");
+            router.refresh();
+        }
+        setIsRegistering(false);
+    };
+
+    return (
+        <Card className="shadow-sm border-slate-100 rounded-3xl overflow-hidden bg-white">
+            <CardHeader className="p-8 pb-4">
+                <div className="flex items-center justify-between">
+                    <CardTitle className="text-xl font-black text-slate-800 flex items-center tracking-tight">
+                        <Coffee className="w-6 h-6 mr-3 text-[#FF5C00]" />
+                        네이버 카페 활동 현황
+                    </CardTitle>
+                    <Badge variant="outline" className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        Cafe Automation
+                    </Badge>
+                </div>
+                <CardDescription className="text-slate-500 font-medium mt-1">
+                    카페 활동 현황을 실시간으로 확인하고 관리하세요.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="p-8 space-y-8">
+                {profile?.naver_id ? (
+                    <div className="space-y-6">
+                        <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Smartphone className="w-4 h-4 text-slate-400" />
+                                <span className="text-sm font-bold text-slate-500">연동된 네이버 ID</span>
+                            </div>
+                            <span className="text-sm font-black text-slate-800">{profile.naver_id}</span>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm font-bold text-slate-600">여행 정보 게시글 작성</span>
+                                    <span className="text-xs font-black text-[#FF5C00]">{postCount} / 5개</span>
+                                </div>
+                                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                                    <div 
+                                        className="h-full bg-[#FF5C00] transition-all duration-700 ease-out rounded-full"
+                                        style={{ width: `${postProgress}%` }}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-sm font-bold text-slate-600">커뮤니티 댓글 작성</span>
+                                    <span className="text-xs font-black text-slate-800">{commentCount} / 30개</span>
+                                </div>
+                                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                                    <div 
+                                        className="h-full bg-slate-800 transition-all duration-700 ease-out rounded-full"
+                                        style={{ width: `${commentProgress}%` }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="p-6 rounded-2xl bg-[#F9F8F3] border border-[#F1EADA] space-y-4">
+                        <div className="space-y-1">
+                            <h4 className="text-sm font-black text-slate-800">네이버 ID 등록이 필요합니다</h4>
+                            <p className="text-xs text-slate-500 font-medium">활동 현황을 자동으로 집계하기 위해 네이버 ID(이메일 아님)를 등록해 주세요.</p>
+                        </div>
+                        <div className="flex gap-2">
+                            <Input 
+                                placeholder="네이버 ID 입력 (예: tourlive)" 
+                                value={naverIdInput}
+                                onChange={(e) => setNaverIdInput(e.target.value)}
+                                className="h-11 rounded-xl border-slate-200 bg-white"
+                            />
+                            <Button 
+                                onClick={handleRegister}
+                                disabled={!naverIdInput || isRegistering}
+                                className="h-11 px-6 rounded-xl bg-slate-900 hover:bg-black text-white font-black"
+                            >
+                                {isRegistering ? <RefreshCcw className="w-4 h-4 animate-spin" /> : "등록"}
+                            </Button>
+                        </div>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
 function AdditionalTasks() {
     return (
         <Card className="shadow-sm border-slate-100 rounded-3xl overflow-hidden bg-white">
@@ -239,7 +346,7 @@ export default function MissionPage() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-[#F8F9FA]">
+            <div className="flex items-center justify-center min-h-screen bg-[#F9F8F3]">
                 <div className="w-8 h-8 rounded-full border-4 border-[#FF5C00] border-t-transparent animate-spin" />
             </div>
         );
@@ -248,7 +355,7 @@ export default function MissionPage() {
     if (!data) return null;
 
     return (
-        <div className="min-h-screen bg-[#F8F9FA] pb-20">
+        <div className="min-h-screen bg-[#F9F8F3] pb-20">
             <div className="max-w-[1000px] mx-auto px-6 py-12">
                 <Link 
                     href="/dashboard" 
@@ -268,6 +375,10 @@ export default function MissionPage() {
                 </div>
 
                 <div className="grid grid-cols-1 gap-8">
+                    {data.team === 'Naver Cafe' && (
+                        <CafeActivityCard profile={data} currentMission={data.currentMission} />
+                    )}
+                    
                     <MissionSubmissionCard currentMission={data.currentMission} />
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

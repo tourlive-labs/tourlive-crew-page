@@ -66,6 +66,8 @@ CREATE TABLE public.profiles (
     hashtag_1 TEXT,
     hashtag_2 TEXT,
     hashtag_3 TEXT,
+    naver_id TEXT,
+    cafe_nickname TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -175,6 +177,9 @@ CREATE TABLE public.missions (
     status mission_status DEFAULT 'none',
     ai_feedback TEXT,
     points_granted BOOLEAN DEFAULT false,
+    cafe_post_count INT DEFAULT 0,
+    cafe_comment_count INT DEFAULT 0,
+    is_cafe_mission_completed BOOLEAN DEFAULT false,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(profile_id, mission_month)
