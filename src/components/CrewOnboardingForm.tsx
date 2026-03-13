@@ -341,7 +341,7 @@ export default function CrewOnboardingForm() {
                                             신청 정보 전송 중...
                                         </>
                                     ) : (
-                                        "크루 멤버 신청 완료"
+                                        "투어라이브 크루 회원가입 완료"
                                     )}
                                 </Button>
                                 <p className="text-slate-400 text-xs text-center leading-relaxed">

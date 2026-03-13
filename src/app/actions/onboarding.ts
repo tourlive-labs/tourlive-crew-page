@@ -38,7 +38,18 @@ export async function submitOnboardingForm(formData: FormData) {
             return { error: "현재 진행 중인 크루 모집 기간이 아닙니다." };
         }
 
-        // 1. Check if user already has a profile for this ACTIVE batch
+        // 1. Global email duplicate check
+        const { data: globalExisting, error: globalCheckError } = await adminSupabase
+            .from('profiles')
+            .select('id')
+            .eq('tourlive_email', tourliveEmail)
+            .maybeSingle();
+
+        if (globalExisting) {
+            return { error: "이미 가입된 투어라이브 계정입니다. 로그인을 시도해 주세요." };
+        }
+
+        // 1.5. Check if user already has a profile for this ACTIVE batch (redundant but safe)
         const { data: existingInActiveBatch, error: checkError } = await adminSupabase
             .from('profiles')
             .select('id, crews!inner(batch_id)')
@@ -47,7 +58,7 @@ export async function submitOnboardingForm(formData: FormData) {
             .maybeSingle();
 
         if (existingInActiveBatch) {
-            return { error: `이미 ${activeBatch.term}기 크루로 가입된 계정입니다. 대시보드에서 활동을 확인해 주세요.` };
+            return { error: `이미 ${activeBatch.term}기 크루로 가입된 계정입니다.` };
         }
 
         // 2. Auth user handling
