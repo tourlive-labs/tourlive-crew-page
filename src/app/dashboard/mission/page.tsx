@@ -302,7 +302,7 @@ function CafeActivityCard({
                                     </div>
                                 </div>
                                 <Button variant="outline" size="sm" asChild className="rounded-xl border-[#FF5C00] text-[#FF5C00] hover:bg-[#FFF5F1]">
-                                    <a href="https://m.cafe.naver.com/ca-fe/web/cafes/31034331" target="_blank" rel="noopener noreferrer">
+                                    <a href="https://m.cafe.naver.com/ca-fe/jisiktravel" target="_blank" rel="noopener noreferrer">
                                         카페 홈 바로가기
                                     </a>
                                 </Button>
