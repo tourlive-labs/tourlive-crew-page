@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +22,7 @@ import {
     Smartphone
 } from "lucide-react";
 import { getDashboardData } from "@/app/actions/dashboard";
-import { submitMission, registerNaverId, processCafeScreenshot, confirmCafeActivity } from "@/app/actions/mission";
+import { submitMission, registerNaverId, processCafeScreenshot, confirmCafeActivity, setCafeBaseline } from "@/app/actions/mission";
 import { signOut } from "@/app/actions/auth";
 import { Camera, Image as ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -200,12 +200,18 @@ function CafeActivityCard({
     currentMission: any, 
     onRefresh: () => void 
 }) {
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const [naverIdInput, setNaverIdInput] = useState("");
     const [isRegistering, setIsRegistering] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
     const [extractedData, setExtractedData] = useState<{posts: number, comments: number} | null>(null);
+    const [uploadMode, setUploadMode] = useState<'activity' | 'baseline'>('activity');
     const router = useRouter();
+
+    const baselinePosts = currentMission?.baseline_post_count;
+    const baselineComments = currentMission?.baseline_comment_count;
+    const hasBaseline = baselinePosts != null && baselineComments != null;
 
     const postCount = currentMission?.cafe_post_count || 0;
     const commentCount = currentMission?.cafe_comment_count || 0;
@@ -235,6 +241,11 @@ function CafeActivityCard({
         setIsRegistering(false);
     };
 
+    const handleUploadClick = (mode: 'activity' | 'baseline') => {
+        setUploadMode(mode);
+        fileInputRef.current?.click();
+    };
+
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -259,11 +270,17 @@ function CafeActivityCard({
     const handleConfirm = async () => {
         if (!extractedData) return;
         setIsSyncing(true);
-        const res = await confirmCafeActivity(extractedData.posts, extractedData.comments);
+        let res;
+        if (uploadMode === 'baseline') {
+            res = await setCafeBaseline(extractedData.posts, extractedData.comments);
+        } else {
+            res = await confirmCafeActivity(extractedData.posts, extractedData.comments);
+        }
+
         if (res.error) {
             toast.error(res.error);
         } else {
-            toast.success("활동 내역이 성공적으로 업데이트되었습니다!");
+            toast.success(uploadMode === 'baseline' ? "기수 시작점이 성공적으로 설정되었습니다!" : "활동 내역이 성공적으로 업데이트되었습니다!");
             setExtractedData(null);
             onRefresh();
             router.refresh();
@@ -308,6 +325,16 @@ function CafeActivityCard({
                                 </Button>
                             </div>
 
+                            {/* Hidden File Input */}
+                            <input 
+                                type="file" 
+                                accept="image/*" 
+                                ref={fileInputRef}
+                                onChange={handleFileChange}
+                                disabled={isUploading}
+                                className="hidden"
+                            />
+
                             {extractedData ? (
                                 <div className="p-6 rounded-2xl bg-orange-50 border border-orange-200 animate-in fade-in slide-in-from-bottom-2">
                                     <h4 className="text-sm font-black text-orange-900 mb-4 flex items-center">
@@ -343,71 +370,108 @@ function CafeActivityCard({
                                         </Button>
                                     </div>
                                 </div>
+                            ) : isUploading ? (
+                                <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 border-dashed relative text-center flex flex-col items-center justify-center space-y-3 py-10">
+                                    <RefreshCcw className="w-8 h-8 text-slate-400 animate-spin" />
+                                    <h4 className="text-sm font-black text-slate-800">AI가 이미지를 분석 중입니다...</h4>
+                                </div>
+                            ) : !hasBaseline ? (
+                                <div className="p-6 rounded-2xl bg-orange-50 border border-orange-200 text-center space-y-4 shadow-sm animate-in fade-in">
+                                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm border border-orange-100 mb-2">
+                                        <Target className="w-6 h-6 text-orange-600" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <h4 className="text-base font-black text-orange-900">이번 기수의 시작점을 설정해주세요</h4>
+                                        <p className="text-xs text-orange-700 max-w-[280px] mx-auto leading-relaxed">
+                                            현재 카페 활동량(작성글/댓글 수)을 먼저 기준점으로 등록해야, 새롭게 활동한 '순수 활동량'을 계산할 수 있습니다.
+                                        </p>
+                                    </div>
+                                    <Button 
+                                        onClick={() => handleUploadClick('baseline')} 
+                                        className="h-12 px-6 w-full rounded-xl bg-[#FF5C00] hover:bg-[#E63900] text-white font-black shadow-lg shadow-orange-200"
+                                    >
+                                        초기 시작점 캡처 업로드하기
+                                    </Button>
+                                    <p className="text-[10px] text-orange-500 font-bold mt-2">
+                                        ※ 기존 활동 내역 화면과 동일하게 캡처해주세요.
+                                    </p>
+                                </div>
                             ) : (
-                                <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 border-dashed relative hover:bg-slate-100 transition-colors">
-                                    <input 
-                                        type="file" 
-                                        accept="image/*" 
-                                        onChange={handleFileChange}
-                                        disabled={isUploading}
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
-                                    />
-                                    <div className="flex flex-col items-center justify-center text-center space-y-3 pointer-events-none">
-                                        <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-slate-100">
-                                            {isUploading ? (
-                                                <RefreshCcw className="w-6 h-6 text-slate-400 animate-spin" />
-                                            ) : (
+                                <div className="space-y-6">
+                                    <div 
+                                        className="p-6 rounded-2xl bg-slate-50 border border-slate-200 border-dashed relative hover:bg-slate-100 transition-colors cursor-pointer animate-in fade-in"
+                                        onClick={() => handleUploadClick('activity')}
+                                    >
+                                        <div className="flex flex-col items-center justify-center text-center space-y-3 pointer-events-none">
+                                            <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-slate-100">
                                                 <ImageIcon className="w-6 h-6 text-[#FF5C00]" />
-                                            )}
+                                            </div>
+                                            <div>
+                                                <h4 className="text-sm font-black text-slate-800 mb-1">
+                                                    활동 내역 캡처 업데이트
+                                                </h4>
+                                                <p className="text-xs font-medium text-slate-500 max-w-[250px] mx-auto leading-relaxed">
+                                                    카페 상단 메뉴(≡) &gt; 내 프로필 &gt; <b>'내 활동'</b> 탭에서 <br/>
+                                                    작성글/댓글 수가 보이게 캡처해 주세요.
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h4 className="text-sm font-black text-slate-800 mb-1">
-                                                {isUploading ? "AI가 이미지를 분석 중입니다..." : "활동 내역 캡처 업로드"}
-                                            </h4>
-                                            <p className="text-xs font-medium text-slate-500 max-w-[250px] mx-auto leading-relaxed">
-                                                카페 상단 메뉴(≡) &gt; 내 프로필 &gt; <b>'내 활동'</b> 탭에서 <br/>
-                                                작성글/댓글 수가 보이게 캡처해 주세요.
-                                            </p>
+                                    </div>
+
+                                    <div className="text-right">
+                                        <Button 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            onClick={() => handleUploadClick('baseline')} 
+                                            className="text-[11px] text-slate-400 hover:text-slate-600 underline font-semibold"
+                                        >
+                                            기수 시작점 잘못 설정하셨나요? 갱신하기
+                                        </Button>
+                                    </div>
+                                    
+                                    <div className="px-1 flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full bg-[#FF5C00]" />
+                                            <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">AI VISION TRACKER</span>
+                                        </div>
+                                        <span className="text-[11px] font-bold text-slate-400">최근 업데이트: {lastUpdated}</span>
+                                    </div>
+
+                                    <div className="space-y-6">
+                                        <div className="space-y-3">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm font-bold text-slate-600">여행 정보 게시글 작성</span>
+                                                <div className="text-right flex flex-col items-end">
+                                                    <span className="text-[10px] text-slate-400 mb-0.5">(시작 시점 {baselinePosts}개)</span>
+                                                    <span className="text-xs font-black text-[#FF5C00]">이번 달: {postCount} / 5개</span>
+                                                </div>
+                                            </div>
+                                            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                                                <div 
+                                                    className="h-full bg-[#FF5C00] transition-all duration-700 ease-out rounded-full"
+                                                    style={{ width: `${postProgress}%` }}
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-3">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm font-bold text-slate-600">커뮤니티 댓글 작성</span>
+                                                <div className="text-right flex flex-col items-end">
+                                                    <span className="text-[10px] text-slate-400 mb-0.5">(시작 시점 {baselineComments}개)</span>
+                                                    <span className="text-xs font-black text-slate-800">이번 달: {commentCount} / 30개</span>
+                                                </div>
+                                            </div>
+                                            <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                                                <div 
+                                                    className="h-full bg-slate-800 transition-all duration-700 ease-out rounded-full"
+                                                    style={{ width: `${commentProgress}%` }}
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             )}
-                        </div>
-                        
-                        <div className="px-1 flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-[#FF5C00]" />
-                                <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">AI VISION TRACKER</span>
-                            </div>
-                            <span className="text-[11px] font-bold text-slate-400">최근 업데이트: {lastUpdated}</span>
-                        </div>
-
-                        <div className="space-y-6">
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm font-bold text-slate-600">여행 정보 게시글 작성</span>
-                                    <span className="text-xs font-black text-[#FF5C00]">{postCount} / 5개</span>
-                                </div>
-                                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                                    <div 
-                                        className="h-full bg-[#FF5C00] transition-all duration-700 ease-out rounded-full"
-                                        style={{ width: `${postProgress}%` }}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-sm font-bold text-slate-600">커뮤니티 댓글 작성</span>
-                                    <span className="text-xs font-black text-slate-800">{commentCount} / 30개</span>
-                                </div>
-                                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                                    <div 
-                                        className="h-full bg-slate-800 transition-all duration-700 ease-out rounded-full"
-                                        style={{ width: `${commentProgress}%` }}
-                                    />
-                                </div>
-                            </div>
                         </div>
                     </div>
                 ) : (

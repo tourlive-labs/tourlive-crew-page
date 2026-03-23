@@ -158,19 +158,28 @@ If you cannot find them, return { "posts": 0, "comments": 0 }.`;
         const result = await model.generateContent([prompt, imagePart]);
         const responseText = result.response.text();
 
-        // Safely parse JSON
-        const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+        // Safely parse JSON with Regex to handle surrounding conversational text
+        let jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+        const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            jsonStr = jsonMatch[0];
+        }
         const parsed = JSON.parse(jsonStr);
 
-        if (typeof parsed.posts !== 'number' || typeof parsed.comments !== 'number') {
-            throw new Error("Invalid format from AI");
-        }
+        // Extract numbers robustly even if AI returns strings like "1개"
+        let posts = 0;
+        let comments = 0;
+        if (parsed.posts !== undefined) posts = Number(String(parsed.posts).replace(/[^0-9]/g, ''));
+        if (parsed.comments !== undefined) comments = Number(String(parsed.comments).replace(/[^0-9]/g, ''));
         
-        if (parsed.posts === 0 && parsed.comments === 0) {
-            return { error: "이미지에서 숫자를 찾지 못했습니다. '작성글'과 '작성댓글' 숫자가 잘 보이게 캡처했는지 확인해주세요." };
+        if (isNaN(posts)) posts = 0;
+        if (isNaN(comments)) comments = 0;
+
+        if (posts === 0 && comments === 0) {
+            return { error: "이미지에서 숫자를 찾지 못했습니다. ('작성글', '작성댓글' 숫자가 명확히 보이는지 확인해주세요.)" };
         }
 
-        return { success: true, posts: parsed.posts, comments: parsed.comments };
+        return { success: true, posts, comments };
     } catch (e) {
         console.error("[AI Vision Error]", e);
         return { error: "이미지 분석에 실패했습니다. 형식 또는 화질을 다시 확인해 주세요." };
@@ -178,7 +187,52 @@ If you cannot find them, return { "posts": 0, "comments": 0 }.`;
 }
 
 /**
- * Confirms the AI-parsed counts and updates the database.
+ * Sets the baseline activity (posts and comments) for the current season/month.
+ */
+export async function setCafeBaseline(posts: number, comments: number) {
+    try {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { error: "로그인이 필요합니다." };
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('tourlive_email', user.email)
+            .single();
+
+        if (!profile) return { error: "프로필을 찾을 수 없습니다." };
+
+        const now = new Date();
+        const missionMonthLabel = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+        const { error: updateError } = await supabase
+            .from('missions')
+            .upsert({
+                profile_id: profile.id,
+                mission_month: missionMonthLabel,
+                baseline_post_count: posts,
+                baseline_comment_count: comments,
+                cafe_post_count: 0,
+                cafe_comment_count: 0,
+                is_cafe_mission_completed: false,
+                updated_at: new Date().toISOString()
+            }, {
+                onConflict: 'profile_id,mission_month'
+            });
+
+        if (updateError) throw updateError;
+
+        revalidatePath("/dashboard/mission");
+        return { success: true };
+    } catch (e) {
+        console.error("[Set Baseline Error]", e);
+        return { error: "시작점 설정에 실패했습니다." };
+    }
+}
+
+/**
+ * Confirms the AI-parsed counts and updates the database, subtracting the baseline.
  */
 export async function confirmCafeActivity(posts: number, comments: number) {
     try {
@@ -197,16 +251,38 @@ export async function confirmCafeActivity(posts: number, comments: number) {
         const now = new Date();
         const missionMonthLabel = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
         
+        // Get current baseline
+        const { data: currentMission } = await supabase
+            .from('missions')
+            .select('baseline_post_count, baseline_comment_count')
+            .eq('profile_id', profile.id)
+            .eq('mission_month', missionMonthLabel)
+            .single();
+            
+        const baselinePosts = currentMission?.baseline_post_count ?? null;
+        const baselineComments = currentMission?.baseline_comment_count ?? null;
+
+        if (baselinePosts === null || baselineComments === null) {
+            return { error: "기수 시작점이 설정되지 않았습니다. 먼저 시작점을 설정해 주세요." };
+        }
+
+        if (posts < baselinePosts || comments < baselineComments) {
+            return { error: `시작 시점(글 ${baselinePosts}건, 댓글 ${baselineComments}건)보다 현재 숫자가 적습니다. 캡처 화면 또는 아이디를 다시 확인해주세요.` };
+        }
+
+        const activityPosts = posts - baselinePosts;
+        const activityComments = comments - baselineComments;
+
         // Define completion rules
-        const isCompleted = posts >= 5 && comments >= 30;
+        const isCompleted = activityPosts >= 5 && activityComments >= 30;
 
         const { error: updateError } = await supabase
             .from('missions')
             .upsert({
                 profile_id: profile.id,
                 mission_month: missionMonthLabel,
-                cafe_post_count: posts,
-                cafe_comment_count: comments,
+                cafe_post_count: activityPosts,
+                cafe_comment_count: activityComments,
                 is_cafe_mission_completed: isCompleted,
                 updated_at: new Date().toISOString()
             }, {
