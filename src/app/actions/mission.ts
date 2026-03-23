@@ -141,13 +141,26 @@ export async function syncCafeActivity(naverId: string) {
     const startOfMonth = new Date(currentYear, currentMonth, 1);
     const endOfMonth = new Date(currentYear, currentMonth + 1, 0);
 
+    const headers: Record<string, string> = { "User-Agent": USER_AGENT };
+    const adminCookie = process.env.NAVER_ADMIN_COOKIE;
+    if (adminCookie) {
+        headers["Cookie"] = adminCookie;
+    } else {
+        console.warn("[Cafe Sync] NAVER_ADMIN_COOKIE is not set. Scraping might fail or be blocked.");
+    }
+
     try {
         // 2. Fetch Posts
         const postSearchUrl = `https://m.cafe.naver.com/ArticleSearchList.nhn?search.clubid=${CLUB_ID}&search.writer=${naverId}`;
-        const postRes = await fetch(postSearchUrl, { headers: { "User-Agent": USER_AGENT } });
+        const postRes = await fetch(postSearchUrl, { headers });
         if (!postRes.ok) throw new Error("Naver Cafe post fetch failed");
         
         const postHtml = await postRes.text();
+        
+        // Check for session expiry / login redirects
+        if (postRes.url.includes("nid.naver.com") || postHtml.includes("<title>네이버 : 로그인</title>")) {
+            throw new Error("SESSION_EXPIRED");
+        }
         const $posts = cheerio.load(postHtml);
         
         let postCount = 0;
@@ -175,10 +188,15 @@ export async function syncCafeActivity(naverId: string) {
 
         // 3. Fetch Comments (Member activity log)
         const commentSearchUrl = `https://m.cafe.naver.com/CafeMemberNetworkView.nhn?search.clubid=${CLUB_ID}&search.memberid=${naverId}&search.networkType=COMMENT`;
-        const commentRes = await fetch(commentSearchUrl, { headers: { "User-Agent": USER_AGENT } });
+        const commentRes = await fetch(commentSearchUrl, { headers });
         if (!commentRes.ok) throw new Error("Naver Cafe comment fetch failed");
 
         const commentHtml = await commentRes.text();
+
+        // Check for session expiry / login redirects
+        if (commentRes.url.includes("nid.naver.com") || commentHtml.includes("<title>네이버 : 로그인</title>")) {
+            throw new Error("SESSION_EXPIRED");
+        }
         const $comments = cheerio.load(commentHtml);
         
         let commentCount = 0;
@@ -240,6 +258,9 @@ export async function syncCafeActivity(naverId: string) {
 
     } catch (error) {
         console.error("[Cafe Sync Error]", error);
+        if (error instanceof Error && error.message === "SESSION_EXPIRED") {
+            return { error: "관리자 네이버 봇 세션이 만료되었습니다. Vercel 환경변수에서 쿠키를 갱신해 주세요." };
+        }
         return { error: "네이버 통신이 원활하지 않습니다. 잠시 후 다시 시도하거나 ID를 확인해주세요." };
     }
 }
