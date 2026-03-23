@@ -2,7 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
-import * as cheerio from "cheerio";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 /**
  * Submits a mission link for the current month.
@@ -123,123 +123,60 @@ export async function registerNaverId(naverId: string) {
 }
 
 /**
- * Scrapes Naver Cafe to sync activity counts.
+ * Processes a Naver Cafe profile screenshot using Gemini Free API.
  */
-export async function syncCafeActivity(naverId: string) {
-    if (!naverId) return { error: "네이버 ID가 등록되어 있지 않습니다." };
-
-    const supabase = await createClient();
-    const CLUB_ID = "31034331";
-    const USER_AGENT = "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1";
-
-    // 1. Get current month range (March 2026 for now, but dynamic is better)
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth(); // 0-indexed
-    const missionMonthLabel = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
-
-    const startOfMonth = new Date(currentYear, currentMonth, 1);
-    const endOfMonth = new Date(currentYear, currentMonth + 1, 0);
-
-    const headers: Record<string, string> = { 
-        "User-Agent": USER_AGENT,
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
-    };
-    
-    const adminCookie = process.env.NAVER_ADMIN_COOKIE;
-    if (adminCookie) {
-        headers["Cookie"] = adminCookie;
-        console.log("[Cafe Sync Debug] Cookie used:", adminCookie.substring(0, 20) + "...");
-    } else {
-        console.warn("[Cafe Sync Debug] NAVER_ADMIN_COOKIE is not set. Scraping might fail or be blocked.");
-    }
-
+export async function processCafeScreenshot(base64Image: string) {
     try {
-        // 2. Fetch Posts
-        const postSearchUrl = `https://m.cafe.naver.com/ArticleSearchList.nhn?search.clubid=${CLUB_ID}&search.writer=${naverId}`;
-        console.log("[Cafe Sync Debug] Fetching Posts URL:", postSearchUrl);
-        
-        const postRes = await fetch(postSearchUrl, { headers });
-        console.log(`[Cafe Sync Debug] Post Response Status: ${postRes.status} | URL: ${postRes.url}`);
-        
-        const postHtml = await postRes.text();
-        
-        if (!postRes.ok) {
-            console.error(`[Cafe Sync Debug] Error Post Response Snippet:`, postHtml.substring(0, 300));
-            throw new Error("Naver Cafe post fetch failed");
-        }
+        const apiKey = process.env.GOOGLE_AI_API_KEY;
+        if (!apiKey) return { error: "Google AI API Key가 설정되지 않았습니다." };
 
-        // Check for session expiry / login redirects
-        if (postRes.url.includes("nid.naver.com") || postHtml.includes("<title>네이버 : 로그인</title>")) {
-            console.error(`[Cafe Sync Debug] Login Redirect Post HTML Snippet:`, postHtml.substring(0, 300));
-            throw new Error("SESSION_EXPIRED");
-        }
-        const $posts = cheerio.load(postHtml);
-        
-        let postCount = 0;
-        $posts("ul.list_area li").each((_, el) => {
-            const dateStr = $posts(el).find(".time").text().trim();
-            // Naver mobile dates are like "24.03.11." or "12:30" (for today)
-            // If it's time, it's today (this month).
-            // If it's date, we check if it falls in the current month.
-            if (dateStr.includes(':')) {
-                postCount++;
-            } else {
-                // Parse date string (e.g., "24.03.11.")
-                const parts = dateStr.split('.').map(p => p.trim()).filter(p => p);
-                if (parts.length === 3) {
-                    const year = 2000 + parseInt(parts[0]);
-                    const month = parseInt(parts[1]) - 1;
-                    const day = parseInt(parts[2]);
-                    const postDate = new Date(year, month, day);
-                    if (postDate >= startOfMonth && postDate <= endOfMonth) {
-                        postCount++;
-                    }
-                }
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { error: "로그인이 필요합니다." };
+
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        // Extract base64 part
+        const base64Data = base64Image.includes(',') ? base64Image.split(',')[1] : base64Image;
+        const mimeType = base64Image.includes(',') ? base64Image.split(',')[0].split(':')[1].split(';')[0] : "image/jpeg";
+
+        const prompt = `Analyze this Naver Cafe profile screenshot. 
+Extract the numbers strictly for '작성글' (posts) and '작성댓글' (comments). 
+Return only a valid JSON object without markdown formatting: { "posts": number, "comments": number }.
+If you cannot find them, return { "posts": 0, "comments": 0 }.`;
+
+        const imagePart = {
+            inlineData: {
+                data: base64Data,
+                mimeType
             }
-        });
+        };
 
-        // 3. Fetch Comments (Member activity log)
-        const commentSearchUrl = `https://m.cafe.naver.com/CafeMemberNetworkView.nhn?search.clubid=${CLUB_ID}&search.memberid=${naverId}&search.networkType=COMMENT`;
-        console.log("[Cafe Sync Debug] Fetching Comments URL:", commentSearchUrl);
-        
-        const commentRes = await fetch(commentSearchUrl, { headers });
-        console.log(`[Cafe Sync Debug] Comment Response Status: ${commentRes.status} | URL: ${commentRes.url}`);
+        const result = await model.generateContent([prompt, imagePart]);
+        const responseText = result.response.text();
 
-        const commentHtml = await commentRes.text();
+        // Safely parse JSON
+        const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(jsonStr);
 
-        if (!commentRes.ok) {
-            console.error(`[Cafe Sync Debug] Error Comment Response Snippet:`, commentHtml.substring(0, 300));
-            throw new Error("Naver Cafe comment fetch failed");
+        if (typeof parsed.posts !== 'number' || typeof parsed.comments !== 'number') {
+            throw new Error("Invalid format from AI");
         }
 
-        // Check for session expiry / login redirects
-        if (commentRes.url.includes("nid.naver.com") || commentHtml.includes("<title>네이버 : 로그인</title>")) {
-            console.error(`[Cafe Sync Debug] Login Redirect Comment HTML Snippet:`, commentHtml.substring(0, 300));
-            throw new Error("SESSION_EXPIRED");
-        }
-        const $comments = cheerio.load(commentHtml);
-        
-        let commentCount = 0;
-        $comments("ul.list_area li").each((_, el) => {
-            const dateStr = $comments(el).find(".time").text().trim();
-            if (dateStr.includes(':')) {
-                commentCount++;
-            } else {
-                const parts = dateStr.split('.').map(p => p.trim()).filter(p => p);
-                if (parts.length === 3) {
-                    const year = 2000 + parseInt(parts[0]);
-                    const month = parseInt(parts[1]) - 1;
-                    const day = parseInt(parts[2]);
-                    const commentDate = new Date(year, month, day);
-                    if (commentDate >= startOfMonth && commentDate <= endOfMonth) {
-                        commentCount++;
-                    }
-                }
-            }
-        });
+        return { success: true, posts: parsed.posts, comments: parsed.comments };
+    } catch (e) {
+        console.error("[AI Vision Error]", e);
+        return { error: "이미지 분석에 실패했습니다. 형식 또는 화질을 다시 확인해 주세요." };
+    }
+}
 
-        // 4. Update Database
+/**
+ * Confirms the AI-parsed counts and updates the database.
+ */
+export async function confirmCafeActivity(posts: number, comments: number) {
+    try {
+        const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return { error: "로그인이 필요합니다." };
 
@@ -251,15 +188,19 @@ export async function syncCafeActivity(naverId: string) {
 
         if (!profile) return { error: "프로필을 찾을 수 없습니다." };
 
-        const isCompleted = postCount >= 5 && commentCount >= 30;
+        const now = new Date();
+        const missionMonthLabel = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        
+        // Define completion rules
+        const isCompleted = posts >= 5 && comments >= 30;
 
         const { error: updateError } = await supabase
             .from('missions')
             .upsert({
                 profile_id: profile.id,
                 mission_month: missionMonthLabel,
-                cafe_post_count: postCount,
-                cafe_comment_count: commentCount,
+                cafe_post_count: posts,
+                cafe_comment_count: comments,
                 is_cafe_mission_completed: isCompleted,
                 updated_at: new Date().toISOString()
             }, {
@@ -269,19 +210,9 @@ export async function syncCafeActivity(naverId: string) {
         if (updateError) throw updateError;
 
         revalidatePath("/dashboard/mission");
-        return { 
-            success: true, 
-            postCount, 
-            commentCount, 
-            isCompleted,
-            lastSyncedAt: new Date().toISOString()
-        };
-
-    } catch (error) {
-        console.error("[Cafe Sync Error]", error);
-        if (error instanceof Error && error.message === "SESSION_EXPIRED") {
-            return { error: "관리자 네이버 봇 세션이 만료되었습니다. Vercel 환경변수에서 쿠키를 갱신해 주세요." };
-        }
-        return { error: "네이버 통신이 원활하지 않습니다. 잠시 후 다시 시도하거나 ID를 확인해주세요." };
+        return { success: true };
+    } catch (e) {
+        console.error("[Confirm Activity Error]", e);
+        return { error: "데이터 업데이트에 실패했습니다." };
     }
 }

@@ -22,8 +22,9 @@ import {
     Smartphone
 } from "lucide-react";
 import { getDashboardData } from "@/app/actions/dashboard";
-import { submitMission, registerNaverId, syncCafeActivity } from "@/app/actions/mission";
+import { submitMission, registerNaverId, processCafeScreenshot, confirmCafeActivity } from "@/app/actions/mission";
 import { signOut } from "@/app/actions/auth";
+import { Camera, Image as ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -201,7 +202,9 @@ function CafeActivityCard({
 }) {
     const [naverIdInput, setNaverIdInput] = useState("");
     const [isRegistering, setIsRegistering] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
+    const [extractedData, setExtractedData] = useState<{posts: number, comments: number} | null>(null);
     const router = useRouter();
 
     const postCount = currentMission?.cafe_post_count || 0;
@@ -232,14 +235,38 @@ function CafeActivityCard({
         setIsRegistering(false);
     };
 
-    const handleSync = async () => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = async () => {
+            const base64String = reader.result as string;
+            setIsUploading(true);
+            const res = await processCafeScreenshot(base64String);
+            if (res.error) {
+                toast.error(res.error);
+            } else if (res.success) {
+                setExtractedData({ posts: res.posts!, comments: res.comments! });
+                toast.success("이미지 분석 완료! 결과를 확인해주세요.");
+            }
+            setIsUploading(false);
+        };
+        reader.readAsDataURL(file);
+        e.target.value = "";
+    };
+
+    const handleConfirm = async () => {
+        if (!extractedData) return;
         setIsSyncing(true);
-        const res = await syncCafeActivity(profile.naver_id);
+        const res = await confirmCafeActivity(extractedData.posts, extractedData.comments);
         if (res.error) {
             toast.error(res.error);
         } else {
-            toast.success("활동 내역이 업데이트되었습니다!");
+            toast.success("활동 내역이 성공적으로 업데이트되었습니다!");
+            setExtractedData(null);
             onRefresh();
+            router.refresh();
         }
         setIsSyncing(false);
     };
@@ -253,7 +280,7 @@ function CafeActivityCard({
                         네이버 카페 활동 현황
                     </CardTitle>
                     <Badge variant="outline" className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                        Cafe Automation
+                        AI Vision
                     </Badge>
                 </div>
                 <CardDescription className="text-slate-500 font-medium mt-1">
@@ -263,32 +290,93 @@ function CafeActivityCard({
             <CardContent className="p-8 space-y-8">
                 {profile?.naver_id ? (
                     <div className="space-y-6">
-                        <div className="flex flex-col md:flex-row gap-4">
-                            <div className="flex-1 p-4 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <Smartphone className="w-4 h-4 text-slate-400" />
-                                    <span className="text-sm font-bold text-slate-500">연동된 네이버 ID</span>
+                        <div className="flex flex-col gap-4">
+                            <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm">
+                                        <Smartphone className="w-5 h-5 text-slate-400" />
+                                    </div>
+                                    <div>
+                                        <span className="text-xs font-bold text-slate-400 block mb-0.5">연동된 네이버 ID</span>
+                                        <span className="text-sm font-black text-slate-800">{profile.naver_id}</span>
+                                    </div>
                                 </div>
-                                <span className="text-sm font-black text-slate-800">{profile.naver_id}</span>
+                                <Button variant="outline" size="sm" asChild className="rounded-xl border-[#FF5C00] text-[#FF5C00] hover:bg-[#FFF5F1]">
+                                    <a href={`https://m.cafe.naver.com/CafeMemberNetworkView.nhn?m=view&clubid=31034331&memberid=${profile.naver_id}`} target="_blank" rel="noopener noreferrer">
+                                        내 카페 프로필
+                                    </a>
+                                </Button>
                             </div>
-                            <Button
-                                onClick={handleSync}
-                                disabled={isSyncing}
-                                className="h-14 px-6 rounded-xl bg-slate-900 hover:bg-black text-white font-black flex items-center gap-2 shadow-lg shadow-slate-200 shrink-0"
-                            >
-                                {isSyncing ? (
-                                    <RefreshCcw className="w-4 h-4 animate-spin" />
-                                ) : (
-                                    <RefreshCcw className="w-4 h-4" />
-                                )}
-                                활동 내역 업데이트
-                            </Button>
+
+                            {extractedData ? (
+                                <div className="p-6 rounded-2xl bg-orange-50 border border-orange-200 animate-in fade-in slide-in-from-bottom-2">
+                                    <h4 className="text-sm font-black text-orange-900 mb-4 flex items-center">
+                                        <CheckCircle2 className="w-5 h-5 mr-2 text-orange-600" />
+                                        AI 분석 완료! 숫자가 맞나요?
+                                    </h4>
+                                    <div className="flex items-center justify-around bg-white p-4 rounded-xl border border-orange-100 mb-4">
+                                        <div className="text-center">
+                                            <span className="text-xs font-bold text-slate-400 block mb-1">작성글</span>
+                                            <span className="text-2xl font-black text-slate-800">{extractedData.posts}건</span>
+                                        </div>
+                                        <div className="w-px h-10 bg-slate-100" />
+                                        <div className="text-center">
+                                            <span className="text-xs font-bold text-slate-400 block mb-1">작성댓글</span>
+                                            <span className="text-2xl font-black text-slate-800">{extractedData.comments}건</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Button 
+                                            variant="outline" 
+                                            onClick={() => setExtractedData(null)}
+                                            disabled={isSyncing}
+                                            className="flex-1 h-12 rounded-xl bg-white border-orange-200 text-orange-600 hover:bg-orange-50"
+                                        >
+                                            다시 캡처하기
+                                        </Button>
+                                        <Button 
+                                            onClick={handleConfirm}
+                                            disabled={isSyncing}
+                                            className="flex-1 h-12 rounded-xl bg-[#FF5C00] hover:bg-[#E63900] text-white font-black"
+                                        >
+                                            {isSyncing ? <RefreshCcw className="w-4 h-4 animate-spin" /> : "맞습니다 (저장)"}
+                                        </Button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 border-dashed relative hover:bg-slate-100 transition-colors">
+                                    <input 
+                                        type="file" 
+                                        accept="image/*" 
+                                        onChange={handleFileChange}
+                                        disabled={isUploading}
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                                    />
+                                    <div className="flex flex-col items-center justify-center text-center space-y-3 pointer-events-none">
+                                        <div className="w-14 h-14 rounded-2xl bg-white flex items-center justify-center shadow-sm border border-slate-100">
+                                            {isUploading ? (
+                                                <RefreshCcw className="w-6 h-6 text-slate-400 animate-spin" />
+                                            ) : (
+                                                <ImageIcon className="w-6 h-6 text-[#FF5C00]" />
+                                            )}
+                                        </div>
+                                        <div>
+                                            <h4 className="text-sm font-black text-slate-800 mb-1">
+                                                {isUploading ? "AI가 이미지를 분석 중입니다..." : "활동 내역 캡처 업로드"}
+                                            </h4>
+                                            <p className="text-xs font-medium text-slate-500 max-w-[200px] mx-auto">
+                                                클릭하거나 터치하여 작성글 수와 댓글 수가 명확히 보이는 화면 캡처를 올려주세요.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                         
                         <div className="px-1 flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                                <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">Auto Tracking Active</span>
+                                <div className="w-2 h-2 rounded-full bg-[#FF5C00]" />
+                                <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest">AI VISION TRACKER</span>
                             </div>
                             <span className="text-[11px] font-bold text-slate-400">최근 업데이트: {lastUpdated}</span>
                         </div>
