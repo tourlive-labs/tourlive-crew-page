@@ -302,8 +302,8 @@ function CafeActivityCard({
                                     </div>
                                 </div>
                                 <Button variant="outline" size="sm" asChild className="rounded-xl border-[#FF5C00] text-[#FF5C00] hover:bg-[#FFF5F1]">
-                                    <a href={`https://m.cafe.naver.com/CafeMemberNetworkView.nhn?m=view&clubid=31034331&memberid=${profile.naver_id}`} target="_blank" rel="noopener noreferrer">
-                                        내 카페 프로필
+                                    <a href="https://m.cafe.naver.com/ca-fe/web/cafes/31034331" target="_blank" rel="noopener noreferrer">
+                                        카페 홈 바로가기
                                     </a>
                                 </Button>
                             </div>
@@ -364,8 +364,9 @@ function CafeActivityCard({
                                             <h4 className="text-sm font-black text-slate-800 mb-1">
                                                 {isUploading ? "AI가 이미지를 분석 중입니다..." : "활동 내역 캡처 업로드"}
                                             </h4>
-                                            <p className="text-xs font-medium text-slate-500 max-w-[200px] mx-auto">
-                                                클릭하거나 터치하여 작성글 수와 댓글 수가 명확히 보이는 화면 캡처를 올려주세요.
+                                            <p className="text-xs font-medium text-slate-500 max-w-[250px] mx-auto leading-relaxed">
+                                                카페 상단 메뉴(≡) &gt; 내 프로필 &gt; <b>'내 활동'</b> 탭에서 <br/>
+                                                작성글/댓글 수가 보이게 캡처해 주세요.
                                             </p>
                                         </div>
                                     </div>

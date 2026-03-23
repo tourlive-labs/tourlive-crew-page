@@ -142,7 +142,9 @@ export async function processCafeScreenshot(base64Image: string) {
         const mimeType = base64Image.includes(',') ? base64Image.split(',')[0].split(':')[1].split(';')[0] : "image/jpeg";
 
         const prompt = `Analyze this Naver Cafe profile screenshot. 
-Extract the numbers strictly for '작성글' (posts) and '작성댓글' (comments). 
+Look for keywords like '작성글', '전체글', '작성댓글', '댓글'. 
+Even if the layout varies, extract the number associated with these terms. 
+If you see multiple numbers, pick the ones clearly labeled as user activity counts.
 Return only a valid JSON object without markdown formatting: { "posts": number, "comments": number }.
 If you cannot find them, return { "posts": 0, "comments": 0 }.`;
 
@@ -162,6 +164,10 @@ If you cannot find them, return { "posts": 0, "comments": 0 }.`;
 
         if (typeof parsed.posts !== 'number' || typeof parsed.comments !== 'number') {
             throw new Error("Invalid format from AI");
+        }
+        
+        if (parsed.posts === 0 && parsed.comments === 0) {
+            return { error: "이미지에서 숫자를 찾지 못했습니다. '작성글'과 '작성댓글' 숫자가 잘 보이게 캡처했는지 확인해주세요." };
         }
 
         return { success: true, posts: parsed.posts, comments: parsed.comments };
