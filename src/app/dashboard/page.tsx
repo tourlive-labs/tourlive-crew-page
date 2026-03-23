@@ -116,7 +116,7 @@ function DashboardHeader({ nickname }: { nickname: string }) {
 }
 
 function TeamMissionList({ team }: { team: string }) {
-    const isCafe = team === 'Naver Cafe';
+    const isCafe = team === 'naver_cafe';
     const currentMonth = new Date().getMonth() + 1;
     const teamName = isCafe ? "네이버 지식카페 활동" : "네이버 블로그 활동";
     const [showGuidelines, setShowGuidelines] = useState(false);
@@ -452,7 +452,7 @@ function DashboardContent() {
         );
     }
 
-    const teamName = data.team === 'Naver Cafe' ? "네이버 지식카페 활동" : "네이버 블로그 활동";
+    const teamName = data.team === 'naver_cafe' ? "네이버 지식카페 활동" : "네이버 블로그 활동";
 
     return (
         <div className="max-w-[1400px] mx-auto px-10 py-16">

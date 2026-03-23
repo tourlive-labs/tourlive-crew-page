@@ -439,7 +439,7 @@ export default function MissionPage() {
                 </div>
 
                 <div className="grid grid-cols-1 gap-8">
-                    {data.team === 'Naver Cafe' && (
+                    {data.team === 'naver_cafe' && (
                         <CafeActivityCard 
                             profile={data} 
                             currentMission={data.currentMission} 
@@ -454,16 +454,16 @@ export default function MissionPage() {
                             <CardHeader className="p-8 pb-4">
                                 <div className="flex items-center justify-between mb-1">
                                     <CardTitle className="text-lg font-black text-slate-800 flex items-center tracking-tight">
-                                        {data.team === 'Naver Cafe' ? <Coffee className="w-5 h-5 mr-3 text-[#FF5C00]" /> : <BookOpen className="w-5 h-5 mr-3 text-[#0052CC]" />}
+                                        {data.team === 'naver_cafe' ? <Coffee className="w-5 h-5 mr-3 text-[#FF5C00]" /> : <BookOpen className="w-5 h-5 mr-3 text-[#0052CC]" />}
                                         활동 목표
                                     </CardTitle>
                                     <Badge variant="outline" className="text-[10px] font-black uppercase tracking-widest">
-                                        {data.team === 'Naver Cafe' ? "Cafe Team" : "Blog Team"}
+                                        {data.team === 'naver_cafe' ? "Cafe Team" : "Blog Team"}
                                     </Badge>
                                 </div>
                             </CardHeader>
                             <CardContent className="p-8 pt-2 space-y-3">
-                                {data.team === 'Naver Cafe' ? (
+                                {data.team === 'naver_cafe' ? (
                                     <>
                                         <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 text-sm font-bold text-slate-600">
                                             <span>여행 정보 게시글</span>
