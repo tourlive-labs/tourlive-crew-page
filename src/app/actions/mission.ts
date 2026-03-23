@@ -141,24 +141,37 @@ export async function syncCafeActivity(naverId: string) {
     const startOfMonth = new Date(currentYear, currentMonth, 1);
     const endOfMonth = new Date(currentYear, currentMonth + 1, 0);
 
-    const headers: Record<string, string> = { "User-Agent": USER_AGENT };
+    const headers: Record<string, string> = { 
+        "User-Agent": USER_AGENT,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
+    };
+    
     const adminCookie = process.env.NAVER_ADMIN_COOKIE;
     if (adminCookie) {
         headers["Cookie"] = adminCookie;
+        console.log("[Cafe Sync Debug] Cookie used:", adminCookie.substring(0, 20) + "...");
     } else {
-        console.warn("[Cafe Sync] NAVER_ADMIN_COOKIE is not set. Scraping might fail or be blocked.");
+        console.warn("[Cafe Sync Debug] NAVER_ADMIN_COOKIE is not set. Scraping might fail or be blocked.");
     }
 
     try {
         // 2. Fetch Posts
         const postSearchUrl = `https://m.cafe.naver.com/ArticleSearchList.nhn?search.clubid=${CLUB_ID}&search.writer=${naverId}`;
+        console.log("[Cafe Sync Debug] Fetching Posts URL:", postSearchUrl);
+        
         const postRes = await fetch(postSearchUrl, { headers });
-        if (!postRes.ok) throw new Error("Naver Cafe post fetch failed");
+        console.log(`[Cafe Sync Debug] Post Response Status: ${postRes.status} | URL: ${postRes.url}`);
         
         const postHtml = await postRes.text();
         
+        if (!postRes.ok) {
+            console.error(`[Cafe Sync Debug] Error Post Response Snippet:`, postHtml.substring(0, 300));
+            throw new Error("Naver Cafe post fetch failed");
+        }
+
         // Check for session expiry / login redirects
         if (postRes.url.includes("nid.naver.com") || postHtml.includes("<title>네이버 : 로그인</title>")) {
+            console.error(`[Cafe Sync Debug] Login Redirect Post HTML Snippet:`, postHtml.substring(0, 300));
             throw new Error("SESSION_EXPIRED");
         }
         const $posts = cheerio.load(postHtml);
@@ -188,13 +201,21 @@ export async function syncCafeActivity(naverId: string) {
 
         // 3. Fetch Comments (Member activity log)
         const commentSearchUrl = `https://m.cafe.naver.com/CafeMemberNetworkView.nhn?search.clubid=${CLUB_ID}&search.memberid=${naverId}&search.networkType=COMMENT`;
+        console.log("[Cafe Sync Debug] Fetching Comments URL:", commentSearchUrl);
+        
         const commentRes = await fetch(commentSearchUrl, { headers });
-        if (!commentRes.ok) throw new Error("Naver Cafe comment fetch failed");
+        console.log(`[Cafe Sync Debug] Comment Response Status: ${commentRes.status} | URL: ${commentRes.url}`);
 
         const commentHtml = await commentRes.text();
 
+        if (!commentRes.ok) {
+            console.error(`[Cafe Sync Debug] Error Comment Response Snippet:`, commentHtml.substring(0, 300));
+            throw new Error("Naver Cafe comment fetch failed");
+        }
+
         // Check for session expiry / login redirects
         if (commentRes.url.includes("nid.naver.com") || commentHtml.includes("<title>네이버 : 로그인</title>")) {
+            console.error(`[Cafe Sync Debug] Login Redirect Comment HTML Snippet:`, commentHtml.substring(0, 300));
             throw new Error("SESSION_EXPIRED");
         }
         const $comments = cheerio.load(commentHtml);
