@@ -20,6 +20,7 @@ export async function getDashboardData() {
             nickname,
             selected_activity,
             created_at,
+            naver_id,
             crews (
                 id,
                 batch_id,
@@ -100,6 +101,7 @@ export async function getDashboardData() {
 
     return {
         nickname: profile.nickname,
+        naver_id: profile.naver_id,
         team: profile.selected_activity,
         term: batch.term,
         dDay,

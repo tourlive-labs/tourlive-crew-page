@@ -227,6 +227,7 @@ function CafeActivityCard({
         } else {
             toast.success("네이버 ID가 성공적으로 등록되었습니다!");
             onRefresh();
+            router.refresh();
         }
         setIsRegistering(false);
     };
