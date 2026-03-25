@@ -20,28 +20,16 @@ export async function signIn(formData: FormData) {
         return { error: "로그인 정보가 올바르지 않습니다." };
     }
 
-    // 2. Fetch role from profiles table using robust two-step lookup
+    // 2. Fetch profile directly by synced ID (profile.id === user.id)
     console.log("[AuthAction] Fetching profile for user:", user.id);
     
-    // Step A: Find Crew ID
-    const { data: crew } = await supabase
-        .from('crews')
-        .select('id')
-        .eq('user_id', user.id)
+    const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
         .maybeSingle();
 
-    let profile = null;
-    if (crew) {
-        // Step B: Find Profile
-        const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('crew_id', crew.id)
-            .maybeSingle();
-        
-        profile = profileData;
-        if (profileError) console.error("[AuthAction] Profile lookup error:", profileError.message);
-    }
+    if (profileError) console.error("[AuthAction] Profile lookup error:", profileError.message);
 
     console.log("[AuthAction] Profile Result:", !!profile, "Complete:", !!(profile?.full_name && profile?.selected_activity));
 

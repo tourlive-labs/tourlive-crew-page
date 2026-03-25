@@ -110,7 +110,7 @@ export async function getAdminLeaderboard() {
     // Fetch all profiles excluding admin role
     const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, nickname, tourlive_email, selected_activity, bank_name, bank_account, bank_holder, role')
+        .select('id, nickname, tourlive_email, selected_activity, role')
         .neq('role', 'admin');
     
     // Fetch all approved missions

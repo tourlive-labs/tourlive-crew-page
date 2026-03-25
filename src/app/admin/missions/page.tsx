@@ -107,15 +107,12 @@ export default function AdminMissionsPage() {
     const exportToCSV = () => {
         if (leaderboard.length === 0) return;
         
-        const headers = ["이름", "이메일", "팀", "총 포인트", "은행명", "계좌번호", "예금주"];
+        const headers = ["이름", "이메일", "팀", "총 포인트"];
         const rows = leaderboard.map(p => [
             p.nickname,
             p.tourlive_email,
             p.selected_activity === 'naver_blog' ? '블로그' : '카페',
-            p.totalPoints,
-            p.bank_name || '',
-            p.bank_account || '',
-            p.bank_holder || ''
+            p.totalPoints
         ]);
         
         const csvContent = [
@@ -333,7 +330,6 @@ export default function AdminMissionsPage() {
                                     <TableRow className="bg-slate-50/30 border-slate-100">
                                         <TableHead className="font-bold text-xs uppercase tracking-tight">Rank</TableHead>
                                         <TableHead className="font-bold text-xs uppercase tracking-tight">User / Team</TableHead>
-                                        <TableHead className="font-bold text-xs uppercase tracking-tight">Bank Info</TableHead>
                                         <TableHead className="font-bold text-xs uppercase tracking-tight text-right">Total Points</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -346,13 +342,6 @@ export default function AdminMissionsPage() {
                                                     <span className="font-black text-sm text-slate-800">{p.nickname}</span>
                                                     <span className="text-[10px] font-bold text-slate-400">{p.tourlive_email}</span>
                                                 </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                {p.bank_name ? (
-                                                    <div className="text-[10px] font-bold text-slate-500">
-                                                        {p.bank_name} {p.bank_account} ({p.bank_holder})
-                                                    </div>
-                                                ) : <span className="text-slate-200 text-xs">정보 없음</span>}
                                             </TableCell>
                                             <TableCell className="text-right text-base font-black text-[#FF5C00] px-6">
                                                 {p.totalPoints.toLocaleString()} P

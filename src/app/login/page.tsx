@@ -26,8 +26,8 @@ export default function LoginPage() {
                 // This prevents the loop: Login -> Home -> Onboarding
                 const { data: profile } = await supabase
                     .from('profiles')
-                    .select('id, crews!inner(user_id)')
-                    .eq('crews.user_id', user.id)
+                    .select('id')
+                    .eq('id', user.id)
                     .maybeSingle();
                 
                 if (profile) {

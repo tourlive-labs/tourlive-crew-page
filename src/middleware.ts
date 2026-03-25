@@ -2,9 +2,14 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+    console.log(">>>> MIDDLEWARE EXECUTING FOR PATH:", request.nextUrl.pathname)
+
     let supabaseResponse = NextResponse.next({
         request,
     })
+
+    // Force 307 and Bust Cache
+    supabaseResponse.headers.set('x-middleware-cache', 'no-cache')
 
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,6 +24,7 @@ export async function middleware(request: NextRequest) {
                     supabaseResponse = NextResponse.next({
                         request,
                     })
+                    supabaseResponse.headers.set('x-middleware-cache', 'no-cache')
                     cookiesToSet.forEach(({ name, value, options }) =>
                         supabaseResponse.cookies.set(name, value, options)
                     )
@@ -27,91 +33,69 @@ export async function middleware(request: NextRequest) {
         }
     )
 
+    const url = request.nextUrl.clone()
+    
+    // SKIP static assets and API routes manually for performance
+    if (url.pathname.startsWith('/_next') || 
+        url.pathname.startsWith('/api') || 
+        url.pathname.includes('.')) {
+        return supabaseResponse
+    }
+
     // 1. AUTHENTICATION CHECK (Highest Priority as requested)
     const { data: { session } } = await supabase.auth.getSession()
     const user = session?.user
 
-    const url = request.nextUrl.clone()
-    const isApiRoute = url.pathname.startsWith('/api')
-    if (isApiRoute) return supabaseResponse
-
     if (!user) {
         // Step 1: Redirect to /login if there is no active session AND user is NOT on /login
         if (url.pathname !== '/login') {
-            console.log(`[AUTH_CHECK] No session found, moving to /login (from ${url.pathname})`)
+            console.log(`[AUTH_CHECK] No session found, forcing redirect to /login (from ${url.pathname})`)
             url.pathname = '/login'
-            return NextResponse.redirect(url)
+            return NextResponse.redirect(url, { status: 307 })
         }
         return supabaseResponse
     }
 
     // 2. ONBOARDING COMPLETION CHECK (Only if session exists)
-    // Fetch Profile without cache using robust two-step lookup
-    const { data: crew } = await supabase
-        .from('crews')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle()
+    const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('id, role, full_name, selected_activity')
+                    .eq('id', user.id)
+                    .maybeSingle();
 
-    let profile = null
-    if (crew) {
-        const { data: profileData } = await supabase
-            .from('profiles')
-            .select('role, full_name, selected_activity')
-            .eq('crew_id', crew.id)
-            .maybeSingle()
-        profile = profileData
-    }
-
-    const isAtOnboarding = url.pathname === '/onboarding'
     const isProfileComplete = !!(profile?.full_name && profile?.selected_activity)
     const isAdmin = profile?.role === 'admin' || user.email === "root@tourlive.co.kr"
 
     console.log(`[Middleware] AUDIT - ID: ${user.id}, Path: ${url.pathname}, Complete: ${isProfileComplete}`)
 
-    // 3. DUPLICATE ACCESS PREVENTION (and Required Redirects)
+    // 3. REDIRECTION LOGIC (Strict 307)
     if (!isProfileComplete) {
-        // If profile is missing AND user is NOT on /onboarding -> REDIRECT to /onboarding
         if (url.pathname !== '/onboarding') {
-            console.log("[Middleware] FORCE: Incomplete profile -> /onboarding")
+            console.log("[Middleware] FORCE: Incomplete profile -> /onboarding (307)")
             url.pathname = '/onboarding'
-            return NextResponse.redirect(url)
+            return NextResponse.redirect(url, { status: 307 })
         }
     } else {
-        // If session exists AND profile complete:
-        // Prevent access to /login or /onboarding
-        if (url.pathname === '/login' || url.pathname === '/onboarding') {
-            console.log("[Middleware] FORCE: Already onboarded -> /dashboard/admin")
-            url.pathname = isAdmin ? '/admin' : '/dashboard'
-            return NextResponse.redirect(url)
+        if (url.pathname === '/login' || url.pathname === '/onboarding' || url.pathname === '/') {
+            const target = isAdmin ? '/admin' : '/dashboard'
+            console.log(`[Middleware] FORCE: Already onboarded -> ${target} (307)`)
+            url.pathname = target
+            return NextResponse.redirect(url, { status: 307 })
         }
 
-        // Handle role-based path consistency
-        if (isAdmin) {
-            if (url.pathname === '/' || url.pathname === '/dashboard') {
-                url.pathname = '/admin'
-                return NextResponse.redirect(url)
-            }
-        } else {
-            if (url.pathname === '/' || url.pathname.startsWith('/admin')) {
-                url.pathname = '/dashboard'
-                return NextResponse.redirect(url)
-            }
+        // Role isolation
+        if (isAdmin && url.pathname.startsWith('/dashboard')) {
+            url.pathname = '/admin'
+            return NextResponse.redirect(url, { status: 307 })
+        }
+        if (!isAdmin && url.pathname.startsWith('/admin')) {
+            url.pathname = '/dashboard'
+            return NextResponse.redirect(url, { status: 307 })
         }
     }
 
     return supabaseResponse
 }
 
-export const config = {
-    matcher: [
-        /*
-         * Match all request paths including root and onboarding
-         */
-        '/',
-        '/onboarding',
-        '/dashboard/:path*',
-        '/admin/:path*',
-        '/login',
-    ],
-}
+// EXPORT NO MATCHER TO ENSURE 100% INTERCEPTION
+export const config = {}

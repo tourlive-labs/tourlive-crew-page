@@ -169,11 +169,12 @@ export async function submitOnboardingForm(formData: FormData) {
             console.log(`[Onboarding] Banner uploaded: ${bannerImageUrl}`);
         }
 
-        // 5. Insert Profile
-        console.log("[Onboarding] Inserting profile record");
+        // 5. Insert Profile (Synced with Auth UID)
+        console.log("[Onboarding] Inserting profile record with ID sync");
         const { error: profileError } = await adminSupabase
             .from('profiles')
             .insert({
+                id: userId, // CRITICAL: Sync with auth.users.id
                 crew_id: crewData.id,
                 full_name: fullName,
                 phone_number: phone,
