@@ -578,8 +578,14 @@ function DashboardContent() {
                 </div>
                 <h3 className="text-2xl font-black text-slate-800">접근할 수 없습니다</h3>
                 <p className="text-slate-400 font-medium mt-2 max-w-sm">로그인 세션이 만료되었거나<br />등록된 프로필 정보를 찾을 수 없습니다.</p>
-                <Button asChild className="mt-10 h-14 px-10 rounded-2xl bg-slate-900 hover:bg-black text-white font-bold transition-all hover:scale-105">
-                    <Link href="/login">다시 로그인하기</Link>
+                <Button 
+                    onClick={async () => {
+                        await signOut();
+                        window.location.href = '/login';
+                    }}
+                    className="mt-10 h-14 px-10 rounded-2xl bg-slate-900 hover:bg-black text-white font-bold transition-all hover:scale-105"
+                >
+                    다시 로그인하기
                 </Button>
             </div>
         );
