@@ -3,9 +3,11 @@ import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { User, Mail, Calendar, MapPin, Tag, Smartphone } from "lucide-react";
+import { User, Mail, Calendar, MapPin, Tag, Smartphone, ExternalLink, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MarkPaidButton } from "@/components/MarkPaidButton";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default async function ManagePage() {
     const supabase = await createClient();
@@ -66,9 +68,11 @@ export default async function ManagePage() {
                 id,
                 status,
                 points_granted,
-                mission_month
+                mission_month,
+                post_url
             )
         `)
+        .neq('role', 'admin')
         .order('created_at', { ascending: false });
 
     return (
@@ -79,9 +83,17 @@ export default async function ManagePage() {
                         <h1 className="text-3xl font-black text-slate-900 tracking-tight">크루 멤버 관리</h1>
                         <p className="text-slate-500 font-medium mt-1">등록된 모든 투어라이브 크루 멤버를 한눈에 확인하고 관리하세요.</p>
                     </div>
-                    <Badge variant="outline" className="w-fit bg-white px-4 py-1.5 rounded-full border-slate-200 text-slate-600 font-bold shadow-sm">
-                        총 {crewMembers?.length || 0}명
-                    </Badge>
+                    <div className="flex items-center gap-3">
+                        <Badge variant="outline" className="w-fit bg-white px-4 py-1.5 rounded-full border-slate-200 text-slate-600 font-bold shadow-sm">
+                            총 {crewMembers?.length || 0}명
+                        </Badge>
+                        <Link href="/admin/missions">
+                            <Button className="bg-[#FF5C00] hover:bg-[#E63900] text-white font-black rounded-xl px-6 h-10 shadow-lg shadow-orange-100/50 flex items-center gap-2 transition-all hover:scale-105 active:scale-95">
+                                <Trophy className="w-4 h-4" />
+                                월간 미션/포인트 정산 바로가기
+                            </Button>
+                        </Link>
+                    </div>
                 </div>
 
                 <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[32px] overflow-hidden bg-white">
@@ -108,7 +120,8 @@ export default async function ManagePage() {
                                         crewMembers.map((member) => {
                                             const currentMission = member.missions?.find(m => m.mission_month === currentMonth);
                                             const status = currentMission?.status || 'none';
-                                            const statusText = status === 'checking' ? '검토 중' : 
+                                            const statusText = status === 'checking' ? '작성 중' : 
+                                                              status === 'PENDING_APPROVAL' ? '심사 대기' :
                                                               status === 'completed' ? '완료' : 
                                                               status === 'rejected' ? '반려' : '미제출';
                                             
@@ -134,14 +147,27 @@ export default async function ManagePage() {
                                                         <div className="flex flex-col gap-2">
                                                             <Badge className={cn(
                                                                 "w-fit px-2 py-0.5 rounded-md font-bold text-[10px]",
-                                                                status === 'checking' ? "bg-orange-100 text-orange-600" :
+                                                                status === 'checking' ? "bg-slate-100 text-slate-600" :
+                                                                status === 'PENDING_APPROVAL' ? "bg-purple-100 text-purple-600" :
                                                                 status === 'completed' ? "bg-blue-100 text-blue-600" :
                                                                 status === 'rejected' ? "bg-red-100 text-red-600" :
                                                                 "bg-slate-100 text-slate-400"
                                                             )}>
                                                                 {statusText}
                                                             </Badge>
-                                                            {status === 'completed' && currentMission && (
+                                                            
+                                                            {currentMission?.post_url && (
+                                                                <div className="flex flex-col gap-1 mt-0.5">
+                                                                    {currentMission.post_url.split(',').map((url: string, idx: number) => (
+                                                                        <a key={idx} href={url.trim()} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1 font-semibold">
+                                                                            <ExternalLink className="w-3 h-3" />
+                                                                            링크 {idx + 1}
+                                                                        </a>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+
+                                                            {(status === 'completed' || status === 'PENDING_APPROVAL') && currentMission && (
                                                                 <MarkPaidButton missionId={currentMission.id} isPaid={currentMission.points_granted} />
                                                             )}
                                                         </div>

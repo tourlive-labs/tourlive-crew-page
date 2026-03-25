@@ -35,11 +35,13 @@ import {
     Coffee,
     BookOpen,
     Quote,
-    HelpCircle
+    HelpCircle,
+    Star
 } from "lucide-react";
 import { Suspense } from "react";
 import { getDashboardData } from "@/app/actions/dashboard";
 import { submitMission } from "@/app/actions/mission";
+import { getCalendarStamps } from "@/app/actions/calendar";
 import { signOut } from "@/app/actions/auth";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -90,7 +92,7 @@ function MonthlyMissionCard({ currentMission }: { currentMission: any }) {
 }
 
 
-function DashboardHeader({ nickname }: { nickname: string }) {
+function DashboardHeader({ nickname, role }: { nickname: string, role: string }) {
     return (
         <div className="flex items-center justify-between mb-16">
             <h1 className="text-[25px] font-black text-slate-900 tracking-tight leading-tight">
@@ -102,6 +104,16 @@ function DashboardHeader({ nickname }: { nickname: string }) {
                     <span className="w-px h-3 bg-slate-200 mx-1" />
                     <span className="text-sm font-black text-slate-800 leading-none">14기</span>
                 </div>
+                {role === 'admin' && (
+                    <Button 
+                        variant="outline" 
+                        size="sm" 
+                        asChild
+                        className="border-[#FF5C00] text-[#FF5C00] hover:bg-[#FF5C00] hover:text-white font-black rounded-xl text-xs h-9 px-4"
+                    >
+                        <Link href="/admin/missions">관리자 페이지</Link>
+                    </Button>
+                )}
                 <Button 
                     variant="ghost" 
                     size="sm" 
@@ -228,10 +240,15 @@ function TeamMissionList({ team }: { team: string }) {
 
 // Unused components (ActivityStepper, SubmissionDialog) have been removed for a cleaner dashboard layout.
 
-function EventCalendar({ schedules }: { schedules: any[] }) {
+function UnifiedMissionCalendar({ schedules }: { schedules: any[] }) {
     const today = new Date();
     const [viewDate, setViewDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
-    const [selectedEvent, setSelectedEvent] = useState<any>(null);
+    const [selectedDayInfo, setSelectedDayInfo] = useState<{ day: number, events: any[], stamps: any[] } | null>(null);
+    const [stamps, setStamps] = useState<any[]>([]);
+
+    useEffect(() => {
+        getCalendarStamps().then(res => setStamps(res.data || []));
+    }, []);
 
     const firstDayOfMonth = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay();
     const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
@@ -248,6 +265,15 @@ function EventCalendar({ schedules }: { schedules: any[] }) {
         });
     };
 
+    const getStampsForDay = (day: number) => {
+        return stamps.filter(s => {
+            const date = new Date(s.date);
+            return date.getDate() === day &&
+                date.getMonth() === viewDate.getMonth() &&
+                date.getFullYear() === viewDate.getFullYear();
+        });
+    };
+
     return (
         <Card className="shadow-[0_4px_24px_rgba(0,0,0,0.04)] border-none rounded-[32px] overflow-hidden bg-white p-2">
             <CardHeader className="p-8 pb-4 flex flex-row items-center justify-between">
@@ -257,12 +283,10 @@ function EventCalendar({ schedules }: { schedules: any[] }) {
                 </CardTitle>
                 <div className="flex items-center gap-6">
                     <div className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-full bg-[#FFD6E0]" />
-                        <span className="text-xs text-slate-400 font-bold">필수</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-full bg-[#D6E4FF]" />
-                        <span className="text-xs text-slate-400 font-bold">이벤트</span>
+                        <div className="w-5 h-5 rounded-full border border-[#E63946] flex items-center justify-center text-[10px] text-[#E63946] font-black mix-blend-multiply opacity-80 rotate-[-15deg]">
+                            인
+                        </div>
+                        <span className="text-xs text-slate-400 font-bold">도장 스탬프</span>
                     </div>
                 </div>
             </CardHeader>
@@ -292,14 +316,24 @@ function EventCalendar({ schedules }: { schedules: any[] }) {
                 </div>
 
                 <div className="grid grid-cols-7 gap-px mb-4 border-b border-slate-50 pb-2">
-                    {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => (
-                        <div key={day} className="text-center text-[10px] font-black text-slate-300 py-2 tracking-widest">{day}</div>
+                    {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((day, idx) => (
+                        <div key={day} className={cn(
+                            "text-center text-[10px] font-black py-2 tracking-widest",
+                            idx === 0 ? "text-red-500" : "text-slate-300"
+                        )}>{day}</div>
                     ))}
                 </div>
                 <div className="grid grid-cols-7 gap-3">
-                    {blanks.map(i => <div key={`blank-${i}`} className="h-20" />)}
+                    {blanks.map(i => <div key={`blank-${i}`} className="h-24" />)}
                     {days.map(day => {
                         const dayEvents = getEventsForDay(day);
+                        const dayStamps = getStampsForDay(day);
+                        const essentialStamp = dayStamps.find(s => s.type === 'essential');
+                        const optionalStamps = dayStamps.filter(s => s.type === 'optional');
+
+                        const dayOfWeek = new Date(viewDate.getFullYear(), viewDate.getMonth(), day).getDay();
+                        const isSunday = dayOfWeek === 0;
+
                         const isToday = today.getDate() === day &&
                             today.getMonth() === viewDate.getMonth() &&
                             today.getFullYear() === viewDate.getFullYear();
@@ -308,58 +342,157 @@ function EventCalendar({ schedules }: { schedules: any[] }) {
                             <div
                                 key={day}
                                 className={cn(
-                                    "h-20 border border-slate-50 rounded-2xl p-2 transition-all cursor-pointer group hover:bg-slate-50 hover:shadow-inner",
-                                    isToday && "bg-[#F0F5FF]/50 border-[#D6E4FF]"
+                                    "h-24 border border-slate-100 rounded-2xl p-2 transition-all cursor-pointer group hover:bg-slate-50 hover:shadow-inner relative overflow-hidden",
+                                    isToday && "bg-[#F0F5FF]/50 border-[#D6E4FF]",
+                                    isSunday && !isToday && "bg-red-50/20"
                                 )}
-                                onClick={() => dayEvents.length > 0 && setSelectedEvent(dayEvents[0])}
+                                onClick={() => {
+                                    if (dayEvents.length > 0 || dayStamps.length > 0) {
+                                        setSelectedDayInfo({ day, events: dayEvents, stamps: dayStamps });
+                                    }
+                                }}
                             >
                                 <span className={cn(
-                                    "text-sm font-bold block mb-1",
-                                    isToday ? "text-[#0052CC]" : "text-slate-400 group-hover:text-slate-600"
+                                    "text-xs font-black block mb-1 relative z-10",
+                                    isToday ? "text-[#0052CC]" : isSunday ? "text-red-500" : "text-slate-500"
                                 )}>{day}</span>
-                                <div className="space-y-1">
-                                    {dayEvents.map(event => (
-                                        <div
-                                            key={event.id}
-                                            className={cn(
-                                                "h-1.5 rounded-full w-full",
-                                                event.is_essential ? "bg-[#FFD6E0]" : "bg-[#D6E4FF]"
-                                            )}
-                                        />
-                                    ))}
+                                
+                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10 px-2 pt-6">
+                                    {dayEvents.map(event => {
+                                        const timeStr = event.scheduled_at 
+                                            ? new Date(event.scheduled_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
+                                            : '';
+                                        return (
+                                            <div
+                                                key={event.id}
+                                                className="text-center flex flex-col items-center justify-center space-y-0.5"
+                                            >
+                                                <div className={cn(
+                                                    "font-black tracking-tighter leading-[1.1] break-keep",
+                                                    event.is_essential 
+                                                        ? "text-[#E63946]/40" 
+                                                        : "text-[#0052CC]/40"
+                                                )} style={{ fontSize: '13px' }}>
+                                                    {event.title}
+                                                </div>
+                                                <div className={cn(
+                                                    "text-[10px] font-bold tracking-tight opacity-40",
+                                                    event.is_essential ? "text-[#E63946]" : "text-[#0052CC]"
+                                                )}>
+                                                    {timeStr}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
+
+                                {essentialStamp && (
+                                    <div className={cn(
+                                        "absolute inset-0 flex items-center justify-center pointer-events-none mix-blend-multiply transition-all duration-300 transform group-hover:scale-105 z-20",
+                                        essentialStamp.status === 'PENDING_APPROVAL' ? "rotate-[-5deg] opacity-60" : "rotate-[-10deg] opacity-90"
+                                    )}>
+                                        <div className={cn(
+                                            "w-[85px] h-[85px] rounded-full border-[2.5px] flex flex-col items-center justify-center font-black text-center leading-[1.2] tracking-tighter relative bg-transparent",
+                                            essentialStamp.status === 'PENDING_APPROVAL' ? "border-[#FF8A00] text-[#FF8A00] blur-[0.4px]" : "border-[#e02a3a] text-[#e02a3a]"
+                                        )}>
+                                            {/* Inner border to simulate double border from image */}
+                                            <div className="absolute inset-1 rounded-full border-[1.2px] border-current opacity-80" />
+                                            
+                                            {/* Top Stars */}
+                                            <div className="flex gap-0.5 mb-1 scale-75 opacity-90">
+                                                <Star className="w-2.5 h-2.5 fill-current" />
+                                                <Star className="w-2.5 h-2.5 fill-current -translate-y-1" />
+                                                <Star className="w-2.5 h-2.5 fill-current" />
+                                            </div>
+                                            
+                                            <div className="font-black text-[11px] leading-tight transform scale-x-110">
+                                                필수활동<br/>완료
+                                            </div>
+
+                                            {/* Bottom Stars */}
+                                            <div className="flex gap-0.5 mt-1 scale-75 opacity-90">
+                                                <Star className="w-2.5 h-2.5 fill-current" />
+                                                <Star className="w-2.5 h-2.5 fill-current translate-y-1" />
+                                                <Star className="w-2.5 h-2.5 fill-current" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {optionalStamps.length > 0 && (
+                                    <div className="absolute bottom-1 right-1 flex -space-x-1.5 z-40 opacity-90 transition-all transform group-hover:-translate-y-1 scale-110 origin-bottom-right">
+                                        {optionalStamps.slice(0, 3).map((s, idx) => (
+                                            <div key={s.id} className={cn(
+                                                "w-7 h-7 rounded-full border-[2px] shadow-sm flex items-center justify-center text-[12px] rotate-[-8deg] bg-white",
+                                                s.status === 'APPROVED' ? "border-green-500 text-green-600" : "border-indigo-400 text-indigo-500 blur-[0.2px]"
+                                            )} style={{ zIndex: 10 - idx }}>
+                                                {s.icon}
+                                            </div>
+                                        ))}
+                                        {optionalStamps.length > 3 && (
+                                            <div className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 shadow-sm flex items-center justify-center text-[8px] font-black text-slate-500 z-0">
+                                                +{optionalStamps.length - 3}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         );
                     })}
                 </div>
 
-                {selectedEvent && (
-                    <div className="mt-8 p-6 bg-slate-50 rounded-[28px] border border-slate-100 animate-in fade-in slide-in-from-top-4 duration-500 relative overflow-hidden group">
-                        <div className={cn(
-                            "absolute top-0 left-0 w-2 h-full",
-                            selectedEvent.is_essential ? "bg-[#FFD6E0]" : "bg-[#D6E4FF]"
-                        )} />
-                        <div className="flex items-center justify-between mb-4">
-                            <span className={cn(
-                                "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border",
-                                selectedEvent.is_essential
-                                    ? "bg-[#FFF0F3] border-[#FFD6E0] text-[#E63946]"
-                                    : "bg-[#F0F5FF] border-[#D6E4FF] text-[#0052CC]"
-                            )}>
-                                {selectedEvent.type === 'mission' ? 'Essential Mission' : 'General Event'}
-                            </span>
+                {selectedDayInfo && (
+                    <div className="mt-8 p-6 bg-slate-50 rounded-[24px] border border-slate-100 animate-in fade-in slide-in-from-top-4 duration-500 shadow-inner">
+                        <div className="flex justify-between items-start mb-6 border-b border-slate-200 pb-4">
+                            <h4 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+                                <span className="bg-white p-2 rounded-xl shadow-sm border border-slate-100 text-sm">🗓️</span>
+                                {viewDate.getFullYear()}.{String(viewDate.getMonth() + 1).padStart(2, '0')}.{String(selectedDayInfo.day).padStart(2, '0')} 기록
+                            </h4>
                             <button
-                                onClick={() => setSelectedEvent(null)}
-                                className="text-slate-300 hover:text-slate-500 transition-colors p-1"
+                                onClick={() => setSelectedDayInfo(null)}
+                                className="text-slate-400 hover:text-slate-600 font-bold bg-white p-2 rounded-full shadow-sm"
                             >
-                                <CheckCircle2 className="w-5 h-5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                <CheckCircle2 className="w-5 h-5" />
                             </button>
                         </div>
-                        <h4 className="text-lg font-black text-slate-800 leading-tight">{selectedEvent.title}</h4>
-                        <p className="text-slate-500 font-medium text-sm mt-2 leading-relaxed">{selectedEvent.description}</p>
-                        <div className="mt-6 flex items-center text-xs text-slate-400 font-bold bg-white/50 w-fit px-4 py-2 rounded-xl backdrop-blur-sm">
-                            <Clock className="w-4 h-4 mr-2 text-slate-300" />
-                            Deadline: <span className="text-slate-600 ml-1">{new Date(selectedEvent.scheduled_at).toLocaleDateString()}</span>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {(selectedDayInfo.stamps.length > 0) && (
+                                <div className="space-y-3">
+                                    <h5 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-1.5"><Trophy className="w-3 h-3" /> My Achieved Stamps</h5>
+                                    <div className="space-y-2">
+                                        {selectedDayInfo.stamps.map(st => (
+                                            <div key={st.id} className="flex items-center gap-3 bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm">
+                                                <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center">
+                                                    {st.type === 'essential' ? (
+                                                        <span className="text-sm font-black text-indigo-500">🚩</span>
+                                                    ) : (
+                                                        <span className="text-sm">{st.icon}</span>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <p className="font-extrabold text-sm text-slate-800">{st.title}</p>
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mt-0.5">{st.status === 'completed' || st.status === 'APPROVED' ? 'Verified ✅' : 'Pending ⏳'}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {(selectedDayInfo.events.length > 0) && (
+                                <div className="space-y-3">
+                                    <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5"><CalendarIcon className="w-3 h-3" /> Scheduled Events</h5>
+                                    <div className="space-y-2">
+                                        {selectedDayInfo.events.map(event => (
+                                            <div key={event.id} className="bg-white p-3.5 rounded-2xl border border-slate-100 border-l-4 shadow-sm" style={{borderLeftColor: event.is_essential ? '#FFD6E0' : '#D6E4FF'}}>
+                                                <p className="font-extrabold text-sm text-slate-800 tracking-tight">{event.title}</p>
+                                                <p className="text-[11px] font-medium text-slate-500 mt-1 leading-snug">{event.description}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
@@ -456,14 +589,14 @@ function DashboardContent() {
 
     return (
         <div className="max-w-[1400px] mx-auto px-10 py-16">
-            <DashboardHeader nickname={data.nickname} />
+            <DashboardHeader nickname={data.nickname} role={data.role} />
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
                 <div className="lg:col-span-4 space-y-12">
                     <MonthlyMissionCard currentMission={data.currentMission} />
                 </div>
                 <div className="lg:col-span-8 space-y-8">
                     <QuickLinks />
-                    <EventCalendar schedules={data.schedules} />
+                    <UnifiedMissionCalendar schedules={data.schedules} />
                 </div>
             </div>
         </div>
