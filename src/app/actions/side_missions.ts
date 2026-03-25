@@ -12,13 +12,24 @@ export async function submitSideMission(missionType: string, proofUrl: string) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { error: "로그인이 필요합니다." };
 
-    const { data: profile, error: profileError } = await supabase
-        .from('profiles')
+    // 2. Get profile ID using robust two-step lookup
+    const { data: crew } = await supabase
+        .from('crews')
         .select('id')
-        .eq('tourlive_email', user.email)
-        .single();
-        
-    if (profileError || !profile) return { error: "프로필 정보를 불러올 수 없습니다." };
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+    let profile = null;
+    if (crew) {
+        const { data: profileData } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('crew_id', crew.id)
+            .maybeSingle();
+        profile = profileData;
+    }
+
+    if (!profile) return { error: "프로필 정보를 불러올 수 없습니다." };
 
     // App Review Logic: Check if there's already an APPROVED one
     if (missionType === "앱 리뷰 (구글/앱스토어)") {
@@ -63,11 +74,21 @@ export async function getSideMissions() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return { data: [] };
 
-        const { data: profile } = await supabase
-            .from('profiles')
+        const { data: crew } = await supabase
+            .from('crews')
             .select('id')
-            .eq('tourlive_email', user.email)
-            .single();
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+        let profile = null;
+        if (crew) {
+            const { data: profileData } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('crew_id', crew.id)
+                .maybeSingle();
+            profile = profileData;
+        }
             
         if (!profile) return { data: [] };
 

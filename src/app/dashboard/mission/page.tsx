@@ -472,10 +472,10 @@ function AdditionalTasks() {
 }
 
 const SIDE_MISSIONS = [
-    { title: "앱 리뷰 (구글/앱스토어)", points: "10,000", type: "onetime", desc: "앱스토어/스토어에 정성스러운 리뷰 남기기" },
-    { title: "포토 리뷰 (투어라이브)", points: "2,000", type: "unlimited", desc: "투어라이브 상품 포토 리뷰 작성하기" },
-    { title: "트랙 댓글 (투어라이브)", points: "1,000", type: "unlimited", desc: "투어라이브 오디오 가이드 트랙 댓글 (최소 10개 이상)" },
-    { title: "지도/정보 오류 제보", points: "3,000", type: "unlimited", desc: "앱 내 지도 위치나 스크립트 등 오류 제보" },
+    { title: "앱 리뷰 (구글/앱스토어)", points: "10,000", type: "onetime", desc: "App store/Google play store 앱 리뷰 작성" },
+    { title: "포토 리뷰 (투어라이브)", points: "2,000", type: "unlimited", desc: "오디오가이드 포토 후기 작성" },
+    { title: "트랙 댓글 (투어라이브)", points: "1,000", type: "unlimited", desc: "투어라이브 오디오 가이드 트랙 댓글 (단순 감상 x오류 제보만) 작성" },
+    { title: "지도 정보 오류 제보", points: "3,000", type: "unlimited", desc: "지도 정보 오류 제보" },
     { title: "이달의 챌린지", points: "N페이 지급", type: "monthly", desc: "매달 새롭게 열리는 챌린지 미션 달성 (카페/블로그)" }
 ];
 
@@ -530,7 +530,10 @@ function SideMissionBoard() {
     const totalPointsEarned = missions
         .filter(m => m.status === 'APPROVED' && !m.mission_type.includes('이달의 챌린지'))
         .reduce((sum, m) => {
-            const match = SIDE_MISSIONS.find(sm => m.mission_type.includes(sm.title));
+            const match = SIDE_MISSIONS.find(sm => 
+                m.mission_type.includes(sm.title) || 
+                (sm.title === "지도 정보 오류 제보" && m.mission_type.includes("지도/정보"))
+            );
             if (match && typeof match.points === 'string') {
                 return sum + parseInt(match.points.replace(/,/g, ''));
             }
