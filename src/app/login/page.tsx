@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,9 +9,24 @@ import { signIn } from "@/app/actions/auth";
 import { toast } from "sonner";
 import Link from "next/link";
 import { Loader2, LogIn, Lock } from "lucide-react";
+import { createClient } from "@/utils/supabase/client";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
     const [isPending, setIsPending] = useState(false);
+    const router = useRouter();
+
+    useEffect(() => {
+        // Simple client-side check to avoid showing login if already authenticated
+        async function checkUser() {
+            const supabase = createClient();
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                router.push("/");
+            }
+        }
+        checkUser();
+    }, [router]);
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
