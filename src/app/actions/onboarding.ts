@@ -106,16 +106,20 @@ export async function submitOnboardingForm(formData: FormData) {
             console.log(`[Onboarding] Created new auth user: ${userId}`);
         }
 
-        // Establish session by signing in
+        // Establish session by signing in (Removed based on user request for manual login)
+        /*
         console.log("[Onboarding] Signing in");
         const { error: signInError } = await supabase.auth.signInWithPassword({
             email: tourliveEmail,
             password: password,
         });
+        */
 
+        /*
         if (signInError) {
             console.warn("[Onboarding] Sign In Warning after Admin Create/Link:", signInError.message);
         }
+        */
 
         // Update app_metadata with role
         const role = isAdmin ? 'admin' : 'crew';

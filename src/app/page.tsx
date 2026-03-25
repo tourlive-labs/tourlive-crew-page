@@ -10,7 +10,7 @@ export default async function RootPage() {
         redirect("/login");
     }
 
-    // Check for profile to decide between onboarding or dashboard
+    // If logged in, check for profile
     const { data: profile } = await supabase
         .from('profiles')
         .select('role')
@@ -18,6 +18,7 @@ export default async function RootPage() {
         .maybeSingle();
 
     if (!profile) {
+        // Logged in but no profile = go to onboarding to complete registration
         redirect("/onboarding");
     }
 
