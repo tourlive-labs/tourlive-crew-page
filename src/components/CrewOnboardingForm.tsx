@@ -79,8 +79,14 @@ export default function CrewOnboardingForm() {
             }
 
             toast.success("Welcome! 🎉");
-            router.push("/dashboard");
+            
+            // Critical: Force session refresh on the client to sync with server
+            const { createClient } = await import("@/utils/supabase/client");
+            const supabase = createClient();
+            await supabase.auth.refreshSession();
+            
             router.refresh();
+            router.push("/dashboard");
         } catch (error) {
             console.error("[Onboarding Form] Submission Error:", error);
             let errorMessage = "회원가입 중 오류가 발생했습니다.";

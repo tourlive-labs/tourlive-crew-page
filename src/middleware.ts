@@ -47,16 +47,27 @@ export async function middleware(request: NextRequest) {
         return supabaseResponse
     }
 
-    // 3. User is logged in - Check profile completeness and role
-    // Fetch profile data. Using tourlive_email as the lookup key for consistency with other parts of the app.
-    const { data: profile } = await supabase
+    // 3. User is logged in - Check profile completeness and role using robust user_id join
+    const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('role, full_name, selected_activity')
-        .eq('tourlive_email', user.email)
+        .select(`
+            id,
+            role,
+            full_name,
+            selected_activity,
+            crews!inner (
+                user_id
+            )
+        `)
+        .eq('crews.user_id', user.id)
         .maybeSingle()
 
+    if (profileError) {
+        console.error("[Middleware] Profile fetch error:", profileError.message)
+    }
+
     const isAdmin = profile?.role === 'admin' || user.email === "root@tourlive.co.kr"
-    const isProfileComplete = profile?.full_name && profile?.selected_activity
+    const isProfileComplete = !!(profile?.full_name && profile?.selected_activity)
 
     // 4. Redirection Logic for logged-in users
     if (!isProfileComplete) {
