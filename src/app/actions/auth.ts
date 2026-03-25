@@ -20,23 +20,30 @@ export async function signIn(formData: FormData) {
         return { error: "로그인 정보가 올바르지 않습니다." };
     }
 
-    // 2. Fetch role from profiles table using robust user_id join
-    console.log("[AuthAction] Fetching profile via join for:", user.id);
-    const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select(`
-            role,
-            full_name,
-            selected_activity,
-            crews!inner (
-                user_id
-            )
-        `)
-        .eq('crews.user_id', user.id)
+    // 2. Fetch role from profiles table using robust two-step lookup
+    console.log("[AuthAction] Fetching profile for user:", user.id);
+    
+    // Step A: Find Crew ID
+    const { data: crew } = await supabase
+        .from('crews')
+        .select('id')
+        .eq('user_id', user.id)
         .maybeSingle();
 
-    console.log("[AuthAction] Profile Join Result:", profile);
-    if (profileError) console.error("[AuthAction] Profile join error:", profileError.message);
+    let profile = null;
+    if (crew) {
+        // Step B: Find Profile
+        const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('crew_id', crew.id)
+            .maybeSingle();
+        
+        profile = profileData;
+        if (profileError) console.error("[AuthAction] Profile lookup error:", profileError.message);
+    }
+
+    console.log("[AuthAction] Profile Result:", !!profile, "Complete:", !!(profile?.full_name && profile?.selected_activity));
 
     // 3. Redirection Logic
     if (email === "root@tourlive.co.kr") {

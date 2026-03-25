@@ -47,50 +47,67 @@ export async function middleware(request: NextRequest) {
         return supabaseResponse
     }
 
-    // 3. User is logged in - Check profile completeness and role using robust user_id join
-    const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select(`
-            id,
-            role,
-            full_name,
-            selected_activity,
-            crews!inner (
-                user_id
-            )
-        `)
-        .eq('crews.user_id', user.id)
+    // 3. User is logged in - Check profile completeness and role using robust two-step lookup
+    console.log(`[Middleware] AUDIT - USER_ID: ${user.id}, EMAIL: ${user.email}`)
+
+    // Step A: Find Crew ID
+    const { data: crew, error: crewError } = await supabase
+        .from('crews')
+        .select('id')
+        .eq('user_id', user.id)
         .maybeSingle()
 
-    if (profileError) {
-        console.error("[Middleware] Profile fetch error:", profileError.message)
+    if (crewError) console.error("[Middleware] Crew fetch error:", crewError.message)
+    console.log(`[Middleware] AUDIT - CREW_ID: ${crew?.id}`)
+
+    let profile = null
+    if (crew) {
+        // Step B: Find Profile
+        const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('crew_id', crew.id)
+            .maybeSingle()
+        
+        profile = profileData
+        if (profileError) console.error("[Middleware] Profile fetch error:", profileError.message)
     }
+
+    console.log("[Middleware] Profile Result:", !!profile, "Complete:", !!(profile?.full_name && profile?.selected_activity));
+    console.log(`[Middleware] AUDIT - PROFILE_RESULT: ${JSON.stringify(profile)}`)
 
     const isAdmin = profile?.role === 'admin' || user.email === "root@tourlive.co.kr"
     const isProfileComplete = !!(profile?.full_name && profile?.selected_activity)
+
+    console.log(`[Middleware] AUDIT - DECISION: isProfileComplete=${isProfileComplete}, isAdmin=${isAdmin}`)
 
     // 4. Redirection Logic for logged-in users
     if (!isProfileComplete) {
         // Force /onboarding if profile is incomplete
         if (url.pathname !== '/onboarding') {
+            console.log("[Middleware] REDIRECTING to /onboarding (Reason: Incomplete profile)")
             url.pathname = '/onboarding'
             return NextResponse.redirect(url)
         }
     } else {
         // Profile is complete: Prevent access to /login or /onboarding
         if (isAuthPage) {
-            url.pathname = isAdmin ? '/admin' : '/dashboard'
+            const dest = isAdmin ? '/admin' : '/dashboard'
+            console.log(`[Middleware] REDIRECTING to ${dest} (Reason: Auth page bypass)`)
+            url.pathname = dest
             return NextResponse.redirect(url)
         }
 
         // Handle path consistency (/admin for admins, /dashboard for users)
         if (isAdmin) {
             if (url.pathname === '/' || url.pathname === '/dashboard') {
+                console.log("[Middleware] REDIRECTING to /admin (Reason: Admin consistency)")
                 url.pathname = '/admin'
                 return NextResponse.redirect(url)
             }
         } else {
             if (url.pathname === '/' || url.pathname.startsWith('/admin')) {
+                console.log("[Middleware] REDIRECTING to /dashboard (Reason: User consistency)")
                 url.pathname = '/dashboard'
                 return NextResponse.redirect(url)
             }
