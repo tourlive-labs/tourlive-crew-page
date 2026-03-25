@@ -21,28 +21,37 @@ export async function signIn(formData: FormData) {
     }
 
     // 2. Fetch role from profiles table
-    const { data: profile } = await supabase
+    const normalizedEmail = email.trim();
+    console.log("[AuthAction] Fetching profile for:", normalizedEmail);
+    const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('role')
-        .eq('tourlive_email', email)
+        .eq('tourlive_email', normalizedEmail)
         .maybeSingle();
+
+    console.log("[AuthAction] Profile Data:", profile);
+    if (profileError) console.error("[AuthAction] Profile check error:", profileError);
 
     // 3. Redirection Logic
     // Super Admin check (bypass role check if email is root)
     if (email === "root@tourlive.co.kr") {
+        console.log("[AuthAction] Root user, redirecting to /manage");
         return redirect("/manage");
     }
 
     if (!profile) {
         // No profile found = onboarding not finished
+        console.log("[AuthAction] No profile, redirecting to /onboarding");
         return redirect("/onboarding");
     }
 
     if (profile.role === 'admin') {
+        console.log("[AuthAction] Admin role, redirecting to /manage");
         return redirect("/manage");
     }
 
     // Default to dashboard for crew or others with a profile
+    console.log("[AuthAction] User redirecting to /dashboard");
     return redirect("/dashboard");
 }
 
