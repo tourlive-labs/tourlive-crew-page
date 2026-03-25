@@ -33,7 +33,7 @@ export async function middleware(request: NextRequest) {
     // 2. Routing Logic
     const url = request.nextUrl.clone()
     const isAuthPage = url.pathname === '/login' || url.pathname === '/onboarding'
-    const isPublicPage = url.pathname === '/' || isAuthPage
+    const isPublicPage = isAuthPage
     const isApiRoute = url.pathname.startsWith('/api')
 
     if (isApiRoute) return supabaseResponse
