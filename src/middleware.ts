@@ -27,87 +27,82 @@ export async function middleware(request: NextRequest) {
         }
     )
 
-    // 1. Get current session
+    // 1. Get Session for most accurate server-side session
     const { data: { user } } = await supabase.auth.getUser()
 
-    // 2. Routing Logic
     const url = request.nextUrl.clone()
     const isAuthPage = url.pathname === '/login' || url.pathname === '/onboarding'
-    const isPublicPage = isAuthPage
     const isApiRoute = url.pathname.startsWith('/api')
 
     if (isApiRoute) return supabaseResponse
 
     if (!user) {
         // Not logged in: Redirect to /login if trying to access protected routes
-        if (!isPublicPage) {
+        if (!isAuthPage && url.pathname !== '/') {
             url.pathname = '/login'
             return NextResponse.redirect(url)
         }
         return supabaseResponse
     }
 
-    // 3. User is logged in - Check profile completeness and role using robust two-step lookup
-    console.log(`[Middleware] AUDIT - USER_ID: ${user.id}, EMAIL: ${user.email}`)
-
-    // Step A: Find Crew ID
-    const { data: crew, error: crewError } = await supabase
+    // 2. Fetch Profile without cache using robust two-step lookup (Schema: Auth -> Crews -> Profiles)
+    // Step A: Find Crew ID associated with the user UID
+    const { data: crew } = await supabase
         .from('crews')
         .select('id')
         .eq('user_id', user.id)
         .maybeSingle()
 
-    if (crewError) console.error("[Middleware] Crew fetch error:", crewError.message)
-    console.log(`[Middleware] AUDIT - CREW_ID: ${crew?.id}`)
-
     let profile = null
     if (crew) {
-        // Step B: Find Profile
-        const { data: profileData, error: profileError } = await supabase
+        // Step B: Find Profile associated with the Crew record
+        const { data: profileData } = await supabase
             .from('profiles')
-            .select('*')
+            .select('role, full_name, selected_activity')
             .eq('crew_id', crew.id)
             .maybeSingle()
-        
         profile = profileData
-        if (profileError) console.error("[Middleware] Profile fetch error:", profileError.message)
     }
 
-    console.log("[Middleware] Profile Result:", !!profile, "Complete:", !!(profile?.full_name && profile?.selected_activity));
-    console.log(`[Middleware] AUDIT - PROFILE_RESULT: ${JSON.stringify(profile)}`)
-
+    // 3. THE INTERCEPTOR (as requested)
+    const isAtOnboarding = url.pathname === '/onboarding'
+    const hasName = !!profile?.full_name
+    const hasActivity = !!profile?.selected_activity
+    const isProfileComplete = hasName && hasActivity
     const isAdmin = profile?.role === 'admin' || user.email === "root@tourlive.co.kr"
-    const isProfileComplete = !!(profile?.full_name && profile?.selected_activity)
 
-    console.log(`[Middleware] AUDIT - DECISION: isProfileComplete=${isProfileComplete}, isAdmin=${isAdmin}`)
+    console.log(`[Middleware] AUDIT - ID: ${user.id}, Path: ${url.pathname}, Complete: ${isProfileComplete}`)
+
+    if (isProfileComplete && isAtOnboarding) {
+        console.log("FORCE REDIRECT: User has profile, moving to /dashboard/admin")
+        const dest = isAdmin ? '/admin' : '/dashboard'
+        url.pathname = dest
+        return NextResponse.redirect(url)
+    }
 
     // 4. Redirection Logic for logged-in users
     if (!isProfileComplete) {
         // Force /onboarding if profile is incomplete
         if (url.pathname !== '/onboarding') {
-            console.log("[Middleware] REDIRECTING to /onboarding (Reason: Incomplete profile)")
+            console.log("[Middleware] FORCE: Incomplete profile -> /onboarding")
             url.pathname = '/onboarding'
             return NextResponse.redirect(url)
         }
     } else {
         // Profile is complete: Prevent access to /login or /onboarding
         if (isAuthPage) {
-            const dest = isAdmin ? '/admin' : '/dashboard'
-            console.log(`[Middleware] REDIRECTING to ${dest} (Reason: Auth page bypass)`)
-            url.pathname = dest
+            url.pathname = isAdmin ? '/admin' : '/dashboard'
             return NextResponse.redirect(url)
         }
 
         // Handle path consistency (/admin for admins, /dashboard for users)
         if (isAdmin) {
             if (url.pathname === '/' || url.pathname === '/dashboard') {
-                console.log("[Middleware] REDIRECTING to /admin (Reason: Admin consistency)")
                 url.pathname = '/admin'
                 return NextResponse.redirect(url)
             }
         } else {
             if (url.pathname === '/' || url.pathname.startsWith('/admin')) {
-                console.log("[Middleware] REDIRECTING to /dashboard (Reason: User consistency)")
                 url.pathname = '/dashboard'
                 return NextResponse.redirect(url)
             }
@@ -120,12 +115,12 @@ export async function middleware(request: NextRequest) {
 export const config = {
     matcher: [
         /*
-         * Match all request paths except for the ones starting with:
-         * - _next/static (static files)
-         * - _next/image (image optimization files)
-         * - favicon.ico (favicon file)
-         * Feel free to modify this pattern to include more paths.
+         * Match all request paths including root and onboarding
          */
-        '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+        '/',
+        '/onboarding',
+        '/dashboard/:path*',
+        '/admin/:path*',
+        '/login',
     ],
 }
