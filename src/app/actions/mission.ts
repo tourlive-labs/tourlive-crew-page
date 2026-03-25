@@ -17,14 +17,24 @@ export async function submitMission(postUrl: string) {
         return { error: "로그인이 필요합니다." };
     }
 
-    // 2. Get profile ID
-    const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, selected_activity')
-        .eq('tourlive_email', user.email)
-        .single();
+    // 2. Get profile ID using robust two-step lookup
+    const { data: crew } = await supabase
+        .from('crews')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-    if (profileError || !profile) {
+    let profile = null;
+    if (crew) {
+        const { data: profileData } = await supabase
+            .from('profiles')
+            .select('id, selected_activity')
+            .eq('crew_id', crew.id)
+            .maybeSingle();
+        profile = profileData;
+    }
+
+    if (!profile) {
         return { error: "프로필 정보를 찾을 수 없습니다." };
     }
 
@@ -79,11 +89,21 @@ export async function markPointsPaid(missionId: string) {
         return { error: "로그인이 필요합니다." };
     }
 
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('tourlive_email', user.email)
+    const { data: crew } = await supabase
+        .from('crews')
+        .select('id')
+        .eq('user_id', user.id)
         .maybeSingle();
+
+    let profile = null;
+    if (crew) {
+        const { data: profileData } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('crew_id', crew.id)
+            .maybeSingle();
+        profile = profileData;
+    }
 
     const isAdmin = profile?.role === 'admin' || user.email === "root@tourlive.co.kr";
 
@@ -157,11 +177,21 @@ export async function verifyMissionContent(postUrl: string) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return { error: "로그인이 필요합니다." };
 
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('naver_id')
-            .eq('tourlive_email', user.email)
-            .single();
+        const { data: crew } = await supabase
+            .from('crews')
+            .select('id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+        let profile = null;
+        if (crew) {
+            const { data: profileData } = await supabase
+                .from('profiles')
+                .select('naver_id')
+                .eq('crew_id', crew.id)
+                .maybeSingle();
+            profile = profileData;
+        }
 
         const naverId = profile?.naver_id || "";
 

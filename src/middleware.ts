@@ -37,8 +37,9 @@ export async function middleware(request: NextRequest) {
     if (isApiRoute) return supabaseResponse
 
     if (!user) {
-        // Not logged in: Redirect to /login if trying to access protected routes
-        if (!isAuthPage && url.pathname !== '/') {
+        // Not logged in: Redirect to /login if trying to access protected routes OR root
+        if (!isAuthPage) {
+            console.log(`[Middleware] GUEST: ${url.pathname} -> /login`)
             url.pathname = '/login'
             return NextResponse.redirect(url)
         }

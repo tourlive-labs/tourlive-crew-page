@@ -12,7 +12,30 @@ export async function getDashboardData() {
         return { error: "로그인이 필요합니다." };
     }
 
-    // 2. Get profile and crew info
+    // 2. Get profile and crew info using robust two-step lookup
+    console.log("[DashboardAction] Fetching profile for user:", user.id);
+
+    // Step A: Find Crew record
+    const { data: crew, error: crewError } = await supabase
+        .from('crews')
+        .select(`
+            id,
+            batch_id,
+            batches (
+                id,
+                term,
+                start_date
+            )
+        `)
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+    if (crewError || !crew) {
+        console.error("Dashboard Crew Error:", crewError);
+        return { error: "소속된 기수 정보를 찾을 수 없습니다." };
+    }
+
+    // Step B: Find Profile
     const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select(`
@@ -21,27 +44,18 @@ export async function getDashboardData() {
             selected_activity,
             created_at,
             naver_id,
-            role,
-            crews (
-                id,
-                batch_id,
-                batches (
-                    term,
-                    start_date
-                )
-            )
+            role
         `)
-        .eq('tourlive_email', user.email)
-        .single();
+        .eq('crew_id', crew.id)
+        .maybeSingle();
 
     if (profileError || !profile) {
         console.error("Dashboard Profile Error:", profileError);
         return { error: "프로필 정보를 불러올 수 없습니다." };
     }
 
-    const crew = profile.crews as any;
-    const batch = crew?.batches;
-    const batchId = crew?.batch_id;
+    const batch = crew.batches as any;
+    const batchId = crew.batch_id;
 
     if (!batchId) {
         return { error: "소속된 기수 정보를 찾을 수 없습니다." };
