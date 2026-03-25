@@ -26,6 +26,8 @@ export async function signIn(formData: FormData) {
         .from('profiles')
         .select(`
             role,
+            full_name,
+            selected_activity,
             crews!inner (
                 user_id
             )
@@ -38,18 +40,19 @@ export async function signIn(formData: FormData) {
 
     // 3. Redirection Logic
     if (email === "root@tourlive.co.kr") {
-        console.log("[AuthAction] Root user detected, redirecting to /manage");
-        return redirect("/manage");
+        console.log("[AuthAction] Root user detected, redirecting to /admin");
+        return redirect("/admin");
     }
 
-    if (!profile) {
-        console.log("[AuthAction] No profile record found, redirecting to /onboarding");
+    const isProfileComplete = profile?.full_name && profile?.selected_activity;
+    if (!isProfileComplete) {
+        console.log("[AuthAction] Profile incomplete, redirecting to /onboarding");
         return redirect("/onboarding");
     }
 
     if (profile.role === 'admin') {
-        console.log("[AuthAction] Admin role detected, redirecting to /manage");
-        return redirect("/manage");
+        console.log("[AuthAction] Admin role detected, redirecting to /admin");
+        return redirect("/admin");
     }
 
     console.log("[AuthAction] Redirecting to /dashboard");

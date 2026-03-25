@@ -102,7 +102,7 @@ export async function markPointsPaid(missionId: string) {
         return { error: "포인트 지급 처리 중 오류가 발생했습니다." };
     }
 
-    revalidatePath("/manage");
+    revalidatePath("/admin");
     return { success: true };
 }
 

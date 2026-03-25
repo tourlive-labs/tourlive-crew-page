@@ -9,7 +9,7 @@ import { MarkPaidButton } from "@/components/MarkPaidButton";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
-export default async function ManagePage() {
+export default async function AdminPage() {
     const supabase = await createClient();
 
     // 1. Check auth and role
@@ -29,16 +29,7 @@ export default async function ManagePage() {
     const isAdmin = profile?.role === 'admin' || user.email === "root@tourlive.co.kr";
 
     if (!isAdmin) {
-        return (
-            <div className="min-h-screen bg-[#F9F8F3] flex items-center justify-center p-6">
-                <Card className="max-w-md w-full text-center p-8 rounded-[32px] border-none shadow-sm bg-white">
-                    <CardHeader>
-                        <CardTitle className="text-2xl font-bold text-slate-800">접근 권한 없음</CardTitle>
-                        <CardDescription className="mt-2">관리자만 접근 가능한 페이지입니다.</CardDescription>
-                    </CardHeader>
-                </Card>
-            </div>
-        );
+        redirect("/dashboard");
     }
 
 

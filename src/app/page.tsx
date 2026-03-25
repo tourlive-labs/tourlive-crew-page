@@ -18,6 +18,8 @@ export default async function RootPage() {
         .from('profiles')
         .select(`
             role,
+            full_name,
+            selected_activity,
             crews!inner (
                 user_id
             )
@@ -30,14 +32,16 @@ export default async function RootPage() {
         console.error("[RootPage] Profile join error:", profileError.message);
     }
 
-    if (!profile) {
-        console.log("[RootPage] No profile record found, redirecting to /onboarding");
+    const isProfileComplete = profile?.full_name && profile?.selected_activity;
+
+    if (!isProfileComplete) {
+        console.log("[RootPage] Profile incomplete, redirecting to /onboarding");
         redirect("/onboarding");
     }
 
     if (profile.role === 'admin' || user.email === "root@tourlive.co.kr") {
-        console.log("[RootPage] Admin/Root detected, redirecting to /manage");
-        redirect("/manage");
+        console.log("[RootPage] Admin/Root detected, redirecting to /admin");
+        redirect("/admin");
     }
 
     console.log("[RootPage] Regular user detected, redirecting to /dashboard");
