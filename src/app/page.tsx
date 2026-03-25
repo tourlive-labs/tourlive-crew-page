@@ -5,34 +5,41 @@ export default async function RootPage() {
     const supabase = await createClient();
 
     const { data: { user } } = await supabase.auth.getUser();
-    console.log("[RootPage] Current User:", user?.email);
+    console.log("[RootPage] Auth User ID:", user?.id);
 
     if (!user) {
-        console.log("[RootPage] No user, redirecting to /login");
+        console.log("[RootPage] No user session found, redirecting to /login");
         redirect("/login");
     }
 
-    // If logged in, check for profile
-    const userEmail = user.email?.trim() || "";
+    // Robust lookup: Join profiles with crews using user_id
+    console.log("[RootPage] Fetching profile via crews join for:", user.id);
     const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('role, tourlive_email')
-        .eq('tourlive_email', userEmail)
+        .select(`
+            role,
+            crews!inner (
+                user_id
+            )
+        `)
+        .eq('crews.user_id', user.id)
         .maybeSingle();
 
-    console.log("[RootPage] Profile Data for", userEmail, ":", profile);
-    if (profileError) console.error("[RootPage] Profile check error:", profileError);
+    console.log("[RootPage] Join Result Data:", JSON.stringify(profile, null, 2));
+    if (profileError) {
+        console.error("[RootPage] Profile join error:", profileError.message);
+    }
 
     if (!profile) {
-        console.log("[RootPage] No profile found for", user.email, "- redirecting to /onboarding");
+        console.log("[RootPage] No profile record found, redirecting to /onboarding");
         redirect("/onboarding");
     }
 
     if (profile.role === 'admin' || user.email === "root@tourlive.co.kr") {
-        console.log("[RootPage] Admin user, redirecting to /manage");
+        console.log("[RootPage] Admin/Root detected, redirecting to /manage");
         redirect("/manage");
     }
 
-    console.log("[RootPage] Regular user, redirecting to /dashboard");
+    console.log("[RootPage] Regular user detected, redirecting to /dashboard");
     redirect("/dashboard");
 }

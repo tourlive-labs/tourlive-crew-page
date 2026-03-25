@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,9 +9,37 @@ import { signIn } from "@/app/actions/auth";
 import { toast } from "sonner";
 import Link from "next/link";
 import { Loader2, LogIn, Lock } from "lucide-react";
+import { createClient } from "@/utils/supabase/client";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
     const [isPending, setIsPending] = useState(false);
+    const router = useRouter();
+
+    useEffect(() => {
+        async function checkUserAndProfile() {
+            const supabase = createClient();
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            if (user) {
+                // IMPORTANT: Only redirect if a profile actually exists
+                // This prevents the loop: Login -> Home -> Onboarding
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('id, crews!inner(user_id)')
+                    .eq('crews.user_id', user.id)
+                    .maybeSingle();
+                
+                if (profile) {
+                    console.log("[LoginPage] User has profile, auto-redirecting to /");
+                    router.push("/");
+                } else {
+                    console.log("[LoginPage] User logged in but no profile. Staying on login page.");
+                }
+            }
+        }
+        checkUserAndProfile();
+    }, [router]);
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();

@@ -20,38 +20,39 @@ export async function signIn(formData: FormData) {
         return { error: "로그인 정보가 올바르지 않습니다." };
     }
 
-    // 2. Fetch role from profiles table
-    const normalizedEmail = email.trim();
-    console.log("[AuthAction] Fetching profile for:", normalizedEmail);
+    // 2. Fetch role from profiles table using robust user_id join
+    console.log("[AuthAction] Fetching profile via join for:", user.id);
     const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('role')
-        .eq('tourlive_email', normalizedEmail)
+        .select(`
+            role,
+            crews!inner (
+                user_id
+            )
+        `)
+        .eq('crews.user_id', user.id)
         .maybeSingle();
 
-    console.log("[AuthAction] Profile Data:", profile);
-    if (profileError) console.error("[AuthAction] Profile check error:", profileError);
+    console.log("[AuthAction] Profile Join Result:", profile);
+    if (profileError) console.error("[AuthAction] Profile join error:", profileError.message);
 
     // 3. Redirection Logic
-    // Super Admin check (bypass role check if email is root)
     if (email === "root@tourlive.co.kr") {
-        console.log("[AuthAction] Root user, redirecting to /manage");
+        console.log("[AuthAction] Root user detected, redirecting to /manage");
         return redirect("/manage");
     }
 
     if (!profile) {
-        // No profile found = onboarding not finished
-        console.log("[AuthAction] No profile, redirecting to /onboarding");
+        console.log("[AuthAction] No profile record found, redirecting to /onboarding");
         return redirect("/onboarding");
     }
 
     if (profile.role === 'admin') {
-        console.log("[AuthAction] Admin role, redirecting to /manage");
+        console.log("[AuthAction] Admin role detected, redirecting to /manage");
         return redirect("/manage");
     }
 
-    // Default to dashboard for crew or others with a profile
-    console.log("[AuthAction] User redirecting to /dashboard");
+    console.log("[AuthAction] Redirecting to /dashboard");
     return redirect("/dashboard");
 }
 
