@@ -11,5 +11,11 @@
 
 ## Logic Priority
 1.  [x] Auth Refactor (Middleware & Login/Signup)
-2.  [x] Clean Sweep (Bank columns & Unused redirects)
-3.  [x] Dashboard/Admin Restriction
+2.  [x] Emergency Fixes (Vercel Build & /onboarding bypass)
+3.  [x] Clean Sweep (Bank columns & Unused redirects)
+4.  [x] Dashboard/Admin Restriction
+
+## Vercel Build Status
+- [x] Middleware: Moved to `src/middleware.ts` for correct tracing.
+- [x] Output: `standalone` enabled in `next.config.ts`.
+- [x] Signup: `/onboarding` path bypasses force-login redirect.

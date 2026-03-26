@@ -40,6 +40,7 @@ export async function middleware(request: NextRequest) {
     const isAdminPath = url.pathname.startsWith("/admin") || url.pathname === "/manage";
 
     // 1. Root and All Routes Default to /login
+    // EXCEPTION: Allow /onboarding for new sign-ups
     if (!user && !isLoginPath && !isOnboardingPath) {
         return NextResponse.redirect(new URL("/login", request.url), 307);
     }
