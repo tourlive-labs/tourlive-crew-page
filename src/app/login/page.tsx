@@ -16,31 +16,6 @@ export default function LoginPage() {
     const [isPending, setIsPending] = useState(false);
     const router = useRouter();
 
-    useEffect(() => {
-        async function checkUserAndProfile() {
-            const supabase = createClient();
-            const { data: { user } } = await supabase.auth.getUser();
-            
-            if (user) {
-                // IMPORTANT: Only redirect if a profile actually exists
-                // This prevents the loop: Login -> Home -> Onboarding
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('id')
-                    .eq('id', user.id)
-                    .maybeSingle();
-                
-                if (profile) {
-                    console.log("[LoginPage] User has profile, auto-redirecting to /");
-                    router.push("/");
-                } else {
-                    console.log("[LoginPage] User logged in but no profile. Staying on login page.");
-                }
-            }
-        }
-        checkUserAndProfile();
-    }, [router]);
-
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
         setIsPending(true);
@@ -51,6 +26,8 @@ export default function LoginPage() {
         if (result?.error) {
             toast.error(result.error);
             setIsPending(false);
+        } else if (result?.success && result.redirectTo) {
+            router.push(result.redirectTo);
         }
     }
 

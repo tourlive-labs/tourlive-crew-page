@@ -12,25 +12,19 @@ import Link from "next/link";
 export default async function AdminPage() {
     const supabase = await createClient();
 
-    // 1. Check auth and role
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // The middleware handles primary protection for /admin.
+    // We do a lightweight check here for extra safety.
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) redirect("/login");
 
-    if (authError || !user) {
-        redirect("/login");
-    }
-
-    // 2. Fetch role from profiles table
     const { data: profile } = await supabase
         .from('profiles')
         .select('role')
-        .eq('tourlive_email', user.email)
+        .eq('id', user.id)
         .maybeSingle();
 
     const isAdmin = profile?.role === 'admin' || user.email === "root@tourlive.co.kr";
-
-    if (!isAdmin) {
-        redirect("/dashboard");
-    }
+    if (!isAdmin) redirect("/dashboard");
 
 
     // 2. Fetch all profiles with their crew/batch info
