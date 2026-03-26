@@ -50,14 +50,15 @@ function MissionSubmissionCard({ currentMission, goalCount }: { currentMission: 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const router = useRouter();
 
-    const isFullySubmitted = verifiedLinks.length >= goalCount;
+    const isRejected = currentMission?.status === 'REJECTED' || currentMission?.status === 'rejected';
+    const isFullySubmitted = (verifiedLinks.length >= goalCount) && !isRejected;
     // Current slot index (1-based)
     const currentSlotIndex = verifiedLinks.length + 1;
     
     const statusText = currentMission?.status === 'checking' ? `활동 진행 중 (${verifiedLinks.length}/${goalCount})` : 
                       currentMission?.status === 'PENDING_APPROVAL' ? '심사 대기 중' :
                       currentMission?.status === 'completed' ? '최종 검토 완료' : 
-                      currentMission?.status === 'rejected' ? '반려됨' : '미진행';
+                      isRejected ? '반려됨 (수정 필요)' : '미진행';
 
     const handleVerify = async () => {
         if (!link) return;
@@ -100,7 +101,7 @@ function MissionSubmissionCard({ currentMission, goalCount }: { currentMission: 
                         링크 인증 제출 ({verifiedLinks.length} / {goalCount})
                     </CardTitle>
                     <CardDescription className="text-slate-500 font-medium mt-1">
-                        블로그 또는 카페 활동 중인 링크를 순서대로 제출해 주세요.
+                        {isRejected ? "반려된 미션입니다. 아래 사유를 확인하고 링크를 다시 제출해 주세요." : "블로그 또는 카페 활동 중인 링크를 순서대로 제출해 주세요."}
                     </CardDescription>
                 </div>
                 {currentMission && currentMission.status !== 'none' && (
@@ -109,7 +110,7 @@ function MissionSubmissionCard({ currentMission, goalCount }: { currentMission: 
                         currentMission.status === 'checking' ? "bg-orange-50 text-orange-600 border border-orange-100" :
                         currentMission.status === 'PENDING_APPROVAL' ? "bg-purple-50 text-purple-600 border border-purple-100" :
                         currentMission.status === 'completed' ? "bg-blue-50 text-blue-600 border border-blue-100" :
-                        currentMission.status === 'REJECTED' ? "bg-red-50 text-red-600 border border-red-100" :
+                        isRejected ? "bg-red-50 text-red-600 border border-red-100" :
                         "bg-slate-50 text-slate-600 border border-slate-100"
                     )}>
                         {statusText}
@@ -117,12 +118,20 @@ function MissionSubmissionCard({ currentMission, goalCount }: { currentMission: 
                 )}
             </CardHeader>
             <CardContent className="p-8">
-                {currentMission?.status === 'REJECTED' && currentMission?.admin_feedback && (
-                    <div className="mb-6 p-4 rounded-2xl bg-red-50 border border-red-100 flex items-start gap-3">
-                        <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                {isRejected && (currentMission?.admin_feedback || currentMission?.rejection_reason) && (
+                    <div className="mb-6 p-6 rounded-[24px] bg-red-50 border border-red-100 flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-2xl bg-red-100 flex items-center justify-center text-red-500 shrink-0">
+                            <AlertCircle className="w-5 h-5" />
+                        </div>
                         <div>
                             <p className="text-xs font-black text-red-600 uppercase tracking-widest mb-1">반려 사유 확인 및 재검토 요청</p>
-                            <p className="text-sm font-bold text-slate-700 leading-relaxed">{currentMission.admin_feedback}</p>
+                            <p className="text-sm font-bold text-slate-800 leading-relaxed italic">
+                                "{currentMission.rejection_reason || currentMission.admin_feedback}"
+                            </p>
+                            <div className="mt-3 flex items-center gap-2 text-[10px] font-black text-red-400">
+                                <RefreshCcw className="w-3 h-3" />
+                                링크를 다시 제출하면 자동으로 검토 대기 상태로 전환됩니다.
+                            </div>
                         </div>
                     </div>
                 )}

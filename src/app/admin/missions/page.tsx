@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { useState, useEffect } from "react";
 import { 
     Tabs, 
@@ -30,18 +32,19 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { 
     getPendingEssentialMissions, 
     getPendingSideMissions, 
-    getAdminLeaderboard,
     updateEssentialStatus,
-    updateSideStatus 
+    updateSideStatus,
+    getPendingSettlements,
+    markAsPaid 
 } from "@/app/actions/admin";
 import { toast } from "sonner";
-import { ExternalLink, Download, CheckCircle2, XCircle, Search, Filter } from "lucide-react";
+import { ExternalLink, Download, CheckCircle2, XCircle, Search, Filter, ChevronLeft, Copy, CreditCard } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 export default function AdminMissionsPage() {
     const [essentialMissions, setEssentialMissions] = useState<any[]>([]);
     const [sideMissions, setSideMissions] = useState<any[]>([]);
-    const [leaderboard, setLeaderboard] = useState<any[]>([]);
+    const [settlements, setSettlements] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     
     const [rejectingItem, setRejectingItem] = useState<{ id: string, type: 'essential' | 'side' } | null>(null);
@@ -58,14 +61,14 @@ export default function AdminMissionsPage() {
 
     async function loadData() {
         setLoading(true);
-        const [ess, side, lb] = await Promise.all([
+        const [ess, side, setl] = await Promise.all([
             getPendingEssentialMissions(),
             getPendingSideMissions(),
-            getAdminLeaderboard()
+            getPendingSettlements()
         ]);
         setEssentialMissions(ess.data || []);
         setSideMissions(side.data || []);
-        setLeaderboard(lb.data || []);
+        setSettlements(setl.data || []);
         setLoading(false);
     }
 
@@ -104,30 +107,22 @@ export default function AdminMissionsPage() {
         setIsRejecting(false);
     };
 
-    const exportToCSV = () => {
-        if (leaderboard.length === 0) return;
-        
-        const headers = ["이름", "이메일", "팀", "총 포인트"];
-        const rows = leaderboard.map(p => [
-            p.nickname,
-            p.tourlive_email,
-            p.selected_activity === 'naver_blog' ? '블로그' : '카페',
-            p.totalPoints
-        ]);
-        
-        const csvContent = [
-            headers.join(","),
-            ...rows.map(row => row.map(cell => `"${cell}"`).join(","))
-        ].join("\n");
-        
-        const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.setAttribute("href", url);
-        link.setAttribute("download", `Supporters_Settlement_${new Date().toISOString().split('T')[0]}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+
+    const handleCopy = (text: string, label: string) => {
+        navigator.clipboard.writeText(text);
+        toast.success(`${label} 복사 완료`);
+    };
+
+    const handleMarkPaid = async (id: string) => {
+        const promise = markAsPaid(id);
+        toast.promise(promise, {
+            loading: '지급 완료 처리 중...',
+            success: () => {
+                loadData();
+                return '지급 처리가 완료되었습니다.';
+            },
+            error: '지급 처리 실패'
+        });
     };
 
     const formatSurvey = (data: any) => {
@@ -169,6 +164,10 @@ export default function AdminMissionsPage() {
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                     <div>
+                        <Link href="/admin" className="flex items-center gap-1.5 text-slate-400 hover:text-slate-600 font-bold text-sm mb-4 transition-all group w-fit">
+                            <ChevronLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+                            목록으로 돌아가기
+                        </Link>
                         <h1 className="text-3xl font-black text-slate-900 tracking-tighter">Admin Mission Control</h1>
                         <p className="text-slate-500 font-medium">관리자 전용 미션 승인 및 포인트 정산 시스템</p>
                     </div>
@@ -202,8 +201,8 @@ export default function AdminMissionsPage() {
                         <TabsTrigger value="side" className="rounded-xl font-black text-sm data-[state=active]:bg-white data-[state=active]:text-[#FF5C00] h-full px-8">
                             추가 미션 검증 ({sideMissions.length})
                         </TabsTrigger>
-                        <TabsTrigger value="leaderboard" className="rounded-xl font-black text-sm data-[state=active]:bg-white data-[state=active]:text-[#FF5C00] h-full px-8">
-                            포인트 현황 및 정산
+                        <TabsTrigger value="settlement" className="rounded-xl font-black text-sm data-[state=active]:bg-white data-[state=active]:text-[#FF5C00] h-full px-8">
+                            ⭐ 포인트 정산 도구 ({settlements.length})
                         </TabsTrigger>
                     </TabsList>
 
@@ -232,8 +231,12 @@ export default function AdminMissionsPage() {
                                             <TableCell>
                                                 <div className="flex flex-col">
                                                     <span className="font-black text-sm text-slate-800">{m.profiles?.nickname}</span>
-                                                    <Badge className={m.profiles?.selected_activity === 'naver_blog' ? "bg-blue-50 text-blue-600 text-[9px] w-fit px-1.5 border-none mt-1" : "bg-orange-50 text-orange-600 text-[9px] w-fit px-1.5 border-none mt-1"}>
-                                                        {m.profiles?.selected_activity === 'naver_blog' ? 'BLOG' : 'CAFE'}
+                                                    <Badge className={
+                                                        m.status === 'REJECTED' || m.status === 'rejected' ? "bg-red-50 text-red-600 text-[9px] w-fit px-1.5 border-none mt-1" :
+                                                        m.profiles?.selected_activity === 'naver_blog' ? "bg-blue-50 text-blue-600 text-[9px] w-fit px-1.5 border-none mt-1" : 
+                                                        "bg-orange-50 text-orange-600 text-[9px] w-fit px-1.5 border-none mt-1"
+                                                    }>
+                                                        {m.status === 'REJECTED' || m.status === 'rejected' ? 'REJECTED' : (m.profiles?.selected_activity === 'naver_blog' ? 'BLOG' : 'CAFE')}
                                                     </Badge>
                                                 </div>
                                             </TableCell>
@@ -246,8 +249,15 @@ export default function AdminMissionsPage() {
                                                 ) : <span className="text-slate-300 text-xs">-</span>}
                                             </TableCell>
                                             <TableCell>
-                                                <div className="max-w-[300px] truncate text-[11px] font-medium text-slate-600" title={formatSurvey(m.survey_data)}>
-                                                    {formatSurvey(m.survey_data)}
+                                                <div className="flex flex-col gap-1">
+                                                    <div className="max-w-[300px] truncate text-[11px] font-medium text-slate-600" title={formatSurvey(m.survey_data)}>
+                                                        {formatSurvey(m.survey_data)}
+                                                    </div>
+                                                    {(m.status === 'REJECTED' || m.status === 'rejected') && (
+                                                        <div className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded border border-red-100 w-fit">
+                                                            Reason: {m.rejection_reason || m.admin_feedback || "No reason provided"}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-right">
@@ -316,35 +326,93 @@ export default function AdminMissionsPage() {
                         </div>
                     </TabsContent>
 
-                    {/* Leaderboard Tab */}
-                    <TabsContent value="leaderboard">
-                        <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+                    
+                    {/* Settlement Tab */}
+                    <TabsContent value="settlement">
+                        <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden text-slate-900">
                             <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
-                                <span className="font-black text-slate-800">전체 누적 포인트 현황</span>
-                                <Button className="bg-[#FF5C00] hover:bg-[#E65200] text-white font-black rounded-xl" onClick={exportToCSV}>
-                                    <Download className="w-4 h-4 mr-2" /> 정산용 CSV 내보내기
-                                </Button>
+                                <div>
+                                    <span className="font-black text-slate-800 block">⭐ 실시간 정산 도구 (Payout Tool)</span>
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">어드민 수동 지급을 위한 복사 전용 리스트</span>
+                                </div>
+                                <Badge className="bg-orange-50 text-orange-600 border border-orange-100 font-black">
+                                    PENDING ONLY
+                                </Badge>
                             </div>
                             <Table>
                                 <TableHeader>
                                     <TableRow className="bg-slate-50/30 border-slate-100">
-                                        <TableHead className="font-bold text-xs uppercase tracking-tight">Rank</TableHead>
-                                        <TableHead className="font-bold text-xs uppercase tracking-tight">User / Team</TableHead>
-                                        <TableHead className="font-bold text-xs uppercase tracking-tight text-right">Total Points</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase tracking-widest px-6">Tourlive Account (ID)</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase tracking-widest">Name</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase tracking-widest">Amount (P)</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase tracking-widest">Reason (ETC field)</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase tracking-widest text-right px-6">Action</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {leaderboard.map((p, idx) => (
-                                        <TableRow key={p.id} className="hover:bg-slate-50/50 border-slate-50">
-                                            <TableCell className="font-black text-slate-400 px-6">{idx + 1}</TableCell>
-                                            <TableCell>
-                                                <div className="flex flex-col">
-                                                    <span className="font-black text-sm text-slate-800">{p.nickname}</span>
-                                                    <span className="text-[10px] font-bold text-slate-400">{p.tourlive_email}</span>
+                                    {settlements.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={5} className="text-center h-60">
+                                                <div className="flex flex-col items-center gap-3">
+                                                    <CreditCard className="w-10 h-10 text-slate-200" />
+                                                    <p className="font-bold text-slate-300">정산 대기 중인 항목이 없습니다.</p>
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-right text-base font-black text-[#FF5C00] px-6">
-                                                {p.totalPoints.toLocaleString()} P
+                                        </TableRow>
+                                    ) : settlements.map((s) => (
+                                        <TableRow key={s.id} className="hover:bg-slate-50/80 border-slate-50 transition-colors">
+                                            <TableCell className="px-6 py-3">
+                                                <div className="flex items-center gap-2">
+                                                    <code className="text-[11px] font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded-lg truncate max-w-[150px]">
+                                                        {s.profiles?.tourlive_email}
+                                                    </code>
+                                                    <Button 
+                                                        variant="ghost" 
+                                                        size="icon" 
+                                                        className="h-7 w-7 rounded-lg text-slate-400 hover:text-[#FF5C00] hover:bg-orange-50"
+                                                        onClick={() => handleCopy(s.profiles?.tourlive_email, "계정(Email)")}
+                                                    >
+                                                        <Copy className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="font-black text-sm text-slate-800 py-3">{s.profiles?.nickname}</TableCell>
+                                            <TableCell className="py-3">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-black text-[#FF5C00]">{s.amount.toLocaleString()}</span>
+                                                    <Button 
+                                                        variant="ghost" 
+                                                        size="icon" 
+                                                        className="h-7 w-7 rounded-lg text-slate-400 hover:text-[#FF5C00] hover:bg-orange-50"
+                                                        onClick={() => handleCopy(s.amount.toString(), "금액")}
+                                                    >
+                                                        <Copy className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="py-3">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-[11px] font-bold text-slate-500 truncate max-w-[200px]" title={s.reason}>
+                                                        {s.reason}
+                                                    </span>
+                                                    <Button 
+                                                        variant="ghost" 
+                                                        size="icon" 
+                                                        className="h-7 w-7 rounded-lg text-slate-400 hover:text-[#FF5C00] hover:bg-orange-50"
+                                                        onClick={() => handleCopy(s.reason, "지급 사유")}
+                                                    >
+                                                        <Copy className="w-3.5 h-3.5" />
+                                                    </Button>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-right px-6 py-3">
+                                                <Button 
+                                                    size="sm" 
+                                                    className="bg-slate-800 hover:bg-black text-white font-black rounded-xl text-[10px] h-8 px-4"
+                                                    onClick={() => handleMarkPaid(s.id)}
+                                                >
+                                                    PAID (리스트에서 제거)
+                                                </Button>
                                             </TableCell>
                                         </TableRow>
                                     ))}

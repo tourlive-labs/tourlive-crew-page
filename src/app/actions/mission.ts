@@ -62,7 +62,9 @@ export async function submitMission(postUrl: string) {
             profile_id: profile.id,
             mission_month: missionMonth,
             post_url: newPostUrl,
-            status: 'checking', // Placeholder status for this phase
+            status: 'checking', 
+            admin_feedback: null,
+            rejection_reason: null,
             updated_at: new Date().toISOString()
         }, {
             onConflict: 'profile_id,mission_month'
@@ -161,6 +163,8 @@ export async function requestReward(missionId: string) {
     const supabase = await createClient();
     const { error } = await supabase.from('missions').update({ 
         status: 'PENDING_APPROVAL',
+        admin_feedback: null,
+        rejection_reason: null,
         updated_at: new Date().toISOString()
     }).eq('id', missionId);
 

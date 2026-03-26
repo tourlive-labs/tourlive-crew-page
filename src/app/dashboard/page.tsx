@@ -596,6 +596,30 @@ function DashboardContent() {
     return (
         <div className="max-w-[1400px] mx-auto px-10 py-16">
             <DashboardHeader nickname={data.nickname} role={data.role} />
+            
+            {/* Rejection Notification Banner */}
+            {data.currentMission?.status === 'REJECTED' && (
+                <div className="mb-10 animate-in fade-in slide-in-from-top-4 duration-500">
+                    <Link href="/dashboard/mission">
+                        <div className="bg-amber-50 border border-amber-200 rounded-[24px] p-6 flex flex-col md:flex-row items-center justify-between gap-4 group cursor-pointer hover:shadow-md transition-all">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-600 shadow-sm shrink-0">
+                                    <AlertCircle className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <h4 className="text-sm font-black text-amber-900 uppercase tracking-widest leading-none mb-1">Mission Needs Revision</h4>
+                                    <p className="text-sm font-bold text-amber-700 leading-tight">이번 달 필수 미션이 반려되었습니다. 반려 사유를 확인하고 수정해 주세요.</p>
+                                </div>
+                            </div>
+                            <Button variant="ghost" className="bg-white/50 text-amber-700 font-black rounded-xl gap-2 group-hover:bg-amber-100 transition-colors">
+                                수정하러 가기
+                                <ArrowRight className="w-4 h-4 ml-1" />
+                            </Button>
+                        </div>
+                    </Link>
+                </div>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
                 <div className="lg:col-span-4 space-y-12">
                     <MonthlyMissionCard currentMission={data.currentMission} />
