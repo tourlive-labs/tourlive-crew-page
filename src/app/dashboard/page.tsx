@@ -28,15 +28,24 @@ import {
     Clock,
     User,
     ArrowRight,
-    Trophy,
-    Target,
     AlertCircle,
     Check,
     Coffee,
     BookOpen,
     Quote,
     HelpCircle,
-    Star
+    Star,
+    ShieldCheck,
+    Trophy,
+    Target,
+    Award,
+    Rocket,
+    MapPin,
+    Hash,
+    Sparkles,
+    Mail,
+    Phone,
+    Calendar
 } from "lucide-react";
 import { Suspense } from "react";
 import { getDashboardData } from "@/app/actions/dashboard";
@@ -46,6 +55,7 @@ import { signOut } from "@/app/actions/auth";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function MonthlyMissionCard({ currentMission }: { currentMission: any }) {
     const router = useRouter();
@@ -509,7 +519,7 @@ function QuickLinks() {
     ];
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 gap-4 mb-8">
             {links.map(link => (
                 <Link
                     href={link.href}
@@ -558,11 +568,11 @@ function DashboardContent() {
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center py-32 bg-[#F8F9FA] rounded-[40px] border border-slate-100 shadow-inner">
+            <div className="flex flex-col items-center justify-center min-h-[60vh] py-32 bg-white/50 rounded-[40px] border border-slate-100 shadow-inner mx-6 lg:mx-10 my-10">
                 <div className="relative w-16 h-16 mb-6">
-                    <div className="absolute inset-0 rounded-2xl bg-[#FFD6E0] animate-pulse" />
+                    <div className="absolute inset-0 rounded-2xl bg-orange-100 animate-pulse" />
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-8 h-8 rounded-full border-4 border-white border-t-transparent animate-spin" />
+                        <div className="w-8 h-8 rounded-full border-4 border-white border-t-[#FF5C00] animate-spin" />
                     </div>
                 </div>
                 <p className="text-slate-400 font-black text-xs uppercase tracking-widest">Initializing Dashboard</p>
@@ -570,36 +580,36 @@ function DashboardContent() {
         );
     }
 
-    if (!data) {
-        return (
-            <div className="text-center py-24 bg-white rounded-[40px] shadow-[0_4px_24px_rgba(0,0,0,0.02)] border border-slate-50 flex flex-col items-center">
-                <div className="w-20 h-20 rounded-[32px] bg-slate-50 flex items-center justify-center mb-6">
-                    <Trophy className="w-10 h-10 text-slate-200" />
-                </div>
-                <h3 className="text-2xl font-black text-slate-800">접근할 수 없습니다</h3>
-                <p className="text-slate-400 font-medium mt-2 max-w-sm">로그인 세션이 만료되었거나<br />등록된 프로필 정보를 찾을 수 없습니다.</p>
-                <Button 
-                    onClick={async () => {
-                        await signOut();
-                        window.location.href = '/login';
-                    }}
-                    className="mt-10 h-14 px-10 rounded-2xl bg-slate-900 hover:bg-black text-white font-bold transition-all hover:scale-105"
-                >
-                    다시 로그인하기
-                </Button>
-            </div>
-        );
-    }
-
-    const teamName = data.team === 'naver_cafe' ? "네이버 지식카페 활동" : "네이버 블로그 활동";
+    if (!data) return null;
 
     return (
-        <div className="max-w-[1400px] mx-auto px-10 py-16">
-            <DashboardHeader nickname={data.nickname} role={data.role} />
+        <div className="max-w-[1400px] mx-auto px-6 py-10 lg:px-10 lg:py-16 space-y-12 animate-in fade-in duration-700">
+            {/* Minimal Welcome Header */}
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8">
+                <div className="space-y-2">
+                    <Badge className="bg-[#FFF5F1] text-[#FF5C00] hover:bg-[#FFF5F1] border-none font-black px-4 py-1.5 rounded-full text-[10px] tracking-widest">CREW OVERVIEW</Badge>
+                    <h1 className="text-xl lg:text-2xl font-black text-slate-900 tracking-tight leading-tight">
+                        <span className="text-[#FF5C00]">{data.nickname}</span>의 크루 활동 대시보드
+                    </h1>
+                </div>
+                {data.role === 'admin' && (
+                    <Button 
+                        variant="ghost" 
+                        asChild
+                        className="h-14 px-8 rounded-2xl bg-slate-900 hover:bg-black text-white font-black group transition-all hover:scale-105 active:scale-95"
+                    >
+                        <Link href="/admin/missions" className="flex items-center gap-2">
+                            <ShieldCheck className="w-5 h-5 text-orange-400" />
+                            관리자 페이지 이동
+                            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                        </Link>
+                    </Button>
+                )}
+            </div>
             
             {/* Rejection Notification Banner */}
             {data.currentMission?.status === 'REJECTED' && (
-                <div className="mb-10 animate-in fade-in slide-in-from-top-4 duration-500">
+                <div className="animate-in fade-in slide-in-from-top-4 duration-500">
                     <Link href="/dashboard/mission">
                         <div className="bg-amber-50 border border-amber-200 rounded-[24px] p-6 flex flex-col md:flex-row items-center justify-between gap-4 group cursor-pointer hover:shadow-md transition-all">
                             <div className="flex items-center gap-4">
@@ -623,9 +633,9 @@ function DashboardContent() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
                 <div className="lg:col-span-4 space-y-12">
                     <MonthlyMissionCard currentMission={data.currentMission} />
-                </div>
-                <div className="lg:col-span-8 space-y-8">
                     <QuickLinks />
+                </div>
+                <div className="lg:col-span-8">
                     <UnifiedMissionCalendar schedules={data.schedules} />
                 </div>
             </div>
@@ -635,19 +645,8 @@ function DashboardContent() {
 
 export default function DashboardPage() {
     return (
-        <div className="min-h-screen bg-[#F9F8F3] selection:bg-[#FF5C00] selection:text-white">
-            <Suspense fallback={
-                <div className="flex items-center justify-center min-h-screen bg-[#F8F9FA]">
-                    <div className="relative w-20 h-20">
-                        <div className="absolute inset-0 rounded-[32px] bg-white shadow-xl animate-pulse" />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-6 h-6 rounded-full border-4 border-[#FF5C00] border-t-transparent animate-spin" />
-                        </div>
-                    </div>
-                </div>
-            }>
-                <DashboardContent />
-            </Suspense>
-        </div>
+        <Suspense fallback={<div className="min-h-screen bg-[#F9F8F3]" />}>
+            <DashboardContent />
+        </Suspense>
     );
 }

@@ -44,7 +44,17 @@ export async function getDashboardData() {
             selected_activity,
             created_at,
             naver_id,
-            role
+            role,
+            travel_country,
+            travel_city,
+            hashtag_1,
+            hashtag_2,
+            hashtag_3,
+            banner_image_url,
+            full_name,
+            phone_number,
+            tourlive_email,
+            contact_email
         `)
         .eq('crew_id', crew.id)
         .maybeSingle();
@@ -146,9 +156,46 @@ export async function getDashboardData() {
         team: profile.selected_activity,
         term: batch.term,
         role: profile.role,
+        travel_country: profile.travel_country,
+        travel_city: profile.travel_city,
+        hashtag_1: profile.hashtag_1,
+        hashtag_2: profile.hashtag_2,
+        hashtag_3: profile.hashtag_3,
+        banner_image_url: profile.banner_image_url,
+        full_name: profile.full_name,
+        phone_number: profile.phone_number,
+        tourlive_email: profile.tourlive_email,
+        contact_email: profile.contact_email,
         dDay,
         essentialMissions,
         schedules: allSchedules,
         currentMission: currentMission || { status: 'none' }
     };
+}
+
+export async function updateProfile(updates: any) {
+    const supabase = await createClient();
+
+    // 1. Get current user to ensure authorization
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+        return { error: "로그인이 필요합니다." };
+    }
+
+    console.log(`[DashboardAction] Updating profile for user ${user.id}:`, updates);
+
+    // 2. Perform the update
+    const { data, error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', user.id) // profiles.id is synced with auth.users.id
+        .select()
+        .single();
+
+    if (error) {
+        console.error("Profile Update Error:", error);
+        return { error: `저장에 실패했습니다: ${error.message}` };
+    }
+
+    return { success: true, data };
 }

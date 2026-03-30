@@ -40,18 +40,25 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-function MissionSubmissionCard({ currentMission, goalCount }: { currentMission: any, goalCount: number }) {
-    const verifiedLinks = currentMission?.post_url ? currentMission.post_url.split(',').map((u: string) => u.trim()) : [];
+function MissionSubmissionCard({ currentMission, goalCount, isCafeTeam, onRefresh }: { currentMission: any, goalCount: number, isCafeTeam: boolean, onRefresh: () => void }) {
+    const verifiedLinks = currentMission?.post_url ? currentMission.post_url.split(',').map((u: string) => u.trim()).filter(Boolean) : [];
     
     // We only need the state for the *current* slot being filled
     const [link, setLink] = useState("");
     const [verificationResult, setVerificationResult] = useState<any>(null);
     const [isVerifying, setIsVerifying] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [cafeChecks, setCafeChecks] = useState({
+        images: false,
+        utm: false,
+        mention: false
+    });
+
     const router = useRouter();
 
     const isRejected = currentMission?.status === 'REJECTED' || currentMission?.status === 'rejected';
-    const isFullySubmitted = (verifiedLinks.length >= goalCount) && !isRejected;
+    const isPending = currentMission?.status === 'PENDING_APPROVAL' || currentMission?.status === 'completed';
+    const isFullySubmitted = (isPending) || (verifiedLinks.length >= goalCount && !isRejected);
     // Current slot index (1-based)
     const currentSlotIndex = verifiedLinks.length + 1;
     
@@ -68,10 +75,12 @@ function MissionSubmissionCard({ currentMission, goalCount }: { currentMission: 
             toast.error(res.error);
         } else {
             setVerificationResult(res.data);
-            if (res.data?.isValid) {
-                toast.success("링크 조건이 모두 충족되었습니다! 제출 버튼을 눌러 확정해 주세요.");
-            } else {
-                toast.warning("조건이 충족되지 않았습니다. 링크나 본문을 확인해 주세요.");
+            if (!isCafeTeam) {
+                if (res.data?.isValid) {
+                    toast.success("링크 조건이 모두 충족되었습니다! 제출 버튼을 눌러 확정해 주세요.");
+                } else {
+                    toast.warning("조건이 충족되지 않았습니다. 링크나 본문을 확인해 주세요.");
+                }
             }
         }
         setIsVerifying(false);
@@ -84,10 +93,22 @@ function MissionSubmissionCard({ currentMission, goalCount }: { currentMission: 
         if (res.error) {
             toast.error(res.error);
         } else {
-            toast.success(`미션 링크 ${currentSlotIndex}개가 확정되었습니다!`);
+            if (isCafeTeam) {
+                // Simple success for Cafe
+                toast.success("미션이 제출되었습니다. 관리자가 확인 후 승인해 드립니다! ✨");
+            } else {
+                // Detailed AI feedback for Blog
+                if (res.verified) {
+                    toast.success("AI 검토 결과, 조건이 모두 충족되어 심사 대기로 자동 전환되었습니다!");
+                } else if (res.reason) {
+                    toast.warning(`미션 기준 미달: ${res.reason}`);
+                } else {
+                    toast.success(`미션 링크가 제출되었습니다.`);
+                }
+            }
             setLink("");
             setVerificationResult(null);
-            router.refresh();
+            onRefresh();
         }
         setIsSubmitting(false);
     };
@@ -160,7 +181,19 @@ function MissionSubmissionCard({ currentMission, goalCount }: { currentMission: 
                         </div>
                     )}
                     {/* Render Input for NEXT link (if goal not reached) */}
-                    {!isFullySubmitted && (
+                    {isFullySubmitted ? (
+                        <div className="mt-8 p-10 rounded-3xl bg-slate-50 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-center">
+                            <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-4">
+                                <CheckCircle2 className="w-8 h-8" />
+                            </div>
+                            <h3 className="text-lg font-black text-slate-800 mb-1">미션 제출 완료</h3>
+                            <p className="text-sm font-medium text-slate-500 max-w-[280px]">
+                                {currentMission?.status === 'completed' 
+                                    ? "모든 검토가 완료되었습니다. 리워드 지급을 신청해 주세요!" 
+                                    : "작성하신 링크가 성공적으로 제출되었습니다. 관리자가 확인 후 최종 승인해 드립니다."}
+                            </p>
+                        </div>
+                    ) : (
                         <div className="space-y-6 mt-6">
                             <div className="p-6 rounded-2xl bg-orange-50 border border-orange-100/50">
                                 <h4 className="text-sm font-black text-orange-800 mb-3 flex items-center gap-2">
@@ -190,38 +223,90 @@ function MissionSubmissionCard({ currentMission, goalCount }: { currentMission: 
                                         setLink(e.target.value);
                                         setVerificationResult(null);
                                     }}
-                                    placeholder="https://blog.naver.com/..."
+                                    placeholder={isCafeTeam ? "https://cafe.naver.com/jisiktravel/글번호" : "https://blog.naver.com/아이디/글번호"}
                                     className="h-14 rounded-2xl border-slate-200 bg-slate-50/50 focus:bg-white text-base shadow-none transition-all"
                                 />
-                                {verificationResult && (
-                                    <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 mt-1 space-y-3">
-                                        <h4 className="text-sm font-black text-slate-800 flex items-center gap-2">
-                                            <CheckCircle2 className="w-4 h-4 text-green-600" /> AI 사전 검토 결과
+
+                                {isCafeTeam && (
+                                    <div className="p-5 rounded-2xl bg-orange-50/50 border border-orange-100 mt-1 space-y-3">
+                                        <h4 className="text-sm font-black text-orange-800 flex items-center gap-2">
+                                            <AlertCircle className="w-4 h-4" /> 필수 자가 체크 (체크 후 제출 가능)
                                         </h4>
-                                        <div className="space-y-2.5">
-                                            <div className="flex items-center justify-between text-sm">
-                                                <span className="font-medium text-slate-600">📸 이미지 개수 (10장 이상)</span>
-                                                <span className="font-bold">{verificationResult.imagePass ? "✅" : "❌"}</span>
-                                            </div>
-                                            <div className="flex items-center justify-between text-sm">
-                                                <span className="font-medium text-slate-600">🔗 투어 UTM 링크 포함</span>
-                                                <span className="font-bold">{verificationResult.utm_tour ? "✅" : "❌"}</span>
-                                            </div>
-                                            <div className="flex items-center justify-between text-sm">
-                                                <span className="font-medium text-slate-600">🔗 가이드북 UTM 링크 포함</span>
-                                                <span className="font-bold">{verificationResult.utm_guide ? "✅" : "❌"}</span>
-                                            </div>
-                                            <div className="flex items-center justify-between text-sm">
-                                                <span className="font-medium text-slate-600">💬 필수 멘트 포함</span>
-                                                <span className="font-bold">{verificationResult.mention ? "✅" : "❌"}</span>
-                                            </div>
+                                        <div className="space-y-2">
+                                            <label className="flex items-center gap-3 cursor-pointer group">
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked={cafeChecks.images}
+                                                    onChange={(e) => setCafeChecks(prev => ({ ...prev, images: e.target.checked }))}
+                                                    className="w-5 h-5 rounded border-orange-300 text-orange-600 focus:ring-orange-500"
+                                                />
+                                                <span className="text-sm font-bold text-slate-700 group-hover:text-orange-700 transition-colors">이미지 10장 이상 포함 완료 (앱 캡쳐 5 + 사진 5)</span>
+                                            </label>
+                                            <label className="flex items-center gap-3 cursor-pointer group">
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked={cafeChecks.utm}
+                                                    onChange={(e) => setCafeChecks(prev => ({ ...prev, utm: e.target.checked }))}
+                                                    className="w-5 h-5 rounded border-orange-300 text-orange-600 focus:ring-orange-500"
+                                                />
+                                                <span className="text-sm font-bold text-slate-700 group-hover:text-orange-700 transition-colors">투어라이브 링크(UTM) 삽입 완료</span>
+                                            </label>
+                                            <label className="flex items-center gap-3 cursor-pointer group">
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked={cafeChecks.mention}
+                                                    onChange={(e) => setCafeChecks(prev => ({ ...prev, mention: e.target.checked }))}
+                                                    className="w-5 h-5 rounded border-orange-300 text-orange-600 focus:ring-orange-500"
+                                                />
+                                                <span className="text-sm font-bold text-slate-700 group-hover:text-orange-700 transition-colors">하단 필수 고지 문구 삽입 완료</span>
+                                            </label>
                                         </div>
                                     </div>
                                 )}
+                                {verificationResult && (
+                                    <div className={cn("p-5 rounded-2xl border mt-1 space-y-3", isCafeTeam ? "bg-indigo-50 border-indigo-100" : "bg-slate-50 border-slate-200")}>
+                                        <h4 className={cn("text-sm font-black flex items-center gap-2", isCafeTeam ? "text-indigo-800" : "text-slate-800")}>
+                                            <CheckCircle2 className={cn("w-4 h-4", isCafeTeam ? "text-indigo-600" : "text-green-600")} /> 
+                                            {isCafeTeam ? "확인 완료" : "AI 사전 검토 결과"}
+                                        </h4>
+                                        {isCafeTeam ? (
+                                            <p className="text-sm font-medium text-indigo-700/80 leading-relaxed">
+                                                작성하신 카페 글의 모든 조건(이미지/링크/멘트)을 확인하셨습니다. 제출하시면 관리자가 확인 후 최종 승인해 드립니다.
+                                            </p>
+                                        ) : (
+                                            <div className="space-y-2.5">
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="font-medium text-slate-600">📸 이미지 개수 (10장 이상)</span>
+                                                    <span className="font-bold">{verificationResult.imagePass ? "✅" : "❌"}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="font-medium text-slate-600">🔗 투어 UTM 링크 포함</span>
+                                                    <span className="font-bold">{verificationResult.utm_tour ? "✅" : "❌"}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="font-medium text-slate-600">🔗 가이드북 UTM 링크 포함</span>
+                                                    <span className="font-bold">{verificationResult.utm_guide ? "✅" : "❌"}</span>
+                                                </div>
+                                                <div className="flex items-center justify-between text-sm">
+                                                    <span className="font-medium text-slate-600">💬 필수 멘트 포함</span>
+                                                    <span className="font-bold">{verificationResult.mention ? "✅" : "❌"}</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
 
-                                {!verificationResult?.isValid ? (
+                                {!verificationResult?.isValid && !isCafeTeam ? (
                                     <Button 
-                                        onClick={handleVerify}
+                                        onClick={() => {
+                                            if (link.includes('naver.me')) {
+                                                toast.error("단축 주소(naver.me)는 AI가 읽을 수 없습니다. 브라우저 주소창의 전체 주소를 복사해서 다시 제출해 주세요!", {
+                                                    style: { background: '#fef2f2', color: '#991b1b', border: '1px solid #fee2e2' }
+                                                });
+                                                return;
+                                            }
+                                            handleVerify();
+                                        }}
                                         disabled={!link || isVerifying || isSubmitting}
                                         className="h-14 w-full rounded-2xl bg-slate-800 hover:bg-slate-900 text-white font-black shadow-none mt-2"
                                     >
@@ -234,12 +319,12 @@ function MissionSubmissionCard({ currentMission, goalCount }: { currentMission: 
                                 ) : (
                                     <Button 
                                         onClick={handleLinkSubmit}
-                                        disabled={!link || isSubmitting}
+                                        disabled={!link || isSubmitting || (isCafeTeam && (!cafeChecks.images || !cafeChecks.utm || !cafeChecks.mention))}
                                         className="h-14 w-full rounded-2xl bg-[#FF5C00] hover:bg-[#E63900] text-white font-black shadow-lg shadow-orange-100/50 mt-2 animate-in slide-in-from-bottom-2 fade-in duration-300"
                                     >
                                         {isSubmitting ? (
-                                            <RefreshCcw className="w-5 h-5 animate-spin" />
-                                        ) : "조건 달성성공! 이 링크 확정하기"}
+                                            <><RefreshCcw className="w-5 h-5 animate-spin mr-2" /> {isCafeTeam ? "미션을 제출 중입니다..." : "AI가 미션을 검토 중입니다..."}</>
+                                        ) : isCafeTeam ? "확인 완료! 미션 최종 제출하기" : "조건 달성성공! 이 링크 확정하기"}
                                     </Button>
                                 )}
                             </div>
@@ -730,7 +815,7 @@ export default function MissionPage() {
 
     const isBlog = data.team !== 'naver_cafe';
     const goalCount = isBlog ? 2 : 1;
-    const aiVerifiedPostCount = data.currentMission?.post_url ? data.currentMission.post_url.split(',').length : 0;
+    const aiVerifiedPostCount = data.currentMission?.post_url ? data.currentMission.post_url.split(',').filter(Boolean).length : 0;
     
     // Conditions
     const isBlogEligible = isBlog && aiVerifiedPostCount >= goalCount && surveyCompleted;
@@ -786,46 +871,53 @@ export default function MissionPage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#F9F8F3] pb-20">
-            <div className="max-w-[1000px] mx-auto px-6 py-12">
+        <div className="pb-20 animate-in fade-in duration-500">
+            <div className="max-w-[1000px] mx-auto px-6 py-10 lg:py-16">
                 <Link 
                     href="/dashboard" 
-                    className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-800 font-black text-sm mb-8 transition-colors"
+                    className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-800 font-black text-sm mb-6 transition-colors"
                 >
                     <ArrowLeft className="w-4 h-4" />
                     대시보드로 돌아가기
                 </Link>
 
-                <div className="mb-12 flex items-center justify-between">
-                    <div>
-                        <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2">
-                            필수 활동 현황
-                        </h1>
-                        <p className="text-slate-500 font-medium">
-                            진행 중인 미션을 완료하고 성과를 제출해 주세요.
-                        </p>
-                    </div>
-                    <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => signOut()}
-                        className="text-slate-400 hover:text-slate-900 font-bold text-xs"
-                    >
-                        로그아웃
-                    </Button>
+                <div className="mb-12">
+                    <h1 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight mb-2">
+                        필수 활동 현황
+                    </h1>
+                    <p className="text-slate-500 font-medium">
+                        진행 중인 미션을 완료하고 성과를 제출해 주세요.
+                    </p>
                 </div>
 
                 <div className="grid grid-cols-1 gap-8">
-                    <MissionSubmissionCard currentMission={data.currentMission} goalCount={goalCount} />
+                    <MissionSubmissionCard 
+                        currentMission={data.currentMission} 
+                        goalCount={goalCount} 
+                        isCafeTeam={!isBlog} 
+                        onRefresh={loadData}
+                    />
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <Card className="shadow-sm border-slate-100 rounded-3xl overflow-hidden bg-white">
                             <CardHeader className="p-8 pb-4">
                                 <div className="flex items-center justify-between mb-1">
-                                    <CardTitle className="text-lg font-black text-slate-800 flex items-center tracking-tight">
-                                        {!isBlog ? <Coffee className="w-5 h-5 mr-3 text-[#FF5C00]" /> : <BookOpen className="w-5 h-5 mr-3 text-[#0052CC]" />}
-                                        활동 목표
-                                    </CardTitle>
+                                    <div className="flex items-center gap-3">
+                                        <CardTitle className="text-lg font-black text-slate-800 flex items-center tracking-tight">
+                                            {!isBlog ? <Coffee className="w-5 h-5 mr-3 text-[#FF5C00]" /> : <BookOpen className="w-5 h-5 mr-3 text-[#0052CC]" />}
+                                            활동 목표
+                                        </CardTitle>
+                                        <button 
+                                            onClick={() => {
+                                                loadData();
+                                                toast.success("상태를 새로고침했습니다.");
+                                            }}
+                                            className="p-1 hover:bg-slate-100 rounded-md transition-colors text-slate-400 hover:text-slate-600"
+                                            title="새로고침"
+                                        >
+                                            <RefreshCcw className="w-3.5 h-3.5" />
+                                        </button>
+                                    </div>
                                     <Badge variant="outline" className="text-[10px] font-black uppercase tracking-widest">
                                         {!isBlog ? "Cafe Team" : "Blog Team"}
                                     </Badge>
@@ -849,7 +941,7 @@ export default function MissionPage() {
                                                 </div>
                                             </div>
                                             <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 text-sm font-bold text-slate-600">
-                                                <span>커뮤니티 댓글 💬</span>
+                                                <span>카페 소통 댓글 💬</span>
                                                 <div className="flex items-center gap-2">
                                                     <Input 
                                                         type="number" 
@@ -893,17 +985,22 @@ export default function MissionPage() {
                                     </div>
                                 </div>
 
-                                <div className="mt-8">
+                                <div className="mt-8 space-y-3">
                                     <Button
                                         onClick={handleRewardRequest}
                                         disabled={!isEligibleForReward || isRequestingReward || data.currentMission?.status === 'PENDING_APPROVAL' || data.currentMission?.status === 'completed'}
-                                        className="w-full h-14 rounded-2xl bg-[#FF5C00] hover:bg-[#E63900] text-white font-black shadow-lg shadow-orange-100/50 disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
+                                        className="w-full h-14 rounded-2xl bg-[#FF5C00] hover:bg-[#E63900] text-white font-black shadow-lg shadow-orange-100/50 disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none transition-all"
                                     >
                                         {isRequestingReward ? <RefreshCcw className="w-5 h-5 animate-spin" /> : 
-                                         data.currentMission?.status === 'PENDING_APPROVAL' ? "최종 검토 대기 중" :
+                                         data.currentMission?.status === 'PENDING_APPROVAL' ? "최종 승인 대기 중" :
                                          data.currentMission?.status === 'completed' ? "모든 미션 완료 🏆" :
-                                        "포인트 지급 신청하기"}
+                                        "미션 최종 완료하기"}
                                     </Button>
+                                    {!isEligibleForReward && (
+                                        <p className="text-[10px] text-center font-bold text-slate-400">
+                                            모든 활동 목표(게시글/댓글/설문)를 달성해야 제출할 수 있습니다.
+                                        </p>
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>
