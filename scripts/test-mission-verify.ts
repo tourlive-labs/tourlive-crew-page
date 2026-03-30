@@ -1,4 +1,4 @@
-import { verifyMissionContent } from "./src/app/actions/mission";
+import { verifyMissionContent } from "../src/app/actions/mission";
 
 async function test() {
     const testUrls = [
