@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, Hash, Sparkles, User, Mail, Phone, Calendar, ShieldCheck, Trophy, Edit2, Check, X, Loader2, Globe, Link2 } from "lucide-react";
+import { MapPin, Hash, Sparkles, User, Mail, Phone, Calendar, ShieldCheck, Trophy, Edit2, Check, X, Loader2, Globe, Link2, ImageIcon, Upload } from "lucide-react";
 import { getDashboardData, updateProfile } from "@/app/actions/dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
 import CrewBannerGenerator from "@/components/dashboard/CrewBannerGenerator";
@@ -19,6 +19,8 @@ export default function MyPage() {
     const [editValues, setEditValues] = useState<any>({});
     const [isSaving, setIsSaving] = useState(false);
     const [isFlashing, setIsFlashing] = useState(false);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
     const loadProfile = useCallback(async () => {
         const res = await getDashboardData();
@@ -40,6 +42,16 @@ export default function MyPage() {
     const handleCancel = () => {
         setEditingSection(null);
         setEditValues({});
+        setPreviewUrl(null);
+        setSelectedFile(null);
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setSelectedFile(file);
+            setPreviewUrl(URL.createObjectURL(file));
+        }
     };
 
     const validatePhone = (phone: string) => /^[0-9-]*$/.test(phone);
@@ -47,38 +59,61 @@ export default function MyPage() {
     const handleSave = async (sectionId: string) => {
         setIsSaving(true);
         try {
-            const updates = { ...editValues };
-
-            // 1. Specific Validations & Formatting
-            if (sectionId === 'section2') {
-                if (updates.phone_number && !validatePhone(updates.phone_number)) {
-                    toast.error("전화번호는 숫자와 하이픈(-)만 가능합니다.");
-                    setIsSaving(false);
-                    return;
-                }
-            }
-
-            if (sectionId === 'section4') {
-                ['hashtag_1', 'hashtag_2', 'hashtag_3'].forEach(key => {
-                    if (updates[key] && !updates[key].startsWith('#')) {
-                        updates[key] = `#${updates[key]}`;
-                    }
-                });
-            }
-
-            // 2. Update via Action
-            const result = await updateProfile(updates);
-            if (result.success) {
-                setData((prev: any) => ({ ...prev, ...updates }));
-                setEditingSection(null);
-                toast.success("프로필 정보가 성공적으로 업데이트되었습니다! ✨");
-
-                // 3. Banner Visual Feedback (Flash)
-                if (sectionId === 'section1' || sectionId === 'section4') {
+            let result: { success?: boolean; data?: any; banner_image_url?: string | null; error?: string };
+            
+            if (sectionId === 'section0' && selectedFile) {
+                // Special case for image upload
+                const formData = new FormData();
+                formData.append('bannerImage', selectedFile);
+                result = await updateProfile(formData);
+                
+                if (result.success && result.banner_image_url) {
+                    setData((prev: any) => ({ ...prev, banner_image_url: result.banner_image_url }));
+                    setPreviewUrl(null);
+                    setSelectedFile(null);
+                    setEditingSection(null);
+                    toast.success("프로필 사진이 업데이트되었습니다! ✨");
+                    
                     setIsFlashing(true);
                     setTimeout(() => setIsFlashing(false), 1000);
+                    return;
                 }
             } else {
+                const updates = { ...editValues };
+
+                // 1. Specific Validations & Formatting
+                if (sectionId === 'section2') {
+                    if (updates.phone_number && !validatePhone(updates.phone_number)) {
+                        toast.error("전화번호는 숫자와 하이픈(-)만 가능합니다.");
+                        setIsSaving(false);
+                        return;
+                    }
+                }
+
+                if (sectionId === 'section4') {
+                    ['hashtag_1', 'hashtag_2', 'hashtag_3'].forEach(key => {
+                        if (updates[key] && !updates[key].startsWith('#')) {
+                            updates[key] = `#${updates[key]}`;
+                        }
+                    });
+                }
+
+                // 2. Update via Action
+                result = await updateProfile(updates);
+                if (result.success) {
+                    setData((prev: any) => ({ ...prev, ...updates }));
+                    setEditingSection(null);
+                    toast.success("프로필 정보가 성공적으로 업데이트되었습니다! ✨");
+
+                    // 3. Banner Visual Feedback (Flash)
+                    if (sectionId === 'section1' || sectionId === 'section4') {
+                        setIsFlashing(true);
+                        setTimeout(() => setIsFlashing(false), 1000);
+                    }
+                }
+            }
+
+            if (result && !result.success) {
                 toast.error(result.error || "업데이트에 실패했습니다.");
             }
         } catch (error) {
@@ -118,12 +153,12 @@ export default function MyPage() {
                     nickname={data.nickname}
                     travelLocation={travelLocation}
                     hashtags={hashtags}
-                    profileImageUrl={data.banner_image_url}
+                    profileImageUrl={previewUrl || data.banner_image_url}
                     term={data.batch || "14"}
                 />
             </section>
 
-            {/* Atomic Edit Sections */}
+            {/* Atomic Edit Sections (2x2 Grid) */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                 {/* Section 1: Crew Identity */}
                 <Card className="rounded-[40px] border-slate-100 shadow-sm overflow-hidden bg-white hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-500">
@@ -157,15 +192,30 @@ export default function MyPage() {
                                     <span className="text-lg font-black text-slate-800 px-1">{data.nickname}</span>
                                 )}
                             </div>
-
+ 
                             <div className="flex flex-col gap-1">
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Activity Type</label>
-                                <span className="font-black text-[#FF5C00] bg-orange-50 px-4 py-2 rounded-xl w-fit">
-                                    {data.selected_activity === 'naver_cafe' ? '네이버 카페' : '네이버 블로그'}
-                                </span>
+                                {editingSection === 'section1' ? (
+                                    <Select 
+                                        value={editValues.selected_activity || ""} 
+                                        onValueChange={(val) => setEditValues({ ...editValues, selected_activity: val })}
+                                    >
+                                        <SelectTrigger className="h-12 rounded-xl border-slate-200 font-bold">
+                                            <SelectValue placeholder="활동 분야 선택" />
+                                        </SelectTrigger>
+                                        <SelectContent className="rounded-xl border-slate-100">
+                                            <SelectItem value="naver_cafe">네이버 카페</SelectItem>
+                                            <SelectItem value="personal_blog">네이버 블로그</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                ) : (
+                                    <span className="font-black text-[#FF5C00] bg-orange-50 px-4 py-2 rounded-xl w-fit">
+                                        {data.selected_activity === 'naver_cafe' ? '네이버 카페' : '네이버 블로그'}
+                                    </span>
+                                )}
                             </div>
                         </div>
-
+ 
                         {editingSection === 'section1' && (
                             <div className="flex items-center gap-2 pt-4">
                                 <Button onClick={() => handleSave('section1')} disabled={isSaving} className="flex-1 h-12 rounded-xl bg-slate-900 text-white font-black">
@@ -176,7 +226,7 @@ export default function MyPage() {
                         )}
                     </CardContent>
                 </Card>
-
+ 
                 {/* Section 2: Basic Info (Consolidated) */}
                 <Card className="rounded-[40px] border-slate-100 shadow-sm overflow-hidden bg-white hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-500">
                     <CardHeader className="p-8 flex flex-row items-center justify-between border-b border-slate-50 bg-slate-50/30">
@@ -225,7 +275,7 @@ export default function MyPage() {
                                 )}
                             </div>
                         </div>
-
+ 
                         {editingSection === 'section2' && (
                             <div className="flex items-center gap-2 pt-4">
                                 <Button onClick={() => handleSave('section2')} disabled={isSaving} className="flex-1 h-12 rounded-xl bg-slate-900 text-white font-black">
@@ -236,7 +286,7 @@ export default function MyPage() {
                         )}
                     </CardContent>
                 </Card>
-
+ 
                 {/* Section 4: Banner & Travel Info */}
                 <Card className="rounded-[40px] border-slate-100 shadow-sm overflow-hidden bg-white hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-500 lg:col-span-1">
                     <CardHeader className="p-8 flex flex-row items-center justify-between border-b border-slate-50 bg-slate-50/30">
@@ -269,7 +319,7 @@ export default function MyPage() {
                                 )}
                             </div>
                         </div>
-
+ 
                         <div className="space-y-4 pt-2">
                              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Branding Hashtags</label>
                              <div className="grid grid-cols-1 gap-3">
@@ -290,7 +340,7 @@ export default function MyPage() {
                                  })}
                              </div>
                         </div>
-
+ 
                         {editingSection === 'section4' && (
                             <div className="flex items-center gap-2 pt-4">
                                 <Button onClick={() => handleSave('section4')} disabled={isSaving} className="flex-1 h-12 rounded-xl bg-slate-900 text-white font-black">
@@ -301,16 +351,68 @@ export default function MyPage() {
                         )}
                     </CardContent>
                 </Card>
+ 
+                {/* Section 0: Profile Photo Management (Moved to Last) */}
+                <Card className="rounded-[40px] border-slate-100 shadow-sm overflow-hidden bg-white hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-500">
+                    <CardHeader className="p-8 flex flex-row items-center justify-between border-b border-slate-50 bg-slate-50/30">
+                        <CardTitle className="text-xl font-black flex items-center gap-3 text-slate-800">
+                            <ImageIcon className="w-6 h-6 text-[#FF5C00]" />
+                            배너 사진 관리
+                        </CardTitle>
+                        {editingSection !== 'section0' ? (
+                            <Button variant="ghost" onClick={() => setEditingSection('section0')} className="text-[#FF5C00] font-black gap-2 hover:bg-orange-50 rounded-xl transition-all">
+                                 <Edit2 className="w-4 h-4" /> 수정
+                            </Button>
+                        ) : (
+                            <div className="flex items-center gap-2">
+                                 <Button onClick={() => handleSave('section0')} disabled={isSaving || !selectedFile} size="sm" className="bg-slate-900 text-white font-black rounded-xl px-6 h-10 shadow-lg shadow-slate-100">
+                                     {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : "저장"}
+                                 </Button>
+                                 <Button variant="ghost" onClick={handleCancel} disabled={isSaving} size="sm" className="text-slate-400 font-bold rounded-xl h-10">
+                                     취소
+                                 </Button>
+                            </div>
+                        )}
+                    </CardHeader>
+                    <CardContent className="p-8 space-y-6">
+                        <div className="flex flex-col items-center gap-6">
+                            <div className="relative group">
+                                <div className="w-32 h-32 rounded-3xl overflow-hidden border-4 border-white shadow-md relative bg-slate-100 transition-transform group-hover:scale-105 duration-500">
+                                    <img 
+                                        src={previewUrl || data.banner_image_url || "/default-avatar.png"} 
+                                        alt="Profile Preview" 
+                                        className="w-full h-full object-cover"
+                                    />
+                                    {editingSection === 'section0' && (
+                                        <label htmlFor="profile-upload" className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Upload className="w-8 h-8 text-white" />
+                                        </label>
+                                    )}
+                                </div>
+                                <input 
+                                    type="file" 
+                                    id="profile-upload" 
+                                    className="hidden" 
+                                    accept="image/*" 
+                                    onChange={handleFileChange}
+                                    disabled={editingSection !== 'section0'}
+                                />
+                            </div>
+                            <div className="space-y-4 text-center">
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Banner Photo Path</label>
+                                    <h4 className="text-sm font-black text-slate-800 tracking-tight">포스팅 시 필수 첨부되어야 하는 배너 사진</h4>
+                                </div>
+                                <p className="text-[11px] font-medium text-slate-400 leading-relaxed">
+                                    위의 아치형 배너에 실시간으로 반영됩니다.<br/>
+                                    얼굴이 나오지 않아도 괜찮습니다. 뒷모습, 옆모습이 포함된 사진으로 선택해주세요.
+                                </p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
 
-            {/* Activities summary */}
-            <Card className="rounded-[40px] border-slate-100 shadow-sm overflow-hidden bg-slate-50/50">
-                <CardContent className="p-10 text-center space-y-4">
-                    <Trophy className="w-16 h-16 text-[#FFD9C6] mx-auto animate-bounce" />
-                    <h4 className="text-xl font-black text-slate-800">Coming Soon: Crew Ranking</h4>
-                    <p className="text-sm font-medium text-slate-400 italic">활동 데이터 통계 및 뱃지 시스템이 준비 중입니다. 열정적인 활동을 기대합니다!</p>
-                </CardContent>
-            </Card>
         </div>
     );
 }

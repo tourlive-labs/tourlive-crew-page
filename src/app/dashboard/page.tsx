@@ -549,6 +549,44 @@ function QuickLinks() {
     );
 }
 
+function WebsiteBanner() {
+    return (
+        <a 
+            href="https://www.tourlive.co.kr" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="block group"
+        >
+            <Card className="relative overflow-hidden border-none rounded-[32px] bg-gradient-to-br from-slate-50 via-white to-slate-50 shadow-[0_4px_24px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.08)] transition-all duration-500 p-1">
+                {/* Subtle Decorative Pattern */}
+                <div className="absolute top-0 right-0 w-32 h-32 bg-slate-100/50 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-orange-100/30 transition-colors" />
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-slate-100/30 rounded-full blur-2xl -ml-12 -mb-12" />
+                
+                <CardContent className="relative p-10 flex flex-col items-center text-center space-y-8">
+                    <div className="space-y-3">
+                        <Badge variant="outline" className="bg-white/80 backdrop-blur-sm border-slate-200 text-slate-400 font-black px-4 py-1.5 rounded-full text-[10px] tracking-widest uppercase">Official Website</Badge>
+                        <div className="flex justify-center py-2">
+                            <img 
+                                src="/logo_black.png" 
+                                alt="Tourlive Logo" 
+                                className="h-10 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-[1.02] transition-all duration-500"
+                            />
+                        </div>
+                        <p className="text-slate-400 font-bold text-xs tracking-tight">지식 가이드 전문 플랫폼, 투어라이브 공식 홈페이지</p>
+                    </div>
+
+                    <Button 
+                        className="h-16 px-12 rounded-2xl bg-slate-900 hover:bg-black text-white font-black shadow-xl shadow-slate-200 group-hover:scale-105 active:scale-95 transition-all text-base gap-3"
+                    >
+                        투어라이브 바로가기
+                        <ExternalLink className="w-5 h-5 text-orange-400 transition-transform group-hover:rotate-12" />
+                    </Button>
+                </CardContent>
+            </Card>
+        </a>
+    );
+}
+
 function DashboardContent() {
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -634,6 +672,7 @@ function DashboardContent() {
                 <div className="lg:col-span-4 space-y-12">
                     <MonthlyMissionCard currentMission={data.currentMission} />
                     <QuickLinks />
+                    <WebsiteBanner />
                 </div>
                 <div className="lg:col-span-8">
                     <UnifiedMissionCalendar schedules={data.schedules} />

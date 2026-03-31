@@ -182,20 +182,73 @@ export async function updateProfile(updates: any) {
         return { error: "로그인이 필요합니다." };
     }
 
-    console.log(`[DashboardAction] Updating profile for user ${user.id}:`, updates);
+    console.log(`[DashboardAction] Updating profile for user ${user.id}`);
 
-    // 2. Perform the update
-    const { data, error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('id', user.id) // profiles.id is synced with auth.users.id
-        .select()
-        .single();
+    try {
+        let finalUpdates = { ...updates };
+        let bannerImageUrl = null;
 
-    if (error) {
-        console.error("Profile Update Error:", error);
-        return { error: `저장에 실패했습니다: ${error.message}` };
+        // 2. Handle FormData for image uploads
+        if (updates instanceof FormData) {
+            const formData = updates;
+            finalUpdates = {};
+            
+            // Convert FormData to object, excluding the file which we handle separately
+            formData.forEach((value, key) => {
+                if (key !== 'bannerImage') {
+                    finalUpdates[key] = value;
+                }
+            });
+
+            const bannerImage = formData.get('bannerImage') as File | null;
+            
+            if (bannerImage && bannerImage.size > 0) {
+                console.log("[DashboardAction] Uploading new banner image to /avatars");
+                const fileExt = bannerImage.name.split('.').pop();
+                // Use the user's ID and timestamp for a unique filename in the avatars folder
+                const fileName = `avatars/${user.id}-${Date.now()}.${fileExt}`;
+
+                const { error: uploadError } = await supabase
+                    .storage
+                    .from('banners')
+                    .upload(fileName, bannerImage);
+
+                if (uploadError) {
+                    console.error("[DashboardAction] Image Upload Error:", uploadError.message);
+                    return { error: `이미지 업로드 실패: ${uploadError.message}` };
+                }
+
+                const { data: publicUrlData } = supabase
+                    .storage
+                    .from('banners')
+                    .getPublicUrl(fileName);
+
+                bannerImageUrl = publicUrlData.publicUrl;
+                finalUpdates.banner_image_url = bannerImageUrl;
+                console.log(`[DashboardAction] New banner URL: ${bannerImageUrl}`);
+            }
+        }
+
+        // 3. Perform the update in profiles table
+        const { data, error } = await supabase
+            .from('profiles')
+            .update(finalUpdates)
+            .eq('id', user.id) // profiles.id is synced with auth.users.id
+            .select()
+            .single();
+
+        if (error) {
+            console.error("Profile Update Error:", error);
+            return { error: `저장에 실패했습니다: ${error.message}` };
+        }
+
+        return { 
+            success: true, 
+            data: data,
+            banner_image_url: bannerImageUrl // Return this explicitly for real-time update
+        };
+    } catch (err) {
+        console.error("[DashboardAction] Unexpected Error:", err);
+        return { error: "프로필 업데이트 중 예외가 발생했습니다." };
     }
-
-    return { success: true, data };
 }

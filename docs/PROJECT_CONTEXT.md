@@ -8,6 +8,7 @@
 - [x] Login (Entry Gate): Root / and all routes default to /login.
 - [x] Sign-up: Unique check by tourlive_email only. profiles.id matches auth.uid().
 - [x] Admin: Direct access for root@tourlive.co.kr only.
+- [x] **[Milestone]** middleware.ts hardening for robust redirection.
 
 ## Middleware Logic Details (Stabilized)
 - **Path**: `src/middleware.ts` (Root of `src/`)
@@ -22,6 +23,7 @@
 
 ## Admin Dashboard (V2)
 - **Batch Management**: Added `batch` column to `profiles` for generation-based filtering.
+- **AI Mission Verification**: Integrated AI engine for automated Naver Cafe/Blog activity validation.
 - **Badge System**: Implemented automated badges for [3월], [4월], and 👑 [수료대상] (3-month streak).
 - **Interactive UI**: `CrewManagementClient` handles real-time filtering by Batch, Field, and Graduation status.
 - **Navigation**: "Back to List" added to mission control; Logout button added to dashboard header.
@@ -39,6 +41,7 @@
 - [x] Admin UI Refinement: '포인트 현황' tab removed to focus on the Settlement Tool.
 - [x] Rejection Flow: `REJECTED` status persists in Admin view; Amber banner notifies Crew users.
 - [x] Settlement Tool: `point_settlements` table synced with approvals; High-density copy UI implemented.
+- [x] **[New]** Profile Management: Atomic editing and real-time banner updates introduced.
 
 ## Point Settlement System
 - **Trigger**: Setting mission status to `completed` (Essential) or `APPROVED` (Side) inserts a `PENDING` row into `point_settlements`.
