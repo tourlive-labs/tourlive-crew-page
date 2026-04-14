@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -402,7 +402,7 @@ function SurveyView({
 
                 <div className="mb-8">
                     <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-2">
-                        필수 활동 만족도 조사
+                        활동 만족도 조사
                     </h1>
                     <p className="text-slate-500 font-medium">
                         더 나은 투어라이브를 위해 크루님의 솔직한 경험을 들려주세요.
@@ -569,8 +569,7 @@ const SIDE_MISSIONS = [
     { title: "앱 리뷰 (구글/앱스토어)", points: "10,000", type: "onetime", desc: "App store/Google play store 앱 리뷰 작성" },
     { title: "포토 리뷰 (투어라이브)", points: "2,000", type: "unlimited", desc: "오디오가이드 포토 후기 작성" },
     { title: "트랙 댓글 (투어라이브)", points: "1,000", type: "unlimited", desc: "투어라이브 오디오 가이드 트랙 댓글 (단순 감상 x오류 제보만) 작성" },
-    { title: "지도 정보 오류 제보", points: "3,000", type: "unlimited", desc: "지도 정보 오류 제보" },
-    { title: "이달의 챌린지", points: "N페이 지급", type: "monthly", desc: "매달 새롭게 열리는 챌린지 미션 달성 (카페/블로그)" }
+    { title: "지도 정보 오류 제보", points: "3,000", type: "unlimited", desc: "지도 정보 오류 제보" }
 ];
 
 function SideMissionBoard() {
@@ -602,11 +601,7 @@ function SideMissionBoard() {
         }
 
         setIsSubmitting(true);
-        let finalTitle = selectedMission.title;
-        if (selectedMission.title === "이달의 챌린지") {
-            finalTitle = `${selectedMission.title} - ${challengeTarget}`;
-        }
-
+        const finalTitle = selectedMission.title;
         const res = await submitSideMission(finalTitle, proofUrl);
         setIsSubmitting(false);
 
@@ -622,7 +617,7 @@ function SideMissionBoard() {
 
     // Derived states
     const totalPointsEarned = missions
-        .filter(m => m.status === 'APPROVED' && !m.mission_type.includes('이달의 챌린지'))
+        .filter(m => m.status === 'APPROVED' )
         .reduce((sum, m) => {
             const match = SIDE_MISSIONS.find(sm => 
                 m.mission_type.includes(sm.title) || 
@@ -698,15 +693,14 @@ function SideMissionBoard() {
                                 )}
                             </div>
                             <p className="text-[11px] font-medium text-slate-500 leading-snug">{sm.desc}</p>
-                            
-                            {/* Rejected Feedback for Side Mission */}
+
                             {missions.filter(m => m.mission_type.includes(sm.title) && m.status === 'REJECTED').map(rm => (
                                 <div key={rm.id} className="mt-3 p-3 rounded-xl bg-red-50 border border-red-100 text-[10px] font-bold text-red-600 flex items-start gap-2">
                                     <XCircle className="w-3 h-3 shrink-0 mt-0.5" />
                                     <span>반려 사유: {rm.admin_feedback || "증빙 자료를 다시 확인해 주세요."}</span>
                                 </div>
                             ))}
-                            
+
                             {!isLocked && (
                                 <div className="mt-3 flex items-center justify-end text-[10px] font-black text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity">
                                     추가 제출하기 <ArrowRight className="w-3 h-3 ml-1" />
@@ -727,26 +721,6 @@ function SideMissionBoard() {
                             </DialogDescription>
                         </div>
                         <div className="p-8 pt-6 space-y-6">
-                            {selectedMission?.title === "이달의 챌린지" && (
-                                <div className="space-y-3">
-                                    <Label className="text-sm font-bold text-slate-700">참여 분야 선택</Label>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <button 
-                                            onClick={() => setChallengeTarget("Cafe")}
-                                            className={cn("h-12 rounded-xl font-black border transition-colors", challengeTarget === "Cafe" ? "bg-indigo-600 text-white border-indigo-600" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50")}
-                                        >
-                                            네이버 카페 (Cafe)
-                                        </button>
-                                        <button 
-                                            onClick={() => setChallengeTarget("Blog")}
-                                            className={cn("h-12 rounded-xl font-black border transition-colors", challengeTarget === "Blog" ? "bg-indigo-600 text-white border-indigo-600" : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50")}
-                                        >
-                                            네이버 블로그 (Blog)
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
-                            
                             <div className="space-y-3">
                                 <Label className="text-sm font-bold text-slate-700">증빙 자료 (URL 등)</Label>
                                 <Input 
@@ -883,7 +857,7 @@ export default function MissionPage() {
 
                 <div className="mb-12">
                     <h1 className="text-4xl lg:text-5xl font-black text-slate-900 tracking-tight mb-2">
-                        필수 활동 현황
+                        활동 현황
                     </h1>
                     <p className="text-slate-500 font-medium">
                         진행 중인 미션을 완료하고 성과를 제출해 주세요.

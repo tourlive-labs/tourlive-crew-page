@@ -22,7 +22,7 @@ const menuItems = [
     { name: "Overview", label: "대시보드 홈", icon: Home, href: "/dashboard" },
     { name: "Notice", label: "공지사항", icon: Bell, href: "/dashboard/notice" },
     { name: "Challenge", label: "이달의 챌린지", icon: Trophy, href: "/dashboard/challenge" },
-    { name: "Mission", label: "필수 활동 제출", icon: FileText, href: "/dashboard/mission" },
+    { name: "Mission", label: "활동 제출", icon: FileText, href: "/dashboard/mission" },
     { name: "MyPage", label: "마이페이지", icon: User, href: "/dashboard/mypage" },
 ];
 

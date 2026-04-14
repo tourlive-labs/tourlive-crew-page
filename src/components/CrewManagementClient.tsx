@@ -50,7 +50,8 @@ export function CrewManagementClient({ initialMembers, batches }: CrewManagement
 
   const filteredMembers = useMemo(() => {
     return initialMembers.filter((m) => {
-      const matchBatch = batchFilter === "all" || m.batch === batchFilter;
+      // .trim() ensures dirty whitespace in DB values (e.g. "14기 ") still matches clean filter value
+      const matchBatch = batchFilter === "all" || m.batch?.trim() === batchFilter;
       const matchField = fieldFilter === "all" || m.selected_activity === fieldFilter;
       
       // Graduation Logic: 3 consecutive months (Feb, Mar, Apr)

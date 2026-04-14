@@ -170,12 +170,16 @@ export async function submitOnboardingForm(formData: FormData) {
         }
 
         // 5. Insert Profile (Synced with Auth UID)
-        console.log("[Onboarding] Inserting profile record with ID sync");
+        // batch is written here in canonical "{term}기" format (e.g. "14기", "15기") with no spaces,
+        // so the admin filter works immediately without any manual SQL backfill.
+        const canonicalBatch = `${activeBatch.term}기`;
+        console.log(`[Onboarding] Writing profile with batch: ${canonicalBatch}`);
         const { error: profileError } = await adminSupabase
             .from('profiles')
             .insert({
                 id: userId, // CRITICAL: Sync with auth.users.id
                 crew_id: crewData.id,
+                batch: canonicalBatch, // e.g. "14기" — canonical, no spaces
                 full_name: fullName,
                 phone_number: phone,
                 tourlive_email: tourliveEmail,

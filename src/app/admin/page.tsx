@@ -47,7 +47,18 @@ export default async function AdminPage() {
         .order('created_at', { ascending: false });
 
     // Get unique batches for the filter
-    const batches = Array.from(new Set(crewMembers?.map(m => m.batch).filter(Boolean))) as string[];
+    // .trim() neutralizes any trailing/leading whitespace that would create phantom duplicates in Set
+    const rawBatches = crewMembers?.map(m => m.batch?.trim()).filter(Boolean) ?? [];
+    const batches = Array.from(new Set(rawBatches)).sort((a, b) => {
+        // Descending numeric sort (15기, 14기, ...)
+        // Safe parseInt fallback: non-numeric names (e.g. "특별기") are sorted to the end
+        const numA = parseInt(a, 10);
+        const numB = parseInt(b, 10);
+        if (!isNaN(numA) && !isNaN(numB)) return numB - numA;
+        if (!isNaN(numA)) return -1; // numeric before non-numeric
+        if (!isNaN(numB)) return 1;
+        return b.localeCompare(a); // both non-numeric: alphabetical descending
+    }) as string[];
 
     return (
         <div className="min-h-screen bg-[#FDFCF9] p-8 font-sans antialiased text-slate-900 border-t-[12px] border-orange-500">
