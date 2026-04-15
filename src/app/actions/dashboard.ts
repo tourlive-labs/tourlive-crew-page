@@ -173,6 +173,74 @@ export async function getDashboardData() {
     };
 }
 
+/**
+ * Fetches the three stamp slot stati for the current month:
+ *   essential  — main missions table (not a challenge row)
+ *   blog       — challenge row with blog_paris type
+ *   cafe       — challenge row with cafe_streak type
+ *
+ * Stamp stati: 'none' | 'pending' | 'approved'
+ */
+export async function getStampStatus() {
+    try {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return { essential: 'none', blog: 'none', cafe: 'none' };
+
+        // Resolve profile_id via crews join
+        const { data: crew } = await supabase
+            .from('crews')
+            .select('id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+        if (!crew) return { essential: 'none', blog: 'none', cafe: 'none' };
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('crew_id', crew.id)
+            .maybeSingle();
+        if (!profile) return { essential: 'none', blog: 'none', cafe: 'none' };
+
+        const now = new Date();
+        const missionMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+        // Fetch all missions for this profile in the current month
+        const { data: missions } = await supabase
+            .from('missions')
+            .select('id, status, post_url, rejection_reason')
+            .eq('profile_id', profile.id)
+            .eq('mission_month', missionMonth);
+
+        const toStampStatus = (status: string): 'none' | 'pending' | 'approved' => {
+            if (!status || status === 'none') return 'none';
+            if (status === 'APPROVED' || status === 'completed') return 'approved';
+            return 'pending';
+        };
+
+        let essential: 'none' | 'pending' | 'approved' = 'none';
+        let blog: 'none' | 'pending' | 'approved' = 'none';
+        let cafe: 'none' | 'pending' | 'approved' = 'none';
+
+        for (const m of missions || []) {
+            const isChallenge = m.post_url?.startsWith('[CHALLENGE]');
+            if (isChallenge) {
+                const tag = m.rejection_reason || '';
+                if (tag.includes('blog_paris')) blog = toStampStatus(m.status);
+                if (tag.includes('cafe_streak')) cafe = toStampStatus(m.status);
+            } else {
+                // Regular essential mission row
+                const s = toStampStatus(m.status);
+                if (s !== 'none') essential = s;
+            }
+        }
+
+        return { essential, blog, cafe };
+    } catch {
+        return { essential: 'none', blog: 'none', cafe: 'none' };
+    }
+}
+
 export async function updateProfile(updates: any) {
     const supabase = await createClient();
 

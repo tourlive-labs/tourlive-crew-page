@@ -137,8 +137,8 @@ function KeywordPill({ word, accent }: { word: string; accent: string }) {
         <button
             onClick={copy}
             className={cn(
-                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold border transition-all duration-200 group/pill",
-                "bg-white/70 border-slate-200 text-slate-600 hover:border-current hover:bg-white hover:shadow-sm"
+                "inline-flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-full text-[11px] font-bold border transition-all duration-200 group/pill",
+                "bg-white/70 border-slate-200 text-slate-600 hover:border-current hover:bg-white hover:shadow-sm active:scale-95"
             )}
             style={{ color: copied ? accent : undefined, borderColor: copied ? accent : undefined }}
         >
@@ -188,7 +188,7 @@ function SubmitPanel({
         : "https://cafe.naver.com/...";
 
     return (
-        <div className="animate-in slide-in-from-bottom-4 fade-in duration-400 border-t border-slate-100 pt-6 mt-6">
+        <div className="animate-in slide-in-from-bottom-4 fade-in duration-400 border-t border-slate-100 pt-6 mt-6 pb-safe">
             {success ? (
                 <div className="flex flex-col items-center gap-4 py-4 animate-in fade-in duration-500">
                     <div className="w-14 h-14 rounded-full bg-emerald-50 flex items-center justify-center">
@@ -235,14 +235,14 @@ function SubmitPanel({
                             variant="ghost"
                             size="sm"
                             onClick={onClose}
-                            className="flex-1 h-11 rounded-2xl text-slate-400 hover:text-slate-600 font-bold text-sm"
+                            className="flex-1 h-12 min-h-[44px] rounded-2xl text-slate-400 hover:text-slate-600 font-bold text-sm"
                         >
                             취소
                         </Button>
                         <Button
                             type="submit"
                             disabled={isPending || !url.trim()}
-                            className="flex-[2] h-11 rounded-2xl bg-[#FF5C00] hover:bg-[#E63900] text-white font-black text-sm shadow-lg shadow-orange-100/60 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
+                            className="flex-[2] h-12 min-h-[44px] rounded-2xl bg-[#FF5C00] hover:bg-[#E63900] text-white font-black text-sm shadow-lg shadow-orange-100/60 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
                         >
                             {isPending ? (
                                 <span className="flex items-center gap-2">
@@ -282,13 +282,13 @@ function BlogChallengeCard() {
     };
 
     return (
-        <div className="relative rounded-[40px] bg-white border border-slate-100 shadow-[0_8px_40px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col">
+        <div className="relative rounded-[32px] sm:rounded-[40px] bg-white border border-slate-100 shadow-[0_8px_40px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col">
 
             {/* Glassmorphism gradient orb */}
             <div className="absolute top-0 right-0 w-72 h-72 rounded-full bg-orange-100/40 blur-[80px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
             <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full bg-amber-50/60 blur-[60px] pointer-events-none" />
 
-            <div className="relative z-10 p-8 lg:p-10 flex flex-col flex-1 gap-8">
+            <div className="relative z-10 p-6 sm:p-8 lg:p-10 flex flex-col flex-1 gap-6 sm:gap-8">
 
                 {/* Header */}
                 <div className="space-y-4">
@@ -304,7 +304,7 @@ function BlogChallengeCard() {
                             <Paintbrush2 className="w-6 h-6 text-[#FF5C00]" />
                         </div>
                         <div>
-                            <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">
+                            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-tight">
                                 파리 미술관 여행<br />포스팅 챌린지
                             </h2>
                             <p className="text-sm font-bold text-slate-400 mt-1">4월 미션 콘텐츠에 파리 3대 미술관 중 1개 포스팅</p>
@@ -324,7 +324,7 @@ function BlogChallengeCard() {
                         <button
                             onClick={() => { setRewardType(rewardType === "points" ? null : "points"); setShowSubmit(false); }}
                             className={cn(
-                                "relative flex flex-col gap-2 p-5 rounded-3xl border-2 text-left transition-all duration-300",
+                                "relative flex flex-col gap-2 p-4 sm:p-5 rounded-3xl border-2 text-left transition-all duration-300 min-h-[88px] sm:min-h-0",
                                 rewardType === "points"
                                     ? "border-[#FF5C00] bg-gradient-to-br from-[#FFF5F1] to-orange-50 shadow-lg shadow-orange-100/50 scale-[1.02]"
                                     : "border-slate-100 bg-slate-50/50 hover:border-orange-200 hover:bg-orange-50/30"
@@ -350,7 +350,7 @@ function BlogChallengeCard() {
                         <button
                             onClick={() => { setRewardType(rewardType === "naver_pay" ? null : "naver_pay"); setShowSubmit(false); }}
                             className={cn(
-                                "relative flex flex-col gap-2 p-5 rounded-3xl border-2 text-left transition-all duration-300",
+                                "relative flex flex-col gap-2 p-4 sm:p-5 rounded-3xl border-2 text-left transition-all duration-300 min-h-[88px] sm:min-h-0",
                                 rewardType === "naver_pay"
                                     ? "border-amber-400 bg-gradient-to-br from-amber-50 to-yellow-50 shadow-lg shadow-amber-100/50 scale-[1.02]"
                                     : "border-slate-100 bg-slate-50/50 hover:border-amber-200 hover:bg-amber-50/30"
@@ -392,13 +392,15 @@ function BlogChallengeCard() {
                         <Info className="w-3 h-3 text-slate-300" />
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2">
+                    {/* Horizontal-scroll tab bar on small screens, grid on larger */}
+                    <div className="flex gap-2 overflow-x-auto pb-1 sm:grid sm:grid-cols-3 scrollbar-none -mx-1 px-1">
                         {MUSEUMS.map((m, idx) => (
                             <button
                                 key={m.id}
                                 onClick={() => setActiveMuseum(activeMuseum === idx ? null : idx)}
                                 className={cn(
-                                    "relative flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all duration-300 group",
+                                    "relative flex-shrink-0 flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all duration-300 group",
+                                    "w-[96px] sm:w-auto min-h-[80px] sm:min-h-0",
                                     activeMuseum === idx
                                         ? "border-current shadow-lg scale-[1.02]"
                                         : "border-slate-100 hover:border-slate-200 hover:shadow-sm"
@@ -448,7 +450,7 @@ function BlogChallengeCard() {
                             <button
                                 onClick={() => copyAll(activeMuseum)}
                                 className={cn(
-                                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black border transition-all duration-200",
+                                    "flex items-center gap-1.5 px-3 py-2 min-h-[44px] rounded-full text-[10px] font-black border transition-all duration-200 active:scale-95",
                                     copiedIdx === activeMuseum
                                         ? "bg-emerald-50 border-emerald-200 text-emerald-600"
                                         : "bg-slate-50 border-slate-200 text-slate-500 hover:bg-white hover:border-slate-300"
@@ -496,7 +498,7 @@ function BlogChallengeCard() {
                             onClick={() => setShowSubmit(true)}
                             disabled={activeMuseum === null || rewardType === null}
                             className={cn(
-                                "w-full h-14 rounded-2xl font-black text-base gap-2 transition-all duration-300",
+                                "w-full h-14 min-h-[44px] rounded-2xl font-black text-base gap-2 transition-all duration-300",
                                 activeMuseum !== null && rewardType !== null
                                     ? "bg-[#FF5C00] hover:bg-[#E63900] text-white shadow-xl shadow-orange-100/60 hover:scale-[1.02] active:scale-95"
                                     : "bg-slate-100 text-slate-300 cursor-not-allowed"
@@ -530,13 +532,13 @@ function CafeChallengeCard() {
     const [showSubmit, setShowSubmit] = useState(false);
 
     return (
-        <div className="relative rounded-[40px] bg-white border border-slate-100 shadow-[0_8px_40px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col">
+        <div className="relative rounded-[32px] sm:rounded-[40px] bg-white border border-slate-100 shadow-[0_8px_40px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col">
 
             {/* Glass orbs */}
             <div className="absolute top-0 right-0 w-56 h-56 rounded-full bg-indigo-100/30 blur-[70px] -translate-y-1/3 translate-x-1/4 pointer-events-none" />
             <div className="absolute bottom-0 left-0 w-40 h-40 rounded-full bg-violet-50/50 blur-[50px] pointer-events-none" />
 
-            <div className="relative z-10 p-8 lg:p-10 flex flex-col flex-1 gap-8">
+            <div className="relative z-10 p-6 sm:p-8 lg:p-10 flex flex-col flex-1 gap-6 sm:gap-8">
 
                 {/* Header */}
                 <div className="space-y-4">
@@ -552,7 +554,7 @@ function CafeChallengeCard() {
                             <Flame className="w-6 h-6 text-indigo-500" />
                         </div>
                         <div>
-                            <h2 className="text-2xl font-black text-slate-900 tracking-tight leading-tight">
+                            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-tight">
                                 네이버 카페<br />챌린지
                             </h2>
                             <p className="text-sm font-bold text-slate-400 mt-1">
@@ -685,7 +687,7 @@ function CafeChallengeCard() {
                     {!showSubmit ? (
                         <Button
                             onClick={() => setShowSubmit(true)}
-                            className="w-full h-14 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-base gap-2 shadow-xl shadow-indigo-100/60 transition-all hover:scale-[1.02] active:scale-95"
+                            className="w-full h-14 min-h-[44px] rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black text-base gap-2 shadow-xl shadow-indigo-100/60 transition-all hover:scale-[1.02] active:scale-95"
                         >
                             <Flame className="w-5 h-5" />
                             챌린지 참여 증빙 제출
@@ -733,7 +735,7 @@ function QuickInfoBar() {
 
 export default function ChallengePage() {
     return (
-        <div className="max-w-[1200px] mx-auto px-6 py-10 lg:px-10 lg:py-16 space-y-8 animate-in fade-in duration-700">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 sm:py-10 lg:px-10 lg:py-16 space-y-6 sm:space-y-8 animate-in fade-in duration-700 pb-32">
 
             {/* Page Header */}
             <div className="space-y-3">
@@ -742,25 +744,25 @@ export default function ChallengePage() {
                 </Badge>
                 <div className="flex items-end justify-between gap-4">
                     <div className="space-y-1">
-                        <h1 className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center shadow-sm">
-                                <Trophy className="w-6 h-6 text-[#FF5C00]" />
+                        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center shadow-sm shrink-0">
+                                <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-[#FF5C00]" />
                             </div>
                             이달의 챌린지
                         </h1>
-                        <p className="text-base font-bold text-slate-400 ml-16">
+                        <p className="text-sm font-bold text-slate-400 ml-[52px] sm:ml-16">
                             파리 미술관 포스팅 챌린지 · 카페 30일 연속 챌린지
                         </p>
                     </div>
-                    <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-2xl bg-white border border-slate-100 shadow-sm">
+                    <div className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-2xl bg-white border border-slate-100 shadow-sm shrink-0">
                         <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                         <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">진행 중</span>
                     </div>
                 </div>
             </div>
 
-            {/* Bento Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Cards — always single column */}
+            <div className="grid grid-cols-1 gap-5 sm:gap-6">
                 <BlogChallengeCard />
                 <CafeChallengeCard />
             </div>

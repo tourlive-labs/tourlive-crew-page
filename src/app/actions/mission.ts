@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { sanitizeHeader } from "@/utils/security";
 import Anthropic from "@anthropic-ai/sdk";
 import * as cheerio from "cheerio";
 
@@ -280,7 +281,7 @@ export async function verifyMissionContent(postUrl: string) {
                 method: 'GET',
                 redirect: 'follow',
                 headers: {
-                    'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_8 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.2 Mobile/15E148 Safari/604.1'
+                    'User-Agent': sanitizeHeader('Mozilla/5.0 (iPhone; CPU iPhone OS 14_8 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.2 Mobile/15E148 Safari/604.1')
                 }
             });
             finalUrl = probeResponse.url;
@@ -309,12 +310,12 @@ export async function verifyMissionContent(postUrl: string) {
         // BLOG HTML Scraping
         let response = await fetch(finalUrl, {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_8 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.2 Mobile/15E148 Safari/604.1',
-                'Referer': 'https://m.blog.naver.com/',
-                'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                'Cache-Control': 'no-cache',
-                'Pragma': 'no-cache'
+                'User-Agent': sanitizeHeader('Mozilla/5.0 (iPhone; CPU iPhone OS 14_8 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.2 Mobile/15E148 Safari/604.1'),
+                'Referer': sanitizeHeader('https://m.blog.naver.com/'),
+                'Accept-Language': sanitizeHeader('ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7'),
+                'Accept': sanitizeHeader('text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'),
+                'Cache-Control': sanitizeHeader('no-cache'),
+                'Pragma': sanitizeHeader('no-cache')
             }
         });
         

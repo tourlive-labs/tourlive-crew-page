@@ -3,54 +3,32 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
 import {
     CheckCircle2,
-    Calendar as CalendarIcon,
     FileText,
     Bell,
     Users,
     ExternalLink,
-    Clock,
-    User,
-    ArrowRight,
-    AlertCircle,
-    Check,
     Coffee,
     BookOpen,
-    Quote,
     HelpCircle,
-    Star,
     ShieldCheck,
     Trophy,
     Target,
     Award,
-    Rocket,
-    MapPin,
-    Hash,
     Sparkles,
-    Mail,
-    Phone,
-    Calendar
+    ArrowRight,
+    AlertCircle,
+    Check,
+    Paintbrush2,
+    Flame,
+    Clock
 } from "lucide-react";
 import { Suspense } from "react";
-import { getDashboardData } from "@/app/actions/dashboard";
+import { getDashboardData, getStampStatus } from "@/app/actions/dashboard";
 import { submitMission } from "@/app/actions/mission";
-import { getCalendarStamps } from "@/app/actions/calendar";
 import { signOut } from "@/app/actions/auth";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -137,452 +115,345 @@ function DashboardHeader({ nickname, role }: { nickname: string, role: string })
     );
 }
 
-function TeamMissionList({ team }: { team: string }) {
-    const isCafe = team === 'naver_cafe';
-    const currentMonth = new Date().getMonth() + 1;
-    const teamName = isCafe ? "네이버 지식카페 활동" : "네이버 블로그 활동";
-    const [showGuidelines, setShowGuidelines] = useState(false);
+// ── Mandatory Task List ─────────────────────────────────────────────────────
+
+function EssentialTaskList({ team }: { team: string }) {
+    const isCafe   = team === 'naver_cafe';
+    const month    = new Date().getMonth() + 1;
+
+    const blogTasks = [
+        { num: "01", title: "가이드북 사용후기 포스팅", sub: "오디오가이드 / 가이드북 후기 미션" },
+        { num: "02", title: "UTM 소스 링크 삽입", sub: "포스팅 내 공식 링크 내용 포함" },
+        { num: "03", title: "필수 멘트 작성", sub: "지정 멘트 텊플릿 빠짐없이 포함" },
+    ];
+    const cafeTasks = [
+        { num: "01", title: "여행 정보 게시글 5건 등록", sub: "유럽/일본 여행에 관련된 유익한 정보를 자유롭게 공유해주세요." },
+        { num: "02", title: "지식여행 카페 댓글 30건 작성", sub: "본인 게시글 댓글 제외" },
+        { num: "03", title: "가이드북 사용후기 1건 작성", sub: "이미지 5장 이상 포함 필수" },
+    ];
+    const tasks = isCafe ? cafeTasks : blogTasks;
 
     return (
-        <Card className="shadow-[0_4px_24px_rgba(0,0,0,0.04)] border-none rounded-[32px] overflow-hidden bg-white p-2">
-            <CardHeader className="p-8 pb-4">
-                <div className="flex items-center justify-between mb-1">
-                    <CardTitle className="text-xl font-extrabold text-slate-800 flex items-center tracking-tight whitespace-nowrap">
-                        {isCafe ? <Coffee className="w-6 h-6 mr-3 text-[#FF5C00]" /> : <BookOpen className="w-6 h-6 mr-3 text-[#0052CC]" />}
-                        {currentMonth}월 미션 현황
-                    </CardTitle>
-                    <span className="text-[10px] font-black text-slate-400 bg-slate-50 px-3 py-1 rounded-full border border-slate-100 whitespace-nowrap">
-                        {teamName}
-                    </span>
-                </div>
-                <div className="flex items-center justify-between mt-1">
-                    <CardDescription className="text-slate-500 font-medium truncate">
-                        기한 내에 지정된 미션을 완료해 주세요.
-                    </CardDescription>
-                    <button
-                        onClick={() => setShowGuidelines(!showGuidelines)}
-                        className="text-[10px] font-black text-[#FF5C00] hover:underline flex items-center gap-1 whitespace-nowrap"
-                    >
-                        <AlertCircle className="w-3 h-3" />
-                        {showGuidelines ? "가이드 접기" : "가이드라인 보기"}
-                    </button>
-                </div>
-            </CardHeader>
-            <CardContent className="px-8 pb-8 space-y-4">
-                {showGuidelines && (
-                    <div className="p-4 rounded-2xl bg-orange-50 border border-orange-100 mb-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                        <h4 className="text-xs font-black text-orange-800 mb-2 flex items-center gap-2 uppercase tracking-widest">
-                            <Target className="w-3 h-3 text-orange-500" />
-                            Activity Guidelines
-                        </h4>
-                        <ul className="space-y-1.5">
-                            {isCafe ? (
-                                <>
-                                    <li className="text-[11px] text-orange-700 font-bold flex items-start gap-2">
-                                        <div className="w-1 h-1 rounded-full bg-orange-400 mt-1.5 shrink-0" />
-                                        정보글 5건 및 댓글 30건 필수 참여
-                                    </li>
-                                    <li className="text-[11px] text-orange-700 font-bold flex items-start gap-2">
-                                        <div className="w-1 h-1 rounded-full bg-orange-400 mt-1.5 shrink-0" />
-                                        가이드북 후기 작성 시 이미지 5장 이상
-                                    </li>
-                                </>
-                            ) : (
-                                <>
-                                    <li className="text-[11px] text-orange-700 font-bold flex items-start gap-2">
-                                        <div className="w-1 h-1 rounded-full bg-orange-400 mt-1.5 shrink-0" />
-                                        월 2건 오디오가이드/가이드북 후기 작성
-                                    </li>
-                                    <li className="text-[11px] text-orange-700 font-bold flex items-start gap-2">
-                                        <div className="w-1 h-1 rounded-full bg-orange-400 mt-1.5 shrink-0" />
-                                        필수 멘트 및 UTM 소스 링크 삽입 필수
-                                    </li>
-                                </>
-                            )}
-                        </ul>
+        <div className="rounded-[28px] bg-white border border-slate-100 shadow-[0_2px_16px_rgba(0,0,0,0.05)] overflow-hidden">
+            {/* Header */}
+            <div className="px-6 pt-5 pb-4 flex items-center justify-between border-b border-slate-50">
+                <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-xl bg-slate-900 flex items-center justify-center shrink-0">
+                        <Check className="w-3.5 h-3.5 text-white" />
                     </div>
-                )}
-                {isCafe ? (
-                    <>
-                        <div className="p-4 rounded-2xl bg-slate-50/50 border border-slate-100 flex items-center justify-between group hover:bg-white hover:shadow-sm transition-all duration-300">
-                            <div className="flex items-center gap-3 overflow-hidden">
-                                <span className="w-8 h-8 rounded-xl bg-white flex items-center justify-center text-slate-400 shadow-sm text-xs font-black shrink-0">01</span>
-                                <span className="text-sm font-bold text-slate-700 truncate whitespace-nowrap">여행 정보 게시글 등록</span>
-                            </div>
-                            <span className="font-black text-slate-800 ml-4 shrink-0 whitespace-nowrap">0 / 5개</span>
-                        </div>
-                        <div className="p-4 rounded-2xl bg-slate-50/50 border border-slate-100 flex items-center justify-between group hover:bg-white hover:shadow-sm transition-all duration-300">
-                            <div className="flex items-center gap-3 overflow-hidden">
-                                <span className="w-8 h-8 rounded-xl bg-white flex items-center justify-center text-slate-400 shadow-sm text-xs font-black shrink-0">02</span>
-                                <span className="text-sm font-bold text-slate-700 truncate whitespace-nowrap">커뮤니티 댓글 활동</span>
-                            </div>
-                            <span className="font-black text-slate-800 ml-4 shrink-0 whitespace-nowrap">0 / 30개</span>
-                        </div>
-                        <div className="p-4 rounded-2xl bg-[#FFF5F1] border border-[#FFD9C6] flex items-center justify-between text-[#FF5C00] group hover:shadow-md transition-all duration-300">
-                            <div className="flex items-center gap-3 overflow-hidden">
-                                <span className="w-8 h-8 rounded-xl bg-[#FF5C00] flex items-center justify-center text-white shadow-sm text-xs font-black shrink-0">03</span>
-                                <span className="text-sm font-black truncate whitespace-nowrap">가이드북 사용후기글</span>
-                            </div>
-                            <span className="font-black ml-4 shrink-0 whitespace-nowrap">0 / 1개</span>
-                        </div>
-                    </>
-                ) : (
-                    <div className="p-6 rounded-3xl bg-[#F0F5FF]/30 border border-[#D6E4FF] flex items-center justify-between text-[#0052CC] group hover:bg-white hover:shadow-lg transition-all duration-500">
-                        <div className="flex items-center gap-4 overflow-hidden">
-                            <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-[#0052CC] shadow-sm shrink-0">
-                                <BookOpen className="w-6 h-6" />
-                            </div>
-                            <div className="overflow-hidden">
-                                <span className="text-sm font-black block truncate whitespace-nowrap">가이드북 사용후기글</span>
-                                <span className="text-[10px] font-bold opacity-60 truncate whitespace-nowrap tracking-tight">총 2건의 후기 작성이 필요합니다</span>
-                            </div>
-                        </div>
-                        <span className="font-black text-xl ml-4 shrink-0 whitespace-nowrap">0 / 2개</span>
+                    <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.14em] leading-none">
+                            {month}월 필수 활동
+                        </p>
+                        <p className="text-base font-black text-slate-900 leading-tight mt-0.5">
+                            이번 달 완료해야 할 미션
+                        </p>
                     </div>
-                )}
-                <p className="text-[10px] text-slate-400 font-medium text-center pt-2 tracking-tight whitespace-nowrap">
-                    * 활동 현황은 매일 오전 6시에 최종 업데이트됩니다.
-                </p>
-            </CardContent>
-        </Card>
+                </div>
+                <Link
+                    href="/dashboard/mission"
+                    className="flex items-center gap-1 text-[10px] font-black text-[#FF5C00] hover:underline uppercase tracking-widest shrink-0"
+                >
+                    제출 →
+                </Link>
+            </div>
+
+            {/* Numbered task rows */}
+            <div className="px-6 py-4 space-y-0 divide-y divide-slate-50">
+                {tasks.map((t, i) => (
+                    <div key={i} className="flex items-start gap-4 py-3.5">
+                        {/* Number badge */}
+                        <div className="w-7 h-7 rounded-full bg-[#FFF5F1] border border-[#FFD9C6] flex items-center justify-center shrink-0 mt-0.5">
+                            <span className="text-[10px] font-black text-[#FF5C00] leading-none">{t.num}</span>
+                        </div>
+                        <div className="min-w-0">
+                            <p className="text-sm font-black text-slate-800 leading-tight">{t.title}</p>
+                            <p className="text-[11px] font-medium text-slate-400 mt-0.5 leading-snug">{t.sub}</p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 pb-5">
+                <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-100">
+                    <Sparkles className="w-3 h-3 text-[#FF5C00] shrink-0" />
+                    <p className="text-[10px] font-bold text-slate-500 leading-snug">
+                        미션 완료 후 '활동 제출' 탭에서 인증 및 제출해주세요.
+                    </p>
+                </div>
+            </div>
+        </div>
     );
 }
 
-// Unused components (ActivityStepper, SubmissionDialog) have been removed for a cleaner dashboard layout.
+// ── Mission Stamp Board ─────────────────────────────────────────────────────
 
-function UnifiedMissionCalendar({ schedules }: { schedules: any[] }) {
-    const today = new Date();
-    const [viewDate, setViewDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
-    const [selectedDayInfo, setSelectedDayInfo] = useState<{ day: number, events: any[], stamps: any[] } | null>(null);
-    const [stamps, setStamps] = useState<any[]>([]);
+type StampState = 'none' | 'pending' | 'approved';
+
+interface StampSlotProps {
+    label: string;
+    sublabel: string;
+    icon: React.ReactNode;
+    state: StampState;
+    href: string;
+    accentColor: string;   // tailwind bg class for lit state
+    ringColor: string;     // tailwind ring/border class
+    stampLabel: string;    // text shown inside stamp when lit
+}
+
+function StampSlot({ label, sublabel, icon, state, href, accentColor, ringColor, stampLabel }: StampSlotProps) {
+    const isLit  = state !== 'none';
+    const isDone = state === 'approved';
+    const isPend = state === 'pending';
+
+    return (
+        <Link href={href} className="flex flex-col items-center gap-2.5 group flex-1 min-w-0 active:scale-95 transition-transform">
+            {/* Stamp circle — status-check size */}
+            <div className={cn(
+                "relative w-16 h-16 sm:w-18 sm:h-18 rounded-full border-[2.5px] transition-all duration-500 flex items-center justify-center",
+                isLit
+                    ? cn(ringColor, "shadow-md bg-white")
+                    : "border-slate-200 bg-slate-50/80"
+            )} style={isLit ? undefined : undefined}>
+                {/* Inner ring */}
+                {isLit && (
+                    <div className={cn(
+                        "absolute inset-[4px] rounded-full border border-current opacity-20",
+                        ringColor
+                    )} />
+                )}
+
+                {/* State icon */}
+                <div className={cn(
+                    "relative z-10 transition-all duration-300",
+                    isLit ? "scale-100" : "scale-90 opacity-25 group-hover:opacity-40"
+                )}>
+                    {isDone ? (
+                        <CheckCircle2 className="w-7 h-7" style={{ color: accentColor }} />
+                    ) : isPend ? (
+                        <Clock className="w-6 h-6" style={{ color: accentColor }} />
+                    ) : (
+                        <div className="text-slate-300">{icon}</div>
+                    )}
+                </div>
+
+                {/* Arc label */}
+                {isLit && (
+                    <div className="absolute inset-0 rounded-full flex items-end justify-center pb-1.5 pointer-events-none">
+                        <span
+                            className="text-[7px] font-black uppercase tracking-widest"
+                            style={{ color: accentColor, opacity: isPend ? 0.7 : 1 }}
+                        >
+                            {isDone ? 'DONE' : 'IN REVIEW'}
+                        </span>
+                    </div>
+                )}
+            </div>
+
+            {/* Label */}
+            <div className="text-center">
+                <p className={cn(
+                    "text-[11px] font-black tracking-tight transition-colors leading-tight",
+                    isLit ? "text-slate-800" : "text-slate-400"
+                )}>{label}</p>
+                <p className="text-[9px] font-bold text-slate-300 mt-0.5">{sublabel}</p>
+            </div>
+        </Link>
+    );
+}
+
+function MissionStampBoard() {
+    const today    = new Date();
+    const month    = today.getMonth();
+    const year     = today.getFullYear();
+    const lastDay  = new Date(year, month + 1, 0).getDate();
+    const deadline = new Date(year, month, lastDay, 23, 59, 0);
+    const dDiff    = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const dDay     = Math.max(0, dDiff);
+    const progress = Math.round((today.getDate() / lastDay) * 100);
+
+    const [stamps, setStamps] = useState<{ essential: StampState; blog: StampState; cafe: StampState }>({
+        essential: 'none', blog: 'none', cafe: 'none'
+    });
 
     useEffect(() => {
-        getCalendarStamps().then(res => setStamps(res.data || []));
+        getStampStatus().then(res => setStamps(res as any));
     }, []);
 
-    const firstDayOfMonth = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay();
-    const daysInMonth = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
-
-    const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-    const blanks = Array.from({ length: firstDayOfMonth }, (_, i) => i);
-
-    const getEventsForDay = (day: number) => {
-        return schedules.filter(s => {
-            const date = new Date(s.scheduled_at);
-            return date.getDate() === day &&
-                date.getMonth() === viewDate.getMonth() &&
-                date.getFullYear() === viewDate.getFullYear();
-        });
-    };
-
-    const getStampsForDay = (day: number) => {
-        return stamps.filter(s => {
-            const date = new Date(s.date);
-            return date.getDate() === day &&
-                date.getMonth() === viewDate.getMonth() &&
-                date.getFullYear() === viewDate.getFullYear();
-        });
-    };
+    const litCount = [stamps.essential, stamps.blog, stamps.cafe].filter(s => s !== 'none').length;
 
     return (
-        <Card className="shadow-[0_4px_24px_rgba(0,0,0,0.04)] border-none rounded-[32px] overflow-hidden bg-white p-2">
-            <CardHeader className="p-8 pb-4 flex flex-row items-center justify-between">
-                <CardTitle className="text-xl font-extrabold text-slate-800 flex items-center tracking-tight">
-                    <CalendarIcon className="w-6 h-6 mr-3 text-[#FF5C00]" />
-                    활동 캘린더
-                </CardTitle>
-                <div className="flex items-center gap-6">
-                    <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 rounded-full border border-[#E63946] flex items-center justify-center text-[10px] text-[#E63946] font-black mix-blend-multiply opacity-80 rotate-[-15deg]">
-                            인
-                        </div>
-                        <span className="text-xs text-slate-400 font-bold">도장 스탬프</span>
+        <div className="rounded-[28px] bg-white border border-slate-100 shadow-[0_2px_16px_rgba(0,0,0,0.05)] overflow-hidden">
+
+            {/* Header row */}
+            <div className="px-6 pt-5 pb-4 flex items-center justify-between border-b border-slate-50">
+                <div className="flex items-center gap-2.5">
+                    <div className="w-6 h-6 rounded-lg bg-[#FFF5F1] flex items-center justify-center">
+                        <Trophy className="w-3.5 h-3.5 text-[#FF5C00]" />
                     </div>
+                    <p className="text-[11px] font-black text-slate-500 uppercase tracking-[0.12em]">
+                        {today.getMonth() + 1}월 미션 스탬프
+                    </p>
                 </div>
-            </CardHeader>
-            <CardContent className="p-8 pt-4">
-                <div className="flex items-center justify-between mb-8">
-                    <div className="text-2xl font-black text-slate-800 tracking-tighter">
-                        {viewDate.getFullYear()}. {String(viewDate.getMonth() + 1).padStart(2, '0')}
-                    </div>
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-10 h-10 p-0 rounded-xl border-slate-100 text-slate-400 hover:text-slate-800 transition-all font-bold"
-                            onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1))}
-                        >
-                            &lt;
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="w-10 h-10 p-0 rounded-xl border-slate-100 text-slate-400 hover:text-slate-800 transition-all font-bold"
-                            onClick={() => setViewDate(new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1))}
-                        >
-                            &gt;
-                        </Button>
-                    </div>
+                {/* D-Day badge */}
+                <div className={cn(
+                    "flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-black",
+                    dDay <= 5
+                        ? "bg-rose-50 text-rose-500 border border-rose-100"
+                        : dDay <= 10
+                        ? "bg-amber-50 text-amber-500 border border-amber-100"
+                        : "bg-slate-50 text-slate-500 border border-slate-100"
+                )}>
+                    <div className="w-1 h-1 rounded-full bg-current animate-pulse" />
+                    D-{dDay}
                 </div>
+            </div>
 
-                <div className="grid grid-cols-7 gap-px mb-4 border-b border-slate-50 pb-2">
-                    {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map((day, idx) => (
-                        <div key={day} className={cn(
-                            "text-center text-[10px] font-black py-2 tracking-widest",
-                            idx === 0 ? "text-red-500" : "text-slate-300"
-                        )}>{day}</div>
-                    ))}
+            {/* Progress bar */}
+            <div className="px-6 pt-3 pb-1">
+                <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
+                    <div
+                        className="h-full bg-gradient-to-r from-[#FF5C00] to-amber-400 rounded-full transition-all duration-700"
+                        style={{ width: `${progress}%` }}
+                    />
                 </div>
-                <div className="grid grid-cols-7 gap-3">
-                    {blanks.map(i => <div key={`blank-${i}`} className="h-24" />)}
-                    {days.map(day => {
-                        const dayEvents = getEventsForDay(day);
-                        const dayStamps = getStampsForDay(day);
-                        const essentialStamp = dayStamps.find(s => s.type === 'essential');
-                        const optionalStamps = dayStamps.filter(s => s.type === 'optional');
+                <p className="text-[9px] font-bold text-slate-300 mt-1.5">{today.getMonth() + 1}월 {lastDay}일 마감 · {progress}% 경과</p>
+            </div>
 
-                        const dayOfWeek = new Date(viewDate.getFullYear(), viewDate.getMonth(), day).getDay();
-                        const isSunday = dayOfWeek === 0;
-
-                        const isToday = today.getDate() === day &&
-                            today.getMonth() === viewDate.getMonth() &&
-                            today.getFullYear() === viewDate.getFullYear();
-
-                        return (
-                            <div
-                                key={day}
-                                className={cn(
-                                    "h-24 border border-slate-100 rounded-2xl p-2 transition-all cursor-pointer group hover:bg-slate-50 hover:shadow-inner relative overflow-hidden",
-                                    isToday && "bg-[#F0F5FF]/50 border-[#D6E4FF]",
-                                    isSunday && !isToday && "bg-red-50/20"
-                                )}
-                                onClick={() => {
-                                    if (dayEvents.length > 0 || dayStamps.length > 0) {
-                                        setSelectedDayInfo({ day, events: dayEvents, stamps: dayStamps });
-                                    }
-                                }}
-                            >
-                                <span className={cn(
-                                    "text-xs font-black block mb-1 relative z-10",
-                                    isToday ? "text-[#0052CC]" : isSunday ? "text-red-500" : "text-slate-500"
-                                )}>{day}</span>
-                                
-                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10 px-2 pt-6">
-                                    {dayEvents.map(event => {
-                                        const timeStr = event.scheduled_at 
-                                            ? new Date(event.scheduled_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
-                                            : '';
-                                        return (
-                                            <div
-                                                key={event.id}
-                                                className="text-center flex flex-col items-center justify-center space-y-0.5"
-                                            >
-                                                <div className={cn(
-                                                    "font-black tracking-tighter leading-[1.1] break-keep",
-                                                    event.is_essential 
-                                                        ? "text-[#E63946]/40" 
-                                                        : "text-[#0052CC]/40"
-                                                )} style={{ fontSize: '13px' }}>
-                                                    {event.title}
-                                                </div>
-                                                <div className={cn(
-                                                    "text-[10px] font-bold tracking-tight opacity-40",
-                                                    event.is_essential ? "text-[#E63946]" : "text-[#0052CC]"
-                                                )}>
-                                                    {timeStr}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-
-                                {essentialStamp && (
-                                    <div className={cn(
-                                        "absolute inset-0 flex items-center justify-center pointer-events-none mix-blend-multiply transition-all duration-300 transform group-hover:scale-105 z-20",
-                                        essentialStamp.status === 'PENDING_APPROVAL' ? "rotate-[-5deg] opacity-60" : "rotate-[-10deg] opacity-90"
-                                    )}>
-                                        <div className={cn(
-                                            "w-[85px] h-[85px] rounded-full border-[2.5px] flex flex-col items-center justify-center font-black text-center leading-[1.2] tracking-tighter relative bg-transparent",
-                                            essentialStamp.status === 'PENDING_APPROVAL' ? "border-[#FF8A00] text-[#FF8A00] blur-[0.4px]" : "border-[#e02a3a] text-[#e02a3a]"
-                                        )}>
-                                            {/* Inner border to simulate double border from image */}
-                                            <div className="absolute inset-1 rounded-full border-[1.2px] border-current opacity-80" />
-                                            
-                                            {/* Top Stars */}
-                                            <div className="flex gap-0.5 mb-1 scale-75 opacity-90">
-                                                <Star className="w-2.5 h-2.5 fill-current" />
-                                                <Star className="w-2.5 h-2.5 fill-current -translate-y-1" />
-                                                <Star className="w-2.5 h-2.5 fill-current" />
-                                            </div>
-                                            
-                                            <div className="font-black text-[11px] leading-tight transform scale-x-110">
-                                                필수활동<br/>완료
-                                            </div>
-
-                                            {/* Bottom Stars */}
-                                            <div className="flex gap-0.5 mt-1 scale-75 opacity-90">
-                                                <Star className="w-2.5 h-2.5 fill-current" />
-                                                <Star className="w-2.5 h-2.5 fill-current translate-y-1" />
-                                                <Star className="w-2.5 h-2.5 fill-current" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {optionalStamps.length > 0 && (
-                                    <div className="absolute bottom-1 right-1 flex -space-x-1.5 z-40 opacity-90 transition-all transform group-hover:-translate-y-1 scale-110 origin-bottom-right">
-                                        {optionalStamps.slice(0, 3).map((s, idx) => (
-                                            <div key={s.id} className={cn(
-                                                "w-7 h-7 rounded-full border-[2px] shadow-sm flex items-center justify-center text-[12px] rotate-[-8deg] bg-white",
-                                                s.status === 'APPROVED' ? "border-green-500 text-green-600" : "border-indigo-400 text-indigo-500 blur-[0.2px]"
-                                            )} style={{ zIndex: 10 - idx }}>
-                                                {s.icon}
-                                            </div>
-                                        ))}
-                                        {optionalStamps.length > 3 && (
-                                            <div className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 shadow-sm flex items-center justify-center text-[8px] font-black text-slate-500 z-0">
-                                                +{optionalStamps.length - 3}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })}
+            {/* Three Stamp Slots */}
+            <div className="px-6 py-5">
+                <div className="flex items-start justify-around gap-2">
+                    <StampSlot
+                        label="필수 활동"
+                        sublabel="달성 시 제출"
+                        icon={<Award className="w-7 h-7" />}
+                        state={stamps.essential}
+                        href="/dashboard/mission"
+                        accentColor="#FF5C00"
+                        ringColor="border-[#FF5C00]"
+                        stampLabel="필수완료"
+                    />
+                    <StampSlot
+                        label="블로그 챌린지"
+                        sublabel="파리 미술관"
+                        icon={<Paintbrush2 className="w-7 h-7" />}
+                        state={stamps.blog}
+                        href="/dashboard/challenge"
+                        accentColor="#D97706"
+                        ringColor="border-amber-500"
+                        stampLabel="블로그"
+                    />
+                    <StampSlot
+                        label="카페 챌린지"
+                        sublabel="연속 출석 도전 !"
+                        icon={<Flame className="w-7 h-7" />}
+                        state={stamps.cafe}
+                        href="/dashboard/challenge"
+                        accentColor="#4F46E5"
+                        ringColor="border-indigo-500"
+                        stampLabel="카페"
+                    />
                 </div>
 
-                {selectedDayInfo && (
-                    <div className="mt-8 p-6 bg-slate-50 rounded-[24px] border border-slate-100 animate-in fade-in slide-in-from-top-4 duration-500 shadow-inner">
-                        <div className="flex justify-between items-start mb-6 border-b border-slate-200 pb-4">
-                            <h4 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-                                <span className="bg-white p-2 rounded-xl shadow-sm border border-slate-100 text-sm">🗓️</span>
-                                {viewDate.getFullYear()}.{String(viewDate.getMonth() + 1).padStart(2, '0')}.{String(selectedDayInfo.day).padStart(2, '0')} 기록
-                            </h4>
-                            <button
-                                onClick={() => setSelectedDayInfo(null)}
-                                className="text-slate-400 hover:text-slate-600 font-bold bg-white p-2 rounded-full shadow-sm"
-                            >
-                                <CheckCircle2 className="w-5 h-5" />
-                            </button>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {(selectedDayInfo.stamps.length > 0) && (
-                                <div className="space-y-3">
-                                    <h5 className="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-1.5"><Trophy className="w-3 h-3" /> My Achieved Stamps</h5>
-                                    <div className="space-y-2">
-                                        {selectedDayInfo.stamps.map(st => (
-                                            <div key={st.id} className="flex items-center gap-3 bg-white p-3.5 rounded-2xl border border-slate-100 shadow-sm">
-                                                <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center">
-                                                    {st.type === 'essential' ? (
-                                                        <span className="text-sm font-black text-indigo-500">🚩</span>
-                                                    ) : (
-                                                        <span className="text-sm">{st.icon}</span>
-                                                    )}
-                                                </div>
-                                                <div>
-                                                    <p className="font-extrabold text-sm text-slate-800">{st.title}</p>
-                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mt-0.5">{st.status === 'completed' || st.status === 'APPROVED' ? 'Verified ✅' : 'Pending ⏳'}</p>
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
+                {/* Status line */}
+                <div className="mt-4 text-center">
+                    {litCount === 0 ? (
+                        <p className="text-[10px] font-bold text-slate-300">
+                            미션을 완료하면 스탬프가 채워집니다
+                        </p>
+                    ) : litCount < 3 ? (
+                        <p className="text-[10px] font-bold text-slate-400">
+                            <span className="text-[#FF5C00] font-black">{litCount}개</span> 제출됨 &middot; {3 - litCount}개 더 남았습니다
+                        </p>
+                    ) : (
+                        <p className="text-[10px] font-black text-emerald-500">
+                            🎉 모든 미션 제출 완료!
+                        </p>
+                    )}
+                </div>
+            </div>
 
-                            {(selectedDayInfo.events.length > 0) && (
-                                <div className="space-y-3">
-                                    <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5"><CalendarIcon className="w-3 h-3" /> Scheduled Events</h5>
-                                    <div className="space-y-2">
-                                        {selectedDayInfo.events.map(event => (
-                                            <div key={event.id} className="bg-white p-3.5 rounded-2xl border border-slate-100 border-l-4 shadow-sm" style={{borderLeftColor: event.is_essential ? '#FFD6E0' : '#D6E4FF'}}>
-                                                <p className="font-extrabold text-sm text-slate-800 tracking-tight">{event.title}</p>
-                                                <p className="text-[11px] font-medium text-slate-500 mt-1 leading-snug">{event.description}</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
+            {/* CTA */}
+            <div className="px-6 pb-5">
+                <Button
+                    asChild
+                    className="w-full h-11 min-h-[44px] rounded-xl bg-[#FF5C00] hover:bg-[#E63900] text-white font-black text-sm shadow-lg shadow-orange-100/50 transition-all hover:scale-[1.02] active:scale-95"
+                >
+                    <Link href="/dashboard/mission" className="flex items-center justify-center gap-2">
+                        필수 활동 제출하기
+                        <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                </Button>
+            </div>
+        </div>
     );
 }
+
+// ── Slim Quick Links ────────────────────────────────────────────────────────────────
 
 function QuickLinks() {
     const links = [
         { title: "활동 가이드", desc: "미션 가이드라인", icon: FileText, href: "/dashboard/guide" },
         { title: "자주 묻는 질문", desc: "FAQ 보러가기", icon: HelpCircle, href: "/dashboard/faq" },
-        { title: "공식 커뮤니티", desc: "지식카페 바로가기", icon: Users, href: "https://cafe.naver.com/jisiktravel", external: true }
+        { title: "공식 커뮤니티", desc: "네이버 지식여행 카페 바로가기", icon: Users, href: "https://cafe.naver.com/jisiktravel", external: true },
     ];
 
     return (
-        <div className="grid grid-cols-1 gap-4 mb-8">
-            {links.map(link => (
+        <div className="rounded-[20px] bg-white border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.04)] overflow-hidden divide-y divide-slate-50">
+            {links.map((link, i) => (
                 <Link
-                    href={link.href}
                     key={link.title}
-                    className="group"
+                    href={link.href}
                     target={link.external ? "_blank" : undefined}
                     rel={link.external ? "noopener noreferrer" : undefined}
+                    className="flex items-center gap-3.5 px-4 py-3 group hover:bg-slate-50 transition-colors"
                 >
-                    <Card className="hover:shadow-md transition-all duration-300 border border-slate-100 rounded-2xl bg-white p-1 h-full overflow-hidden">
-                        <CardContent className="p-4 flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all shrink-0">
-                                <link.icon className="w-5 h-5" />
-                            </div>
-                            <div className="overflow-hidden">
-                                <h4 className="font-extrabold text-slate-800 text-sm whitespace-nowrap truncate tracking-tight">
-                                    {link.title}
-                                </h4>
-                                <p className="text-[10px] text-slate-400 font-bold whitespace-nowrap truncate tracking-tight">
-                                    {link.desc}
-                                </p>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-slate-900 group-hover:text-white transition-all shrink-0">
+                        <link.icon className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-slate-700 truncate leading-tight">{link.title}</p>
+                        <p className="text-[10px] text-slate-400 font-medium truncate mt-0.5">{link.desc}</p>
+                    </div>
+                    <ArrowRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-500 group-hover:translate-x-0.5 transition-all shrink-0" />
                 </Link>
             ))}
         </div>
     );
 }
 
-function WebsiteBanner() {
+// ── TourLive Banner ────────────────────────────────────────────────────────────────
+
+function TourliveMiniBanner() {
     return (
-        <a 
-            href="https://www.tourlive.co.kr" 
-            target="_blank" 
+        <a
+            href="https://www.tourlive.co.kr"
+            target="_blank"
             rel="noopener noreferrer"
             className="block group"
         >
-            <Card className="relative overflow-hidden border-none rounded-[32px] bg-gradient-to-br from-slate-50 via-white to-slate-50 shadow-[0_4px_24px_rgba(0,0,0,0.04)] hover:shadow-[0_8px_32px_rgba(0,0,0,0.08)] transition-all duration-500 p-1">
-                {/* Subtle Decorative Pattern */}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-slate-100/50 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-orange-100/30 transition-colors" />
-                <div className="absolute bottom-0 left-0 w-24 h-24 bg-slate-100/30 rounded-full blur-2xl -ml-12 -mb-12" />
-                
-                <CardContent className="relative p-10 flex flex-col items-center text-center space-y-8">
-                    <div className="space-y-3">
-                        <Badge variant="outline" className="bg-white/80 backdrop-blur-sm border-slate-200 text-slate-400 font-black px-4 py-1.5 rounded-full text-[10px] tracking-widest uppercase">Official Website</Badge>
-                        <div className="flex justify-center py-2">
-                            <img 
-                                src="/logo_black.png" 
-                                alt="Tourlive Logo" 
-                                className="h-10 object-contain opacity-90 group-hover:opacity-100 group-hover:scale-[1.02] transition-all duration-500"
-                            />
-                        </div>
-                        <p className="text-slate-400 font-bold text-xs tracking-tight">지식 가이드 전문 플랫폼, 투어라이브 공식 홈페이지</p>
+            <div className="relative overflow-hidden rounded-[20px] bg-slate-900 hover:bg-black transition-colors duration-300 shadow-lg shadow-slate-900/10">
+                {/* Decorative glow */}
+                <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/10 rounded-full blur-[40px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+                <div className="relative flex items-center gap-4 px-5 py-4">
+                    <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0 group-hover:bg-white/20 transition-colors">
+                        <ExternalLink className="w-4.5 h-4.5 text-orange-400" />
                     </div>
-
-                    <Button 
-                        className="h-16 px-12 rounded-2xl bg-slate-900 hover:bg-black text-white font-black shadow-xl shadow-slate-200 group-hover:scale-105 active:scale-95 transition-all text-base gap-3"
-                    >
-                        투어라이브 바로가기
-                        <ExternalLink className="w-5 h-5 text-orange-400 transition-transform group-hover:rotate-12" />
-                    </Button>
-                </CardContent>
-            </Card>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.15em] leading-none">Official Website</p>
+                        <img
+                            src="/logo_black.png"
+                            alt="Tourlive"
+                            className="h-5 object-contain invert opacity-80 group-hover:opacity-100 transition-opacity mt-1.5"
+                        />
+                    </div>
+                    <div className="shrink-0 flex flex-col items-end gap-1">
+                        <span className="text-[10px] font-black text-white/60 uppercase tracking-widest">바로가기</span>
+                        <ArrowRight className="w-4 h-4 text-orange-400 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                </div>
+            </div>
         </a>
     );
 }
@@ -668,14 +539,16 @@ function DashboardContent() {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-                <div className="lg:col-span-4 space-y-12">
-                    <MonthlyMissionCard currentMission={data.currentMission} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+                {/* Left — Mission Stamp Board + quick nav */}
+                <div className="space-y-4">
+                    <MissionStampBoard />
                     <QuickLinks />
-                    <WebsiteBanner />
                 </div>
-                <div className="lg:col-span-8">
-                    <UnifiedMissionCalendar schedules={data.schedules} />
+                {/* Right — Essential tasks + TourLive */}
+                <div className="space-y-4">
+                    <EssentialTaskList team={data.team || 'naver_blog'} />
+                    <TourliveMiniBanner />
                 </div>
             </div>
         </div>
