@@ -52,6 +52,10 @@ export async function submitOnboardingForm(formData: FormData) {
             .eq('tourlive_email', tourliveEmail)
             .maybeSingle();
 
+        if (globalEmailError) {
+            console.error("[Onboarding] Email duplicate check failed:", globalEmailError);
+            return { error: "이메일 중복 확인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요." };
+        }
         if (globalEmailExisting) {
             return { error: "이미 가입된 투어라이브 계정입니다. 해당 계정으로 로그인을 해주세요." };
         }
@@ -64,6 +68,10 @@ export async function submitOnboardingForm(formData: FormData) {
             .eq('nickname', nickname)
             .maybeSingle();
 
+        if (globalNicknameError) {
+            console.error("[Onboarding] Nickname duplicate check failed:", globalNicknameError);
+            return { error: "닉네임 중복 확인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요." };
+        }
         if (globalNicknameExisting) {
             return { error: "사용 중인 닉네임입니다. 다른 닉네임을 입력해주세요." };
         }

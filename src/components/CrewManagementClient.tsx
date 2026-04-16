@@ -79,7 +79,7 @@ export function CrewManagementClient({ initialMembers, batches }: CrewManagement
         batches={batches}
       />
 
-      <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-[40px] overflow-hidden bg-white">
+      <Card className="border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-brand-xl overflow-hidden bg-white">
         <CardHeader className="p-8 border-b border-slate-50 bg-slate-50/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <CardTitle className="text-xl font-bold text-slate-800 flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-orange-100 flex items-center justify-center">

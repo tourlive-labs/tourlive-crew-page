@@ -32,8 +32,8 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#F8F9FA] flex items-center justify-center p-6 font-sans antialiased">
-            <Card className="w-full max-w-md shadow-[0_8px_30px_rgb(0,0,0,0.04)] border-none rounded-[32px] overflow-hidden bg-white">
+        <div className="min-h-screen bg-brand-bg flex items-center justify-center p-6 font-sans antialiased">
+            <Card className="w-full max-w-md shadow-[0_8px_30px_rgb(0,0,0,0.04)] border-none rounded-brand-lg overflow-hidden bg-white">
                 <CardHeader className="pt-12 pb-8 text-center flex flex-col items-center">
                     <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center mb-6 border border-slate-100 shadow-sm">
                         <Lock className="w-6 h-6 text-slate-400" />
@@ -72,7 +72,7 @@ export default function LoginPage() {
                         <Button
                             type="submit"
                             disabled={isPending}
-                            className="w-full h-14 bg-[#FF5C00] hover:bg-[#E65300] text-white font-bold rounded-2xl shadow-lg shadow-orange-100 transition-all hover:scale-[1.02] active:scale-[0.98] border-none text-lg mt-4"
+                            className="w-full h-14 bg-brand-primary hover:bg-brand-primary-hover text-white font-bold rounded-2xl shadow-lg shadow-orange-100 transition-all hover:scale-[1.02] active:scale-[0.98] border-none text-lg mt-4"
                         >
                             {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : "로그인"}
                         </Button>
@@ -80,7 +80,7 @@ export default function LoginPage() {
                     <div className="mt-10 text-center border-t border-slate-50 pt-8">
                         <p className="text-sm text-slate-400 font-medium">
                             아직 크루 신청을 안 하셨나요?{" "}
-                            <Link href="/onboarding" className="text-[#FF5C00] font-bold hover:underline transition-all">
+                            <Link href="/onboarding" className="text-brand-primary font-bold hover:underline transition-all">
                                 신규 가입하기
                             </Link>
                         </p>

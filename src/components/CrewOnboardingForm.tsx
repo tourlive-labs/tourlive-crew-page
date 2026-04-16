@@ -104,8 +104,8 @@ export default function CrewOnboardingForm() {
     };
 
     return (
-        <div className="min-h-screen bg-[#F8F9FA] py-12 px-6 flex items-center justify-center font-sans antialiased text-slate-900">
-            <Card className="w-full max-w-6xl shadow-[0_4px_24px_rgba(0,0,0,0.04)] border-none rounded-[32px] bg-white overflow-hidden p-0">
+        <div className="min-h-screen bg-brand-bg py-12 px-6 flex items-center justify-center font-sans antialiased text-slate-900">
+            <Card className="w-full max-w-6xl shadow-[0_4px_24px_rgba(0,0,0,0.04)] border-none rounded-brand-lg bg-white overflow-hidden p-0">
                 {/* Minimal Step Progress Bar */}
                 <div className="flex w-full h-1.5 bg-slate-50">
                     <div className={cn("h-full transition-all duration-500 bg-[#FFD6E0]", currentStep === 1 ? "w-1/2" : "w-1/2")} />
@@ -297,10 +297,10 @@ export default function CrewOnboardingForm() {
                                                     <Label
                                                         htmlFor="banner-upload"
                                                         className={cn(
-                                                            "border-2 border-dashed rounded-[24px] p-8 text-center cursor-pointer transition-all flex flex-col items-center justify-center min-h-[160px]",
+                                                            "border-2 border-dashed rounded-brand p-8 text-center cursor-pointer transition-all flex flex-col items-center justify-center min-h-[160px]",
                                                             previewUrl
                                                                 ? "border-transparent bg-slate-50 shadow-inner"
-                                                                : "border-slate-100 bg-[#F8F9FA] hover:bg-white hover:border-slate-300"
+                                                                : "border-slate-100 bg-brand-bg hover:bg-white hover:border-slate-300"
                                                         )}
                                                     >
                                                         {previewUrl ? (
@@ -349,7 +349,7 @@ export default function CrewOnboardingForm() {
                                 <Button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="w-full md:w-auto md:min-w-[320px] h-16 text-white text-lg font-bold rounded-2xl shadow-xl shadow-orange-100/50 hover:scale-[1.02] active:scale-[0.98] transition-all bg-[#FF5C00] border-none"
+                                    className="w-full md:w-auto md:min-w-[320px] h-16 text-white text-lg font-bold rounded-2xl shadow-xl shadow-orange-100/50 hover:scale-[1.02] active:scale-[0.98] transition-all bg-brand-primary border-none"
                                 >
                                     {isSubmitting ? (
                                         <>

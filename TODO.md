@@ -7,32 +7,8 @@
 
 ## 🔴 즉시 (Critical)
 
-### #6 `dashboard/page.tsx` — 에러 시 완전 공백 화면
-- **파일**: `src/app/dashboard/page.tsx`
-- **문제**: `getDashboardData()`가 에러를 반환하면 `data = null` → `return null` → 사용자에게 흰 화면만 표시됨
-- **수정 방향**: 에러 상태 UI 추가 (재시도 버튼, 안내 메시지)
-
-```ts
-// 현재
-if ('error' in res) {
-    console.error(res.error); // 콘솔만 출력
-} else {
-    setData(res);
-}
-if (!data) return null; // ← 공백 화면
-```
-
-### #7 `onboarding.ts` — 중복 체크 쿼리 에러 미처리
-- **파일**: `src/app/actions/onboarding.ts`
-- **문제**: `globalEmailError` / `globalNicknameError` 선언 후 한 번도 체크 안 함. DB 장애 시 중복 체크 통과 → 잘못된 등록 가능
-- **수정 방향**: 두 에러 변수에 조기 반환 로직 추가
-
-```ts
-// 현재 (에러 무시)
-const { data: globalEmailExisting, error: globalEmailError } = ...
-if (globalEmailExisting) { return { error: "이미 가입된..." }; }
-// globalEmailError 체크 없음 ← 문제
-```
+- ✅ **#6 `dashboard/page.tsx` — 에러 시 완전 공백 화면** — `error` state 추가, 에러 UI(AlertCircle + 다시 시도 버튼) 렌더링으로 수정
+- ✅ **#7 `onboarding.ts` — 중복 체크 쿼리 에러 미처리** — `globalEmailError` / `globalNicknameError` 체크 후 조기 반환 추가
 
 ---
 

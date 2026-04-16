@@ -31,7 +31,7 @@ export function AdminFilters({
   batches
 }: AdminFiltersProps) {
   return (
-    <div className="flex flex-wrap items-center gap-6 p-6 bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-50">
+    <div className="flex flex-wrap items-center gap-6 p-6 bg-white rounded-brand shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-50">
       <div className="flex items-center gap-2 text-slate-400">
         <Filter className="w-4 h-4" />
         <span className="text-xs font-bold uppercase tracking-wider">필터링</span>

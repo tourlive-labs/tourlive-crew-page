@@ -41,6 +41,7 @@ import {
 import { toast } from "sonner";
 import { ExternalLink, Download, CheckCircle2, XCircle, Search, Filter, ChevronLeft, Copy, CreditCard } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function AdminMissionsPage() {
     const [essentialMissions, setEssentialMissions] = useState<any[]>([]);
@@ -190,34 +191,35 @@ export default function AdminMissionsPage() {
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
                         </div>
-                        <select 
-                            className="h-10 px-4 bg-white border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none"
-                            value={selectedTeam}
-                            onChange={(e) => setSelectedTeam(e.target.value)}
-                        >
-                            <option value="all">전체 팀</option>
-                            <option value="naver_blog">블로그 팀</option>
-                            <option value="naver_cafe">카페 팀</option>
-                        </select>
+                        <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+                            <SelectTrigger className="w-[140px] h-10 bg-white border-slate-200 rounded-xl font-bold text-slate-700">
+                                <SelectValue placeholder="전체 팀" />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                                <SelectItem value="all">전체 팀</SelectItem>
+                                <SelectItem value="naver_blog">블로그 팀</SelectItem>
+                                <SelectItem value="naver_cafe">카페 팀</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
                 </div>
 
                 <Tabs defaultValue="essential" className="w-full">
                     <TabsList className="bg-slate-200/50 p-1.5 rounded-2xl h-14 mb-6">
-                        <TabsTrigger value="essential" className="rounded-xl font-black text-sm data-[state=active]:bg-white data-[state=active]:text-[#FF5C00] h-full px-8">
+                        <TabsTrigger value="essential" className="rounded-xl font-black text-sm data-[state=active]:bg-white data-[state=active]:text-brand-primary h-full px-8">
                             필수 미션 승인 대기 ({essentialMissions.length})
                         </TabsTrigger>
-                        <TabsTrigger value="side" className="rounded-xl font-black text-sm data-[state=active]:bg-white data-[state=active]:text-[#FF5C00] h-full px-8">
+                        <TabsTrigger value="side" className="rounded-xl font-black text-sm data-[state=active]:bg-white data-[state=active]:text-brand-primary h-full px-8">
                             추가 미션 검증 ({sideMissions.length})
                         </TabsTrigger>
-                        <TabsTrigger value="settlement" className="rounded-xl font-black text-sm data-[state=active]:bg-white data-[state=active]:text-[#FF5C00] h-full px-8">
+                        <TabsTrigger value="settlement" className="rounded-xl font-black text-sm data-[state=active]:bg-white data-[state=active]:text-brand-primary h-full px-8">
                             ⭐ 포인트 정산 도구 ({settlements.length})
                         </TabsTrigger>
                     </TabsList>
 
                     {/* Essential Missions Tab */}
                     <TabsContent value="essential">
-                        <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+                        <div className="bg-white rounded-brand-lg border border-slate-100 shadow-sm overflow-hidden">
                             <Table>
                                 <TableHeader className="bg-slate-50/50">
                                     <TableRow className="hover:bg-transparent border-slate-100">
@@ -288,7 +290,7 @@ export default function AdminMissionsPage() {
 
                     {/* Side Missions Tab */}
                     <TabsContent value="side">
-                        <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden">
+                        <div className="bg-white rounded-brand-lg border border-slate-100 shadow-sm overflow-hidden">
                             <Table>
                                 <TableHeader className="bg-slate-50/50">
                                     <TableRow className="hover:bg-transparent border-slate-100">
@@ -338,7 +340,7 @@ export default function AdminMissionsPage() {
                     
                     {/* Settlement Tab */}
                     <TabsContent value="settlement">
-                        <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden text-slate-900">
+                        <div className="bg-white rounded-brand-lg border border-slate-100 shadow-sm overflow-hidden text-slate-900">
                             <div className="p-6 border-b border-slate-50 flex items-center justify-between bg-slate-50/30">
                                 <div>
                                     <span className="font-black text-slate-800 block">⭐ 실시간 정산 도구 (Payout Tool)</span>
@@ -378,7 +380,7 @@ export default function AdminMissionsPage() {
                                                     <Button 
                                                         variant="ghost" 
                                                         size="icon" 
-                                                        className="h-7 w-7 rounded-lg text-slate-400 hover:text-[#FF5C00] hover:bg-orange-50"
+                                                        className="h-7 w-7 rounded-lg text-slate-400 hover:text-brand-primary hover:bg-orange-50"
                                                         onClick={() => handleCopy(s.profiles?.tourlive_email, "계정(Email)")}
                                                     >
                                                         <Copy className="w-3.5 h-3.5" />
@@ -388,11 +390,11 @@ export default function AdminMissionsPage() {
                                             <TableCell className="font-black text-sm text-slate-800 py-3">{s.profiles?.nickname}</TableCell>
                                             <TableCell className="py-3">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="font-black text-[#FF5C00]">{s.amount.toLocaleString()}</span>
+                                                    <span className="font-black text-brand-primary">{s.amount.toLocaleString()}</span>
                                                     <Button 
                                                         variant="ghost" 
                                                         size="icon" 
-                                                        className="h-7 w-7 rounded-lg text-slate-400 hover:text-[#FF5C00] hover:bg-orange-50"
+                                                        className="h-7 w-7 rounded-lg text-slate-400 hover:text-brand-primary hover:bg-orange-50"
                                                         onClick={() => handleCopy(s.amount.toString(), "금액")}
                                                     >
                                                         <Copy className="w-3.5 h-3.5" />
@@ -407,7 +409,7 @@ export default function AdminMissionsPage() {
                                                     <Button 
                                                         variant="ghost" 
                                                         size="icon" 
-                                                        className="h-7 w-7 rounded-lg text-slate-400 hover:text-[#FF5C00] hover:bg-orange-50"
+                                                        className="h-7 w-7 rounded-lg text-slate-400 hover:text-brand-primary hover:bg-orange-50"
                                                         onClick={() => handleCopy(s.reason, "지급 사유")}
                                                     >
                                                         <Copy className="w-3.5 h-3.5" />
@@ -434,7 +436,7 @@ export default function AdminMissionsPage() {
 
             {/* Rejection Modal */}
             <Dialog open={!!rejectingItem} onOpenChange={() => setRejectingItem(null)}>
-                <DialogContent className="sm:max-w-[425px] rounded-[32px] border-none shadow-2xl p-8">
+                <DialogContent className="sm:max-w-[425px] rounded-brand-lg border-none shadow-2xl p-8">
                     <DialogHeader>
                         <DialogTitle className="text-2xl font-black tracking-tighter text-slate-900">미션 반려 사유 입력</DialogTitle>
                     </DialogHeader>
@@ -442,7 +444,7 @@ export default function AdminMissionsPage() {
                         <Label className="font-black text-slate-600 text-sm">사용자에게 전달할 반려 사유를 입력해주세요.</Label>
                         <Textarea 
                             placeholder="예: UTM 가이드 태그가 누락되었습니다. 수정 후 다시 제출해주세요."
-                            className="min-h-[120px] rounded-2xl border-slate-100 focus:border-[#FF5C00] focus:ring-[#FF5C00] transition-all p-4 font-medium"
+                            className="min-h-[120px] rounded-2xl border-slate-100 focus:border-brand-primary focus:ring-brand-primary transition-all p-4 font-medium"
                             value={rejectReason}
                             onChange={(e) => setRejectReason(e.target.value)}
                         />

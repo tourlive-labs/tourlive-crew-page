@@ -381,7 +381,7 @@ function QuickLinks() {
     ];
 
     return (
-        <div className="rounded-[20px] bg-white border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.04)] overflow-hidden divide-y divide-slate-50">
+        <div className="rounded-brand bg-white border border-slate-100 shadow-[0_2px_12px_rgba(0,0,0,0.04)] overflow-hidden divide-y divide-slate-50">
             {links.map((link, i) => (
                 <Link
                     key={link.title}
@@ -414,7 +414,7 @@ function TourliveMiniBanner() {
             rel="noopener noreferrer"
             className="block group"
         >
-            <div className="relative overflow-hidden rounded-[20px] bg-slate-900 hover:bg-black transition-colors duration-300 shadow-lg shadow-slate-900/10">
+            <div className="relative overflow-hidden rounded-brand bg-slate-900 hover:bg-black transition-colors duration-300 shadow-lg shadow-slate-900/10">
                 {/* Decorative glow */}
                 <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/10 rounded-full blur-[40px] -translate-y-1/2 translate-x-1/2 pointer-events-none" />
                 <div className="relative flex items-center gap-4 px-5 py-4">
@@ -442,12 +442,14 @@ function TourliveMiniBanner() {
 function DashboardContent() {
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         async function loadData() {
             const res = await getDashboardData();
             if ('error' in res) {
-                console.error(res.error);
+                console.error('[Dashboard] loadData error:', res.error);
+                setError(res.error ?? "알 수 없는 오류가 발생했습니다.");
             } else {
                 setData(res);
             }
@@ -466,6 +468,24 @@ function DashboardContent() {
                     </div>
                 </div>
                 <p className="text-slate-400 font-black text-xs uppercase tracking-widest">Initializing Dashboard</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] py-32 mx-6 lg:mx-10 my-10">
+                <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center mb-5">
+                    <AlertCircle className="w-7 h-7 text-red-400" />
+                </div>
+                <p className="text-base font-black text-slate-800 mb-2">데이터를 불러오지 못했습니다</p>
+                <p className="text-sm text-slate-400 font-medium mb-6 text-center max-w-xs">{error}</p>
+                <button
+                    onClick={() => { setError(null); setLoading(true); getDashboardData().then(res => { if ('error' in res) { setError(res.error ?? "알 수 없는 오류가 발생했습니다."); } else { setData(res); } setLoading(false); }); }}
+                    className="px-6 py-2.5 rounded-xl bg-brand-primary text-white text-sm font-black hover:bg-brand-primary-hover transition-colors"
+                >
+                    다시 시도
+                </button>
             </div>
         );
     }
