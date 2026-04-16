@@ -1,7 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, LogOut } from "lucide-react";
+import { AlertCircle, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { CrewManagementClient } from "@/components/CrewManagementClient";
@@ -45,6 +45,27 @@ export default async function AdminPage() {
         `)
         .neq('role', 'admin')
         .order('created_at', { ascending: false });
+
+    if (fetchError) {
+        return (
+            <div className="min-h-screen bg-brand-bg p-8 font-sans antialiased text-slate-900 border-t-[12px] border-orange-500 flex items-center justify-center">
+                <div className="max-w-md w-full bg-white rounded-brand-lg p-10 shadow-sm text-center space-y-4">
+                    <div className="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center mx-auto">
+                        <AlertCircle className="w-7 h-7 text-red-400" />
+                    </div>
+                    <h2 className="text-xl font-bold text-slate-800">데이터를 불러오지 못했습니다</h2>
+                    <p className="text-slate-400 text-sm leading-relaxed">
+                        크루 멤버 정보를 가져오는 중 오류가 발생했습니다.<br />
+                        잠시 후 다시 시도해주세요.
+                    </p>
+                    <p className="text-xs text-slate-300 font-mono break-all">{fetchError.message}</p>
+                    <Link href="/admin" className="inline-block mt-2 px-6 py-2.5 bg-slate-900 text-white rounded-2xl text-sm font-bold hover:bg-slate-700 transition-colors">
+                        다시 시도
+                    </Link>
+                </div>
+            </div>
+        );
+    }
 
     // Get unique batches for the filter
     // .trim() neutralizes any trailing/leading whitespace that would create phantom duplicates in Set

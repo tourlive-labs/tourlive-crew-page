@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { submitOnboardingForm } from "@/app/actions/onboarding";
 import { Label } from "@/components/ui/label";
-import { Loader2, Upload, X, ChevronRight, User, Image as ImageIcon } from "lucide-react";
+import { Loader2, Upload, X, ChevronRight, User, Image as ImageIcon, CalendarOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function CrewOnboardingForm() {
@@ -21,6 +21,7 @@ export default function CrewOnboardingForm() {
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [activeBatch, setActiveBatch] = useState<{ term: number, id: string } | null>(null);
+    const [batchLoading, setBatchLoading] = useState(true);
     const [currentStep, setCurrentStep] = useState(1);
 
     const form = useForm<FormValues>({
@@ -48,13 +49,17 @@ export default function CrewOnboardingForm() {
         async function fetchActiveBatch() {
             const { createClient } = await import("@/utils/supabase/client");
             const supabase = createClient();
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('batches')
                 .select('id, term')
                 .eq('is_active', true)
                 .single();
 
+            if (error && error.code !== 'PGRST116') {
+                console.error('[CrewOnboardingForm] fetchActiveBatch:', error);
+            }
             if (data) setActiveBatch(data);
+            setBatchLoading(false);
         }
         fetchActiveBatch();
     }, []);
@@ -102,6 +107,38 @@ export default function CrewOnboardingForm() {
             setIsSubmitting(false);
         }
     };
+
+    if (batchLoading) {
+        return (
+            <div className="min-h-screen bg-brand-bg py-12 px-6 flex items-center justify-center font-sans antialiased text-slate-900">
+                <div className="flex flex-col items-center gap-4 text-slate-400">
+                    <Loader2 className="w-8 h-8 animate-spin" />
+                    <p className="text-sm font-medium">모집 정보를 확인하는 중...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!activeBatch) {
+        return (
+            <div className="min-h-screen bg-brand-bg py-12 px-6 flex items-center justify-center font-sans antialiased text-slate-900">
+                <Card className="w-full max-w-lg shadow-[0_4px_24px_rgba(0,0,0,0.04)] border-none rounded-brand-lg bg-white overflow-hidden p-0">
+                    <CardContent className="p-12 flex flex-col items-center text-center gap-6">
+                        <div className="w-16 h-16 rounded-brand bg-slate-50 border border-slate-100 flex items-center justify-center">
+                            <CalendarOff className="w-8 h-8 text-slate-300" />
+                        </div>
+                        <div className="space-y-2">
+                            <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight">현재 모집 중이 아닙니다</h2>
+                            <p className="text-slate-400 font-medium text-sm leading-relaxed">
+                                투어라이브 크루의 신규 모집이 마감되었습니다.<br />
+                                다음 기수 모집 일정을 확인해주세요.
+                            </p>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-brand-bg py-12 px-6 flex items-center justify-center font-sans antialiased text-slate-900">

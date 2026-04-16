@@ -1,11 +1,24 @@
 "use client";
 
+import ReactMarkdown from "react-markdown";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { HelpCircle, MessageSquare, ExternalLink, Download, Sparkles } from "lucide-react";
 import { signOut } from "@/app/actions/auth";
 import PageHeader from "@/components/shared/PageHeader";
+
+const faqMarkdownComponents = {
+    p: ({ children }: { children?: React.ReactNode }) => <span>{children}</span>,
+    strong: ({ children }: { children?: React.ReactNode }) => (
+        <strong className="font-black text-slate-900">{children}</strong>
+    ),
+    a: ({ href, children }: { href?: string; children?: React.ReactNode }) => (
+        <a href={href} target="_blank" rel="noopener noreferrer" className="text-brand-primary hover:underline font-bold">
+            {children}
+        </a>
+    ),
+};
 
 export default function FAQPage() {
     const faqs = [
@@ -70,14 +83,11 @@ export default function FAQPage() {
                                 <div className="flex gap-3">
                                     <span className="text-slate-300 font-black shrink-0">A.</span>
                                     <div className="space-y-3">
-                                        <p className="text-slate-600 font-medium leading-relaxed">
-                                            {faq.a.includes("**[") ? (
-                                                <>
-                                                    <span className="text-slate-900 font-black">[오디오 가이드 사용 후기]</span>
-                                                    {faq.a.split("]")[1]}
-                                                </>
-                                            ) : faq.a}
-                                        </p>
+                                        <div className="text-slate-600 font-medium leading-relaxed">
+                                            <ReactMarkdown components={faqMarkdownComponents}>
+                                                {faq.a}
+                                            </ReactMarkdown>
+                                        </div>
                                         
                                         {faq.highlight && (
                                             <div className="p-4 rounded-2xl bg-brand-primary/5 border border-brand-primary/20 flex items-start gap-3">

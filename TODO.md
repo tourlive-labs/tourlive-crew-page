@@ -14,15 +14,9 @@
 
 ## 🟡 높음 (High)
 
-### #8 `admin/page.tsx` — `fetchError` 선언 후 미사용
-- **파일**: `src/app/admin/page.tsx`
-- **문제**: 크루 멤버 조회 실패 시 `fetchError` 체크 없음 → `crewMembers = null` → 빈 테이블 렌더링, 에러 안내 없음
-- **수정 방향**: `fetchError` 체크 후 에러 UI 또는 redirect 처리
+- ✅ **#8 `admin/page.tsx` — `fetchError` 선언 후 미사용** — `fetchError` 체크 후 AlertCircle 에러 카드(메시지 + 다시 시도 링크) 렌더링으로 수정
 
-### #9 `CrewOnboardingForm.tsx` — 모집 마감 시 안내 없음
-- **파일**: `src/components/CrewOnboardingForm.tsx`
-- **문제**: `fetchActiveBatch`에서 error 무시, `is_active` 배치가 없으면 `activeBatch = null`인 채로 폼 표시. "현재 모집 중이 아닙니다" 같은 안내 없음
-- **수정 방향**: `error` 변수 체크 + `activeBatch === null`일 때 모집 마감 안내 UI 추가
+- ✅ **#9 `CrewOnboardingForm.tsx` — 모집 마감 시 안내 없음** — `batchLoading` state 추가, `error`/`PGRST116` 처리, `activeBatch === null`일 때 CalendarOff 아이콘 + "현재 모집 중이 아닙니다" 카드 렌더링
 
 - ✅ **#1 브랜드 토큰 미적용 — `/dashboard` 외 영역** — `login`, `page`, `admin`, `missions`, `CrewOnboardingForm`, `CrewManagementClient`, `AdminFilters` 전체 교체 완료
 - ✅ **#2 네이티브 `<select>` vs shadcn/ui `<Select>` 혼용** — `admin/missions/page.tsx` 팀 필터 교체 완료
