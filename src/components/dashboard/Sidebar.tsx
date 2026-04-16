@@ -50,7 +50,7 @@ export default function Sidebar() {
             {/* Mobile Header */}
             <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-slate-100 flex items-center justify-between px-6 z-50">
                 <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#FF5C00] to-[#E63900] flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-primary to-brand-primary-hover flex items-center justify-center">
                         <span className="text-white font-black text-sm">T</span>
                     </div>
                     <span className="font-extrabold text-slate-900 tracking-tight">Tourlive Crew</span>
@@ -68,12 +68,12 @@ export default function Sidebar() {
                 <div className="flex flex-col h-full p-8 pt-10 lg:pt-10">
                     {/* Logo Area */}
                     <div className="flex items-center gap-3 mb-12 ml-2">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF5C00] to-[#E63900] flex items-center justify-center shadow-lg shadow-orange-100">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-primary to-brand-primary-hover flex items-center justify-center shadow-lg shadow-orange-100">
                             <span className="text-white font-black text-lg">T</span>
                         </div>
                         <div>
                             <span className="block font-black text-slate-900 leading-tight">Tourlive Crew</span>
-                            <span className="block text-[10px] font-black text-[#FF5C00] uppercase tracking-widest mt-0.5">Portal v2.0</span>
+                            <span className="block text-[10px] font-black text-brand-primary uppercase tracking-widest mt-0.5">Portal v2.0</span>
                         </div>
                     </div>
 
@@ -91,16 +91,16 @@ export default function Sidebar() {
                                     className={cn(
                                         "flex items-center group px-5 py-4 rounded-2xl transition-all duration-300 relative overflow-hidden",
                                         isActive 
-                                            ? "bg-[#FFF5F1] text-[#FF5C00]" 
+                                            ? "bg-brand-primary/5 text-brand-primary" 
                                             : "hover:bg-slate-50 text-slate-500 hover:text-slate-900"
                                     )}
                                 >
                                     {isActive && (
-                                        <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-[#FF5C00] rounded-r-full" />
+                                        <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-brand-primary rounded-r-full" />
                                     )}
                                     <Icon className={cn(
                                         "w-5 h-5 mr-4 transition-colors",
-                                        isActive ? "text-[#FF5C00]" : "text-slate-400 group-hover:text-slate-900"
+                                        isActive ? "text-brand-primary" : "text-slate-400 group-hover:text-slate-900"
                                     )} />
                                     <span className="font-bold text-sm tracking-tight">{item.label}</span>
                                     {isActive && (

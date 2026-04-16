@@ -45,6 +45,17 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+
+  /* ── Brand Design Tokens ───────────────────────────── */
+  --color-brand-bg: #F9F8F3;
+  --color-brand-primary: #FF5C00;
+  --color-brand-primary-hover: #E65300;
+  --color-brand-surface: #ffffff;
+
+  --radius-brand-sm: 16px;
+  --radius-brand: 24px;
+  --radius-brand-lg: 32px;
+  --radius-brand-xl: 40px;
 }
 
 :root {

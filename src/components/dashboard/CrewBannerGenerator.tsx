@@ -62,7 +62,7 @@ export default function CrewBannerGenerator({
             <div className="flex items-center justify-between">
                 <div className="space-y-1">
                     <h3 className="text-xl font-black text-slate-800 flex items-center gap-2">
-                        <Sparkles className="w-5 h-5 text-[#FF5C00]" />
+                        <Sparkles className="w-5 h-5 text-brand-primary" />
                         나만의 크루 배너 생성기
                     </h3>
                     <p className="text-sm font-medium text-slate-400">네이버 블로그 헤더나 본문에 활용하기 좋은 고화질 배너입니다.</p>
@@ -78,7 +78,7 @@ export default function CrewBannerGenerator({
                     <Button 
                         onClick={handleDownload} 
                         disabled={isExporting}
-                        className="h-12 px-8 rounded-2xl bg-[#FF5C00] hover:bg-[#E63900] text-white font-black gap-2 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-orange-200"
+                        className="h-12 px-8 rounded-2xl bg-brand-primary hover:bg-brand-primary-hover text-white font-black gap-2 transition-all hover:scale-105 active:scale-95 shadow-lg shadow-brand-primary/20"
                     >
                         <Download className={cn("w-4 h-4", isExporting && "animate-bounce")} />
                         {isExporting ? "생성 중..." : "배너 다운로드 (PNG)"}
@@ -87,7 +87,7 @@ export default function CrewBannerGenerator({
             </div>
 
             {/* Banner Preview Area */}
-            <div className="relative rounded-[40px] border border-slate-100 shadow-2xl shadow-orange-100/30 group bg-slate-50 p-4 lg:p-12 flex flex-col items-center gap-6 overflow-hidden">
+            <div className="relative rounded-brand-xl border border-slate-100 shadow-2xl shadow-brand-primary/10 group bg-slate-50 p-4 lg:p-12 flex flex-col items-center gap-6 overflow-hidden">
                 {/* Scroll Wrapper */}
                 <div className="w-full overflow-x-auto pb-4 custom-scrollbar flex justify-center">
                     {/* The actual exportable container - Wrapped for scaling */}

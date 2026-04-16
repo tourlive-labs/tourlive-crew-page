@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { cookies } from "next/headers";
+import { MissionStatus, SideMissionStatus, StampStatus, ScheduleStatus, normalizeMissionStatus, missionStatusToStamp, sideMissionStatusToStamp } from "@/types/mission";
 
 export async function getDashboardData() {
     const supabase = await createClient();
@@ -88,6 +89,10 @@ export async function getDashboardData() {
         .select('activity_id')
         .eq('crew_id', crew.id);
 
+    if (submissionError) {
+        console.error("[DashboardAction] Submission Fetch Error:", submissionError);
+    }
+
     // Calculate D-Day
     const startDate = batch.start_date ? new Date(batch.start_date) : new Date(profile.created_at);
     const today = new Date();
@@ -101,11 +106,11 @@ export async function getDashboardData() {
             const scheduledAt = new Date(s.scheduled_at);
             const isCompleted = (submissions || []).some(sub => sub.activity_id === s.id);
 
-            let status: 'completed' | 'ongoing' | 'pending' = 'pending';
+            let status: ScheduleStatus = ScheduleStatus.PENDING;
             if (isCompleted) {
-                status = 'completed';
+                status = ScheduleStatus.COMPLETED;
             } else if (scheduledAt.getMonth() === today.getMonth() && scheduledAt.getFullYear() === today.getFullYear()) {
-                status = 'ongoing';
+                status = ScheduleStatus.ONGOING;
             }
 
             return {
@@ -169,7 +174,9 @@ export async function getDashboardData() {
         dDay,
         essentialMissions,
         schedules: allSchedules,
-        currentMission: currentMission || { status: 'none' }
+        currentMission: currentMission
+            ? { ...currentMission, status: normalizeMissionStatus(currentMission.status) }
+            : { status: MissionStatus.NONE }
     };
 }
 
@@ -184,60 +191,70 @@ export async function getDashboardData() {
 export async function getStampStatus() {
     try {
         const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return { essential: 'none', blog: 'none', cafe: 'none' };
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError) {
+            console.error("[StampStatus] Auth Error:", authError);
+        }
+        if (!user) return { essential: StampStatus.NONE, blog: StampStatus.NONE, cafe: StampStatus.NONE };
 
         // Resolve profile_id via crews join
-        const { data: crew } = await supabase
+        const { data: crew, error: crewError } = await supabase
             .from('crews')
             .select('id')
             .eq('user_id', user.id)
             .maybeSingle();
-        if (!crew) return { essential: 'none', blog: 'none', cafe: 'none' };
+        if (crewError) {
+            console.error("[StampStatus] Crew Error:", crewError);
+        }
+        if (!crew) return { essential: StampStatus.NONE, blog: StampStatus.NONE, cafe: StampStatus.NONE };
 
-        const { data: profile } = await supabase
+        const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('id')
             .eq('crew_id', crew.id)
             .maybeSingle();
-        if (!profile) return { essential: 'none', blog: 'none', cafe: 'none' };
+        if (profileError) {
+            console.error("[StampStatus] Profile Error:", profileError);
+        }
+        if (!profile) return { essential: StampStatus.NONE, blog: StampStatus.NONE, cafe: StampStatus.NONE };
 
         const now = new Date();
         const missionMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
         // Fetch all missions for this profile in the current month
-        const { data: missions } = await supabase
+        const { data: missions, error: missionsError } = await supabase
             .from('missions')
             .select('id, status, post_url, rejection_reason')
             .eq('profile_id', profile.id)
             .eq('mission_month', missionMonth);
+        if (missionsError) {
+            console.error("[StampStatus] Missions Error:", missionsError);
+        }
 
-        const toStampStatus = (status: string): 'none' | 'pending' | 'approved' => {
-            if (!status || status === 'none') return 'none';
-            if (status === 'APPROVED' || status === 'completed') return 'approved';
-            return 'pending';
-        };
-
-        let essential: 'none' | 'pending' | 'approved' = 'none';
-        let blog: 'none' | 'pending' | 'approved' = 'none';
-        let cafe: 'none' | 'pending' | 'approved' = 'none';
+        let essential: StampStatus = StampStatus.NONE;
+        let blog: StampStatus = StampStatus.NONE;
+        let cafe: StampStatus = StampStatus.NONE;
 
         for (const m of missions || []) {
             const isChallenge = m.post_url?.startsWith('[CHALLENGE]');
             if (isChallenge) {
                 const tag = m.rejection_reason || '';
-                if (tag.includes('blog_paris')) blog = toStampStatus(m.status);
-                if (tag.includes('cafe_streak')) cafe = toStampStatus(m.status);
+                const normalizedStatus = normalizeMissionStatus(m.status);
+                const stamp = missionStatusToStamp(normalizedStatus);
+                if (tag.includes('blog_paris')) blog = stamp;
+                if (tag.includes('cafe_streak')) cafe = stamp;
             } else {
                 // Regular essential mission row
-                const s = toStampStatus(m.status);
-                if (s !== 'none') essential = s;
+                const normalizedStatus = normalizeMissionStatus(m.status);
+                const stamp = missionStatusToStamp(normalizedStatus);
+                if (stamp !== StampStatus.NONE) essential = stamp;
             }
         }
 
         return { essential, blog, cafe };
-    } catch {
-        return { essential: 'none', blog: 'none', cafe: 'none' };
+    } catch (error) {
+        console.error("[StampStatus] Fatal Error:", error);
+        return { essential: StampStatus.NONE, blog: StampStatus.NONE, cafe: StampStatus.NONE };
     }
 }
 

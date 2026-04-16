@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { MissionStatus } from "@/types/mission";
 import { 
   Table, 
   TableBody, 
@@ -55,9 +56,9 @@ export function CrewManagementClient({ initialMembers, batches }: CrewManagement
       const matchField = fieldFilter === "all" || m.selected_activity === fieldFilter;
       
       // Graduation Logic: 3 consecutive months (Feb, Mar, Apr)
-      const hasFeb = m.missions?.some(ms => ms.mission_month === '2026-02' && ms.status === 'completed');
-      const hasMar = m.missions?.some(ms => ms.mission_month === '2026-03' && ms.status === 'completed');
-      const hasApr = m.missions?.some(ms => ms.mission_month === '2026-04' && ms.status === 'completed');
+      const hasFeb = m.missions?.some(ms => ms.mission_month === '2026-02' && ms.status === MissionStatus.COMPLETED);
+      const hasMar = m.missions?.some(ms => ms.mission_month === '2026-03' && ms.status === MissionStatus.COMPLETED);
+      const hasApr = m.missions?.some(ms => ms.mission_month === '2026-04' && ms.status === MissionStatus.COMPLETED);
       const isGraduationCandidate = !!(hasFeb && hasMar && hasApr);
 
       const matchGraduation = !showGraduationOnly || isGraduationCandidate;
@@ -113,9 +114,9 @@ export function CrewManagementClient({ initialMembers, batches }: CrewManagement
               <TableBody>
                 {filteredMembers.length > 0 ? (
                   filteredMembers.map((member) => {
-                    const hasMar = member.missions?.some(ms => ms.mission_month === '2026-03' && ms.status === 'completed');
-                    const hasApr = member.missions?.some(ms => ms.mission_month === '2026-04' && ms.status === 'completed');
-                    const hasFeb = member.missions?.some(ms => ms.mission_month === '2026-02' && ms.status === 'completed');
+                    const hasMar = member.missions?.some(ms => ms.mission_month === '2026-03' && ms.status === MissionStatus.COMPLETED);
+                    const hasApr = member.missions?.some(ms => ms.mission_month === '2026-04' && ms.status === MissionStatus.COMPLETED);
+                    const hasFeb = member.missions?.some(ms => ms.mission_month === '2026-02' && ms.status === MissionStatus.COMPLETED);
                     const isGraduationCandidate = !!(hasFeb && hasMar && hasApr);
 
                     return (

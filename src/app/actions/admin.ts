@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { MissionStatus, SideMissionStatus } from "@/types/mission";
 
 /**
  * Fetch all missions pending approval (Excluding Admin accounts)
@@ -22,7 +23,7 @@ export async function getPendingEssentialMissions() {
                 selected_activity
             )
         `)
-        .in('status', ['PENDING_APPROVAL', 'REJECTED', 'rejected'])
+        .in('status', [MissionStatus.PENDING_APPROVAL, MissionStatus.REJECTED, 'rejected'])
         .order('created_at', { ascending: false });
 
     if (error) {
@@ -52,7 +53,7 @@ export async function getPendingSideMissions() {
                 selected_activity
             )
         `)
-        .in('status', ['PENDING', 'REJECTED'])
+        .in('status', [SideMissionStatus.PENDING, SideMissionStatus.REJECTED])
         .order('created_at', { ascending: false });
 
     if (error) {
@@ -68,18 +69,18 @@ export async function getPendingSideMissions() {
 /**
  * Update essential mission status
  */
-export async function updateEssentialStatus(missionId: string, status: 'completed' | 'REJECTED', feedback?: string) {
+export async function updateEssentialStatus(missionId: string, status: typeof MissionStatus.COMPLETED | typeof MissionStatus.REJECTED, feedback?: string) {
     const supabase = await createClient();
     const { error } = await supabase
         .from('missions')
-        .update({ 
-            status, 
+        .update({
+            status,
             admin_feedback: feedback,
             updated_at: new Date().toISOString()
         })
         .eq('id', missionId);
 
-    if (!error && status === 'completed') {
+    if (!error && status === MissionStatus.COMPLETED) {
         console.log('[Settlement] Essential mission approved. Fetching mission data for settlement...', missionId);
         const { data: mission, error: fetchError } = await supabase
             .from('missions')
@@ -114,18 +115,18 @@ export async function updateEssentialStatus(missionId: string, status: 'complete
 /**
  * Update side mission status
  */
-export async function updateSideStatus(missionId: string, status: 'APPROVED' | 'REJECTED', feedback?: string) {
+export async function updateSideStatus(missionId: string, status: typeof SideMissionStatus.APPROVED | typeof SideMissionStatus.REJECTED, feedback?: string) {
     const supabase = await createClient();
     const { error } = await supabase
         .from('side_missions')
-        .update({ 
-            status, 
+        .update({
+            status,
             admin_feedback: feedback,
             updated_at: new Date().toISOString()
         })
         .eq('id', missionId);
 
-    if (!error && status === 'APPROVED') {
+    if (!error && status === SideMissionStatus.APPROVED) {
         console.log('[Settlement] Side mission approved. Fetching mission data for settlement...', missionId);
         const { data: mission, error: fetchError } = await supabase
             .from('side_missions')
@@ -173,18 +174,33 @@ export async function updateSideStatus(missionId: string, status: 'APPROVED' | '
  */
 export async function getAdminLeaderboard() {
     const supabase = await createClient();
-    
+
     // Fetch all profiles excluding admin role
-    const { data: profiles } = await supabase
+    const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, nickname, tourlive_email, selected_activity, role')
         .neq('role', 'admin');
-    
+
+    if (profilesError) {
+        console.error("[Admin] Leaderboard Profiles Error:", profilesError);
+        return { data: [] };
+    }
+
     // Fetch all approved missions
-    const { data: missions } = await supabase.from('missions').select('profile_id, status').eq('status', 'completed');
-    
+    const { data: missions, error: missionsError } = await supabase.from('missions').select('profile_id, status').eq('status', MissionStatus.COMPLETED);
+
+    if (missionsError) {
+        console.error("[Admin] Leaderboard Missions Error:", missionsError);
+        return { data: [] };
+    }
+
     // Fetch all approved side missions
-    const { data: sideMissions } = await supabase.from('side_missions').select('profile_id, mission_type, status').eq('status', 'APPROVED');
+    const { data: sideMissions, error: sideMissionsError } = await supabase.from('side_missions').select('profile_id, mission_type, status').eq('status', SideMissionStatus.APPROVED);
+
+    if (sideMissionsError) {
+        console.error("[Admin] Leaderboard Side Missions Error:", sideMissionsError);
+        return { data: [] };
+    }
 
     const pointMap: Record<string, number> = {
         "앱 리뷰 (구글/앱스토어)": 10000,

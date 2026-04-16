@@ -2,30 +2,41 @@
 
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
+import { SideMissionStatus } from "@/types/mission";
 
 /**
  * Submits a new side mission
  */
 export async function submitSideMission(missionType: string, proofUrl: string) {
     const supabase = await createClient();
-    
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: "로그인이 필요합니다." };
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+        console.error("[SideMission] Auth Error:", authError);
+        return { error: "로그인이 필요합니다." };
+    }
 
     // 2. Get profile ID using robust two-step lookup
-    const { data: crew } = await supabase
+    const { data: crew, error: crewError } = await supabase
         .from('crews')
         .select('id')
         .eq('user_id', user.id)
         .maybeSingle();
 
+    if (crewError) {
+        console.error("[SideMission] Crew lookup error:", crewError);
+    }
+
     let profile = null;
     if (crew) {
-        const { data: profileData } = await supabase
+        const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('id')
             .eq('crew_id', crew.id)
             .maybeSingle();
+        if (profileError) {
+            console.error("[SideMission] Profile lookup error:", profileError);
+        }
         profile = profileData;
     }
 
@@ -38,7 +49,7 @@ export async function submitSideMission(missionType: string, proofUrl: string) {
             .select('id')
             .eq('profile_id', profile.id)
             .eq('mission_type', missionType)
-            .eq('status', 'APPROVED')
+            .eq('status', SideMissionStatus.APPROVED)
             .maybeSingle();
 
         if (existingAppReview) {
@@ -52,7 +63,7 @@ export async function submitSideMission(missionType: string, proofUrl: string) {
             profile_id: profile.id,
             mission_type: missionType,
             proof_url: proofUrl,
-            status: 'PENDING'
+            status: SideMissionStatus.PENDING
         });
 
     if (error) {
@@ -70,26 +81,36 @@ export async function submitSideMission(missionType: string, proofUrl: string) {
 export async function getSideMissions() {
     try {
         const supabase = await createClient();
-        
-        const { data: { user } } = await supabase.auth.getUser();
+
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError) {
+            console.error("[SideMission] Auth Error:", authError);
+        }
         if (!user) return { data: [] };
 
-        const { data: crew } = await supabase
+        const { data: crew, error: crewError } = await supabase
             .from('crews')
             .select('id')
             .eq('user_id', user.id)
             .maybeSingle();
 
+        if (crewError) {
+            console.error("[SideMission] Crew lookup error:", crewError);
+        }
+
         let profile = null;
         if (crew) {
-            const { data: profileData } = await supabase
+            const { data: profileData, error: profileError } = await supabase
                 .from('profiles')
                 .select('id')
                 .eq('crew_id', crew.id)
                 .maybeSingle();
+            if (profileError) {
+                console.error("[SideMission] Profile lookup error:", profileError);
+            }
             profile = profileData;
         }
-            
+
         if (!profile) return { data: [] };
 
         const { data, error } = await supabase
@@ -105,6 +126,7 @@ export async function getSideMissions() {
 
         return { data: data || [] };
     } catch(err) {
+        console.error("[SideMission] Fatal Error:", err);
         return { data: [] };
     }
 }

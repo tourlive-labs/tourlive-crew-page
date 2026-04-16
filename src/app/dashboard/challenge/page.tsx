@@ -105,7 +105,7 @@ function SuccessOverlay({ onClose }: { onClose: () => void }) {
     }, [onClose]);
 
     return (
-        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center rounded-[40px] bg-white/95 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-500">
+        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center rounded-brand-xl bg-white/95 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-500">
             <div className="flex flex-col items-center gap-5 text-center">
                 <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center animate-in zoom-in duration-700">
                     <CheckCircle2 className="w-10 h-10 text-emerald-500" strokeWidth={2.5} />
@@ -211,7 +211,7 @@ function SubmitPanel({
                                 value={url}
                                 onChange={e => setUrl(e.target.value)}
                                 placeholder={placeholder}
-                                className="h-12 rounded-2xl border-slate-200 bg-slate-50/50 text-sm font-bold pr-12 focus:bg-white focus:ring-2 focus:ring-[#FF5C00]/20 focus:border-[#FF5C00] transition-all"
+                                className="h-12 rounded-2xl border-slate-200 bg-slate-50/50 text-sm font-bold pr-12 focus:bg-white focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all"
                             />
                             {url && (
                                 <button
@@ -242,7 +242,7 @@ function SubmitPanel({
                         <Button
                             type="submit"
                             disabled={isPending || !url.trim()}
-                            className="flex-[2] h-12 min-h-[44px] rounded-2xl bg-[#FF5C00] hover:bg-[#E63900] text-white font-black text-sm shadow-lg shadow-orange-100/60 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
+                            className="flex-[2] h-12 min-h-[44px] rounded-2xl bg-brand-primary hover:bg-brand-primary-hover text-white font-black text-sm shadow-lg shadow-orange-100/60 transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50"
                         >
                             {isPending ? (
                                 <span className="flex items-center gap-2">
@@ -282,7 +282,7 @@ function BlogChallengeCard() {
     };
 
     return (
-        <div className="relative rounded-[32px] sm:rounded-[40px] bg-white border border-slate-100 shadow-[0_8px_40px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col">
+        <div className="relative rounded-brand-lg sm:rounded-brand-xl bg-white border border-slate-100 shadow-[0_8px_40px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col">
 
             {/* Glassmorphism gradient orb */}
             <div className="absolute top-0 right-0 w-72 h-72 rounded-full bg-orange-100/40 blur-[80px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
@@ -293,7 +293,7 @@ function BlogChallengeCard() {
                 {/* Header */}
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                        <Badge className="bg-[#FFF5F1] text-[#FF5C00] hover:bg-[#FFF5F1] border-none font-black px-4 py-1.5 rounded-full text-[10px] tracking-widest uppercase">
+                        <Badge className="bg-brand-primary/5 text-brand-primary hover:bg-brand-primary/5 border-none font-black px-4 py-1.5 rounded-full text-[10px] tracking-widest uppercase">
                             이번 달 한정
                         </Badge>
                         <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Blog Challenge</span>
@@ -301,7 +301,7 @@ function BlogChallengeCard() {
 
                     <div className="flex items-start gap-4">
                         <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center shrink-0 shadow-sm">
-                            <Paintbrush2 className="w-6 h-6 text-[#FF5C00]" />
+                            <Paintbrush2 className="w-6 h-6 text-brand-primary" />
                         </div>
                         <div>
                             <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-tight">
@@ -324,21 +324,21 @@ function BlogChallengeCard() {
                         <button
                             onClick={() => { setRewardType(rewardType === "points" ? null : "points"); setShowSubmit(false); }}
                             className={cn(
-                                "relative flex flex-col gap-2 p-4 sm:p-5 rounded-3xl border-2 text-left transition-all duration-300 min-h-[88px] sm:min-h-0",
+                                "relative flex flex-col gap-2 p-4 sm:p-5 rounded-brand border-2 text-left transition-all duration-300 min-h-[88px] sm:min-h-0",
                                 rewardType === "points"
-                                    ? "border-[#FF5C00] bg-gradient-to-br from-[#FFF5F1] to-orange-50 shadow-lg shadow-orange-100/50 scale-[1.02]"
+                                    ? "border-brand-primary bg-gradient-to-br from-brand-primary/5 to-orange-50 shadow-lg shadow-orange-100/50 scale-[1.02]"
                                     : "border-slate-100 bg-slate-50/50 hover:border-orange-200 hover:bg-orange-50/30"
                             )}
                         >
                             {rewardType === "points" && (
-                                <div className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-[#FF5C00] flex items-center justify-center">
+                                <div className="absolute top-2.5 right-2.5 w-4 h-4 rounded-full bg-brand-primary flex items-center justify-center">
                                     <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
                                 </div>
                             )}
                             <p className={cn("text-[9px] font-black uppercase tracking-widest", rewardType === "points" ? "text-orange-400" : "text-slate-400")}>
                                 확정 리워드
                             </p>
-                            <p className={cn("text-3xl font-black tracking-tight leading-none", rewardType === "points" ? "text-[#FF5C00]" : "text-slate-500")}>
+                            <p className={cn("text-3xl font-black tracking-tight leading-none", rewardType === "points" ? "text-brand-primary" : "text-slate-500")}>
                                 5,000P
                             </p>
                             <p className={cn("text-[10px] font-bold", rewardType === "points" ? "text-orange-300" : "text-slate-300")}>
@@ -350,7 +350,7 @@ function BlogChallengeCard() {
                         <button
                             onClick={() => { setRewardType(rewardType === "naver_pay" ? null : "naver_pay"); setShowSubmit(false); }}
                             className={cn(
-                                "relative flex flex-col gap-2 p-4 sm:p-5 rounded-3xl border-2 text-left transition-all duration-300 min-h-[88px] sm:min-h-0",
+                                "relative flex flex-col gap-2 p-4 sm:p-5 rounded-brand border-2 text-left transition-all duration-300 min-h-[88px] sm:min-h-0",
                                 rewardType === "naver_pay"
                                     ? "border-amber-400 bg-gradient-to-br from-amber-50 to-yellow-50 shadow-lg shadow-amber-100/50 scale-[1.02]"
                                     : "border-slate-100 bg-slate-50/50 hover:border-amber-200 hover:bg-amber-50/30"
@@ -500,7 +500,7 @@ function BlogChallengeCard() {
                             className={cn(
                                 "w-full h-14 min-h-[44px] rounded-2xl font-black text-base gap-2 transition-all duration-300",
                                 activeMuseum !== null && rewardType !== null
-                                    ? "bg-[#FF5C00] hover:bg-[#E63900] text-white shadow-xl shadow-orange-100/60 hover:scale-[1.02] active:scale-95"
+                                    ? "bg-brand-primary hover:bg-brand-primary-hover text-white shadow-xl shadow-orange-100/60 hover:scale-[1.02] active:scale-95"
                                     : "bg-slate-100 text-slate-300 cursor-not-allowed"
                             )}
                         >
@@ -532,7 +532,7 @@ function CafeChallengeCard() {
     const [showSubmit, setShowSubmit] = useState(false);
 
     return (
-        <div className="relative rounded-[32px] sm:rounded-[40px] bg-white border border-slate-100 shadow-[0_8px_40px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col">
+        <div className="relative rounded-brand-lg sm:rounded-brand-xl bg-white border border-slate-100 shadow-[0_8px_40px_rgba(0,0,0,0.06)] overflow-hidden flex flex-col">
 
             {/* Glass orbs */}
             <div className="absolute top-0 right-0 w-56 h-56 rounded-full bg-indigo-100/30 blur-[70px] -translate-y-1/3 translate-x-1/4 pointer-events-none" />
@@ -708,8 +708,8 @@ function CafeChallengeCard() {
 
 function QuickInfoBar() {
     return (
-        <div className="rounded-[28px] bg-gradient-to-br from-slate-900 to-slate-800 p-6 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-[#FF5C00] rounded-full blur-[80px] opacity-15 -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+        <div className="rounded-brand bg-gradient-to-br from-slate-900 to-slate-800 p-6 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-40 h-40 bg-brand-primary rounded-full blur-[80px] opacity-15 -translate-y-1/2 translate-x-1/2 pointer-events-none" />
             <div className="relative z-10 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
@@ -739,14 +739,14 @@ export default function ChallengePage() {
 
             {/* Page Header */}
             <div className="space-y-3">
-                <Badge className="bg-[#FFF5F1] text-[#FF5C00] hover:bg-[#FFF5F1] border-none font-black px-4 py-1.5 rounded-full text-[10px] tracking-widest uppercase">
+                <Badge className="bg-brand-primary/5 text-brand-primary hover:bg-brand-primary/5 border-none font-black px-4 py-1.5 rounded-full text-[10px] tracking-widest uppercase">
                     April 2026
                 </Badge>
                 <div className="flex items-end justify-between gap-4">
                     <div className="space-y-1">
                         <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight flex items-center gap-3">
                             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center shadow-sm shrink-0">
-                                <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-[#FF5C00]" />
+                                <Trophy className="w-5 h-5 sm:w-6 sm:h-6 text-brand-primary" />
                             </div>
                             이달의 챌린지
                         </h1>

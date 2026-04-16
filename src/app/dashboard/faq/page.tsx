@@ -3,8 +3,9 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowLeft, HelpCircle, MessageSquare, ExternalLink, Download, Sparkles } from "lucide-react";
+import { HelpCircle, MessageSquare, ExternalLink, Download, Sparkles } from "lucide-react";
 import { signOut } from "@/app/actions/auth";
+import PageHeader from "@/components/shared/PageHeader";
 
 export default function FAQPage() {
     const faqs = [
@@ -36,41 +37,32 @@ export default function FAQPage() {
     ];
 
     return (
-        <div className="min-h-screen bg-[#F9F8F3] pb-20">
+        <div className="min-h-screen bg-brand-bg pb-20">
             <div className="max-w-[1000px] mx-auto px-6 py-12">
-                <Link 
-                    href="/dashboard" 
-                    className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-800 font-black text-sm mb-8 transition-colors"
-                >
-                    <ArrowLeft className="w-4 h-4" />
-                    대시보드로 돌아가기
-                </Link>
-
-                <div className="mb-12 flex items-center justify-between">
-                    <div>
-                        <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2">
-                            자주 묻는 질문 (FAQ)
-                        </h1>
-                        <p className="text-slate-500 font-medium">
-                            크루 활동 중 궁금하신 점을 확인해 보세요.
-                        </p>
-                    </div>
-                    <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        onClick={() => signOut()}
-                        className="text-slate-400 hover:text-slate-900 font-bold text-xs"
-                    >
-                        로그아웃
-                    </Button>
+                <div className="mb-12">
+                    <PageHeader
+                        title="자주 묻는 질문 (FAQ)"
+                        subtitle="크루 활동 중 궁금하신 점을 확인해 보세요."
+                        backHref="/dashboard"
+                        right={
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => signOut()}
+                                className="text-slate-400 hover:text-slate-900 font-bold text-xs"
+                            >
+                                로그아웃
+                            </Button>
+                        }
+                    />
                 </div>
 
                 <div className="space-y-6">
                     {faqs.map((faq, idx) => (
-                        <Card key={idx} className="shadow-sm border-slate-100 rounded-3xl overflow-hidden bg-white group hover:shadow-md transition-all duration-300">
+                        <Card key={idx} className="shadow-sm border-slate-100 rounded-brand overflow-hidden bg-white group hover:shadow-md transition-all duration-300">
                             <CardHeader className="p-8 pb-4">
                                 <CardTitle className="text-lg font-black text-slate-800 flex items-start gap-3 leading-snug">
-                                    <span className="text-[#FF5C00] shrink-0">Q.</span>
+                                    <span className="text-brand-primary shrink-0">Q.</span>
                                     {faq.q}
                                 </CardTitle>
                             </CardHeader>
@@ -88,9 +80,9 @@ export default function FAQPage() {
                                         </p>
                                         
                                         {faq.highlight && (
-                                            <div className="p-4 rounded-2xl bg-orange-50/50 border border-orange-100 flex items-start gap-3">
-                                                <Sparkles className="w-4 h-4 text-[#FF5C00] shrink-0 mt-0.5" />
-                                                <p className="text-sm font-bold text-orange-800 leading-normal">
+                                            <div className="p-4 rounded-2xl bg-brand-primary/5 border border-brand-primary/20 flex items-start gap-3">
+                                                <Sparkles className="w-4 h-4 text-brand-primary shrink-0 mt-0.5" />
+                                                <p className="text-sm font-bold text-brand-primary leading-normal">
                                                     {faq.highlight}
                                                 </p>
                                             </div>
@@ -111,14 +103,14 @@ export default function FAQPage() {
                     ))}
 
                     <div className="mt-16 text-center">
-                        <div className="inline-flex flex-col items-center gap-4 p-8 rounded-[40px] bg-slate-100/50 border border-slate-200">
+                        <div className="inline-flex flex-col items-center gap-4 p-8 rounded-brand-xl bg-slate-100/50 border border-slate-200">
                             <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-slate-400 shadow-sm">
                                 <MessageSquare className="w-6 h-6" />
                             </div>
                             <div className="space-y-1">
                                 <p className="text-slate-900 font-black">추가 질문이 있으신가요?</p>
                                 <p className="text-slate-500 font-medium text-sm">
-                                    <a href="mailto:root@tourlive.co.kr" className="text-[#FF5C00] hover:underline">root@tourlive.co.kr</a>로 문의해 주세요.
+                                    <a href="mailto:root@tourlive.co.kr" className="text-brand-primary hover:underline">root@tourlive.co.kr</a>로 문의해 주세요.
                                 </p>
                             </div>
                         </div>

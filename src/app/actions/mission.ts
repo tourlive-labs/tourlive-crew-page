@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { sanitizeHeader } from "@/utils/security";
 import Anthropic from "@anthropic-ai/sdk";
 import * as cheerio from "cheerio";
+import { MissionStatus } from "@/types/mission";
 
 /**
  * Submits a mission link for the current month.
@@ -58,8 +59,8 @@ export async function submitMission(postUrl: string) {
 
     // 5. AI Verification before submission
     const verification = await verifyMissionContent(postUrl);
-    
-    let status: 'checking' | 'PENDING_APPROVAL' | 'rejected' = 'checking';
+
+    let status: MissionStatus = MissionStatus.CHECKING;
     let rejectionReason = null;
 
     if (verification.error) {
@@ -68,9 +69,9 @@ export async function submitMission(postUrl: string) {
     } else if (verification.data?.isValid) {
         // IMPORTANT: Successfully verified links stay in 'checking' status.
         // They only turn into 'PENDING_APPROVAL' when the user clicks the final "Complete Mission" button.
-        status = 'checking'; 
+        status = MissionStatus.CHECKING;
     } else {
-        status = 'rejected';
+        status = MissionStatus.REJECTED;
         rejectionReason = verification.data?.rejection_reason || "미션 기준을 충족하지 못했습니다.";
     }
 
@@ -96,10 +97,10 @@ export async function submitMission(postUrl: string) {
 
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/mission");
-    
-    return { 
-        success: true, 
-        verified: status !== 'rejected',
+
+    return {
+        success: true,
+        verified: status !== MissionStatus.REJECTED,
         reason: rejectionReason
     };
 }
@@ -186,8 +187,8 @@ export async function submitSurvey(missionId: string, surveyData: any) {
  */
 export async function requestReward(missionId: string) {
     const supabase = await createClient();
-    const { error } = await supabase.from('missions').update({ 
-        status: 'PENDING_APPROVAL',
+    const { error } = await supabase.from('missions').update({
+        status: MissionStatus.PENDING_APPROVAL,
         admin_feedback: null,
         rejection_reason: null,
         updated_at: new Date().toISOString()
@@ -203,22 +204,32 @@ export async function requestReward(missionId: string) {
 export async function verifyMissionContent(postUrl: string) {
     try {
         const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return { error: "로그인이 필요합니다." };
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) {
+            console.error("[MissionVerify] Auth Error:", authError);
+            return { error: "로그인이 필요합니다." };
+        }
 
-        const { data: crew } = await supabase
+        const { data: crew, error: crewError } = await supabase
             .from('crews')
             .select('id')
             .eq('user_id', user.id)
             .maybeSingle();
 
+        if (crewError) {
+            console.error("[MissionVerify] Crew lookup error:", crewError);
+        }
+
         let profile = null;
         if (crew) {
-            const { data: profileData } = await supabase
+            const { data: profileData, error: profileError } = await supabase
                 .from('profiles')
                 .select('id, naver_id, selected_activity')
                 .eq('crew_id', crew.id)
                 .maybeSingle();
+            if (profileError) {
+                console.error("[MissionVerify] Profile lookup error:", profileError);
+            }
             profile = profileData;
         }
 
@@ -419,12 +430,41 @@ export async function verifyMissionContent(postUrl: string) {
         
         console.log(`[MissionVerify] AI Call Success`);
         const responseText = (msg.content[0] as any).text;
-        const aiResult = JSON.parse(responseText.match(/\{[\s\S]*\}/)?.[0] || "{}");
 
-        // Ensure isValid is strictly handled
-        const isValid = !!aiResult.isValid;
+        let aiResult: any = {};
+        try {
+            const jsonMatch = responseText.match(/\{[\s\S]*\}/)?.[0];
+            if (!jsonMatch) {
+                console.warn("[MissionVerify] No JSON found in AI response. Treating as manual review required.");
+                return {
+                    success: true,
+                    data: {
+                        isValid: true,
+                        imageCount,
+                        rejection_reason: "[AI Parse Error - Manual Review Required]",
+                        details: {}
+                    }
+                };
+            }
+            aiResult = JSON.parse(jsonMatch);
+        } catch (parseError) {
+            console.error("[MissionVerify] JSON Parse Error:", parseError);
+            console.warn("[MissionVerify] AI response text:", responseText);
+            return {
+                success: true,
+                data: {
+                    isValid: true,
+                    imageCount,
+                    rejection_reason: "[AI Parse Error - Manual Review Required]",
+                    details: {}
+                }
+            };
+        }
+
+        // Ensure isValid is strictly handled with explicit undefined guard
+        const isValid = aiResult.isValid === true;
         let rejection_reason = aiResult.rejection_reason || "";
-        
+
         return {
             success: true,
             data: {

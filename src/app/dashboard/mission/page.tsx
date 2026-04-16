@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useEffect, useState, useRef } from "react";
+import { MissionStatus, SideMissionStatus } from "@/types/mission";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -56,15 +57,15 @@ function MissionSubmissionCard({ currentMission, goalCount, isCafeTeam, onRefres
 
     const router = useRouter();
 
-    const isRejected = currentMission?.status === 'REJECTED' || currentMission?.status === 'rejected';
-    const isPending = currentMission?.status === 'PENDING_APPROVAL' || currentMission?.status === 'completed';
+    const isRejected = currentMission?.status === MissionStatus.REJECTED;
+    const isPending = currentMission?.status === MissionStatus.PENDING_APPROVAL || currentMission?.status === MissionStatus.COMPLETED;
     const isFullySubmitted = (isPending) || (verifiedLinks.length >= goalCount && !isRejected);
     // Current slot index (1-based)
     const currentSlotIndex = verifiedLinks.length + 1;
-    
-    const statusText = currentMission?.status === 'checking' ? `활동 진행 중 (${verifiedLinks.length}/${goalCount})` : 
-                      currentMission?.status === 'PENDING_APPROVAL' ? '심사 대기 중' :
-                      currentMission?.status === 'completed' ? '최종 검토 완료' : 
+
+    const statusText = currentMission?.status === MissionStatus.CHECKING ? `활동 진행 중 (${verifiedLinks.length}/${goalCount})` :
+                      currentMission?.status === MissionStatus.PENDING_APPROVAL ? '심사 대기 중' :
+                      currentMission?.status === MissionStatus.COMPLETED ? '최종 검토 완료' :
                       isRejected ? '반려됨 (수정 필요)' : '미진행';
 
     const handleVerify = async () => {
@@ -114,23 +115,23 @@ function MissionSubmissionCard({ currentMission, goalCount, isCafeTeam, onRefres
     };
 
     return (
-        <Card className="shadow-sm border-slate-100 rounded-3xl overflow-hidden bg-white mb-8">
+        <Card className="shadow-sm border-slate-100 rounded-brand overflow-hidden bg-white mb-8">
             <CardHeader className="p-8 pb-4 flex flex-row items-center justify-between bg-slate-50/50">
                 <div>
                     <CardTitle className="text-xl font-black text-slate-800 flex items-center tracking-tight">
-                        <Trophy className="w-6 h-6 mr-3 text-[#FF5C00]" />
+                        <Trophy className="w-6 h-6 mr-3 text-brand-primary" />
                         링크 인증 제출 ({verifiedLinks.length} / {goalCount})
                     </CardTitle>
                     <CardDescription className="text-slate-500 font-medium mt-1">
                         {isRejected ? "반려된 미션입니다. 아래 사유를 확인하고 링크를 다시 제출해 주세요." : "블로그 또는 카페 활동 중인 링크를 순서대로 제출해 주세요."}
                     </CardDescription>
                 </div>
-                {currentMission && currentMission.status !== 'none' && (
+                {currentMission && currentMission.status !== MissionStatus.NONE && (
                     <Badge className={cn(
                         "px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest",
-                        currentMission.status === 'checking' ? "bg-orange-50 text-orange-600 border border-orange-100" :
-                        currentMission.status === 'PENDING_APPROVAL' ? "bg-purple-50 text-purple-600 border border-purple-100" :
-                        currentMission.status === 'completed' ? "bg-blue-50 text-blue-600 border border-blue-100" :
+                        currentMission.status === MissionStatus.CHECKING ? "bg-orange-50 text-orange-600 border border-orange-100" :
+                        currentMission.status === MissionStatus.PENDING_APPROVAL ? "bg-purple-50 text-purple-600 border border-purple-100" :
+                        currentMission.status === MissionStatus.COMPLETED ? "bg-blue-50 text-blue-600 border border-blue-100" :
                         isRejected ? "bg-red-50 text-red-600 border border-red-100" :
                         "bg-slate-50 text-slate-600 border border-slate-100"
                     )}>
@@ -140,7 +141,7 @@ function MissionSubmissionCard({ currentMission, goalCount, isCafeTeam, onRefres
             </CardHeader>
             <CardContent className="p-8">
                 {isRejected && (currentMission?.admin_feedback || currentMission?.rejection_reason) && (
-                    <div className="mb-6 p-6 rounded-[24px] bg-red-50 border border-red-100 flex items-start gap-4">
+                    <div className="mb-6 p-6 rounded-brand bg-red-50 border border-red-100 flex items-start gap-4">
                         <div className="w-10 h-10 rounded-2xl bg-red-100 flex items-center justify-center text-red-500 shrink-0">
                             <AlertCircle className="w-5 h-5" />
                         </div>
@@ -182,14 +183,14 @@ function MissionSubmissionCard({ currentMission, goalCount, isCafeTeam, onRefres
                     )}
                     {/* Render Input for NEXT link (if goal not reached) */}
                     {isFullySubmitted ? (
-                        <div className="mt-8 p-10 rounded-3xl bg-slate-50 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-center">
+                        <div className="mt-8 p-10 rounded-brand bg-slate-50 border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-center">
                             <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-4">
                                 <CheckCircle2 className="w-8 h-8" />
                             </div>
                             <h3 className="text-lg font-black text-slate-800 mb-1">미션 제출 완료</h3>
                             <p className="text-sm font-medium text-slate-500 max-w-[280px]">
-                                {currentMission?.status === 'completed' 
-                                    ? "모든 검토가 완료되었습니다. 리워드 지급을 신청해 주세요!" 
+                                {currentMission?.status === MissionStatus.COMPLETED
+                                    ? "모든 검토가 완료되었습니다. 리워드 지급을 신청해 주세요!"
                                     : "작성하신 링크가 성공적으로 제출되었습니다. 관리자가 확인 후 최종 승인해 드립니다."}
                             </p>
                         </div>
@@ -320,7 +321,7 @@ function MissionSubmissionCard({ currentMission, goalCount, isCafeTeam, onRefres
                                     <Button 
                                         onClick={handleLinkSubmit}
                                         disabled={!link || isSubmitting || (isCafeTeam && (!cafeChecks.images || !cafeChecks.utm || !cafeChecks.mention))}
-                                        className="h-14 w-full rounded-2xl bg-[#FF5C00] hover:bg-[#E63900] text-white font-black shadow-lg shadow-orange-100/50 mt-2 animate-in slide-in-from-bottom-2 fade-in duration-300"
+                                        className="h-14 w-full rounded-2xl bg-brand-primary hover:bg-brand-primary-hover text-white font-black shadow-lg shadow-orange-100/50 mt-2 animate-in slide-in-from-bottom-2 fade-in duration-300"
                                     >
                                         {isSubmitting ? (
                                             <><RefreshCcw className="w-5 h-5 animate-spin mr-2" /> {isCafeTeam ? "미션을 제출 중입니다..." : "AI가 미션을 검토 중입니다..."}</>
@@ -390,7 +391,7 @@ function SurveyView({
     };
 
     return (
-        <div className="min-h-screen bg-[#F9F8F3] pb-20">
+        <div className="min-h-screen bg-brand-bg pb-20">
             <div className="max-w-[700px] mx-auto px-6 py-12">
                 <button 
                     onClick={onCancel}
@@ -409,7 +410,7 @@ function SurveyView({
                     </p>
                 </div>
 
-                <Card className="shadow-sm border-slate-100 rounded-3xl overflow-hidden bg-white mb-8">
+                <Card className="shadow-sm border-slate-100 rounded-brand overflow-hidden bg-white mb-8">
                     <CardContent className="p-8 space-y-10">
                         {/* Q1 */}
                         <div>
@@ -436,10 +437,10 @@ function SurveyView({
                                         onClick={() => setRating(star)}
                                         className={cn(
                                             "p-1.5 transition-transform hover:scale-110 rounded-full",
-                                            rating >= star ? "text-[#FF5C00]" : "text-slate-200"
+                                            rating >= star ? "text-brand-primary" : "text-slate-200"
                                         )}
                                     >
-                                        <Star className={cn("w-10 h-10", rating >= star ? "fill-[#FF5C00]" : "fill-current")} />
+                                        <Star className={cn("w-10 h-10", rating >= star ? "fill-brand-primary" : "fill-current")} />
                                     </button>
                                 ))}
                             </div>
@@ -535,7 +536,7 @@ function SurveyView({
 
 function AdditionalTasks() {
     return (
-        <Card className="shadow-sm border-slate-100 rounded-3xl overflow-hidden bg-white">
+        <Card className="shadow-sm border-slate-100 rounded-brand overflow-hidden bg-white">
             <CardHeader className="p-8 pb-4">
                 <CardTitle className="text-xl font-black text-slate-800 flex items-center tracking-tight">
                     <ClipboardList className="w-6 h-6 mr-3 text-blue-600" />
@@ -617,7 +618,7 @@ function SideMissionBoard() {
 
     // Derived states
     const totalPointsEarned = missions
-        .filter(m => m.status === 'APPROVED' )
+        .filter(m => m.status === SideMissionStatus.APPROVED)
         .reduce((sum, m) => {
             const match = SIDE_MISSIONS.find(sm => 
                 m.mission_type.includes(sm.title) || 
@@ -629,12 +630,12 @@ function SideMissionBoard() {
             return sum;
         }, 0);
 
-    const pendingCount = missions.filter(m => m.status === 'PENDING').length;
+    const pendingCount = missions.filter(m => m.status === SideMissionStatus.PENDING).length;
 
-    const hasApprovedAppReview = missions.some(m => m.mission_type === "앱 리뷰 (구글/앱스토어)" && m.status === 'APPROVED');
+    const hasApprovedAppReview = missions.some(m => m.mission_type === "앱 리뷰 (구글/앱스토어)" && m.status === SideMissionStatus.APPROVED);
 
     return (
-        <Card className="shadow-sm border-slate-100 rounded-3xl overflow-hidden bg-white">
+        <Card className="shadow-sm border-slate-100 rounded-brand overflow-hidden bg-white">
             <CardHeader className="p-8 pb-4 bg-gradient-to-br from-indigo-50 to-white">
                 <div className="flex items-center justify-between mb-4">
                     <CardTitle className="text-xl font-black text-indigo-900 tracking-tight flex items-center gap-2">
@@ -662,7 +663,7 @@ function SideMissionBoard() {
                 {SIDE_MISSIONS.map(sm => {
                     const isAppReview = sm.title === "앱 리뷰 (구글/앱스토어)";
                     const isLocked = isAppReview && hasApprovedAppReview;
-                    const pendingCountForMission = missions.filter(m => m.mission_type.includes(sm.title) && m.status === 'PENDING').length;
+                    const pendingCountForMission = missions.filter(m => m.mission_type.includes(sm.title) && m.status === SideMissionStatus.PENDING).length;
 
                     return (
                         <div key={sm.title} className={cn(
@@ -685,7 +686,7 @@ function SideMissionBoard() {
                                                 {pendingCountForMission}건 대기 중
                                             </span>
                                         )}
-                                        {missions.some(m => m.mission_type.includes(sm.title) && m.status === 'REJECTED') && (
+                                        {missions.some(m => m.mission_type.includes(sm.title) && m.status === SideMissionStatus.REJECTED) && (
                                             <Badge variant="outline" className="text-red-500 border-red-100 bg-red-50 font-black">반려됨</Badge>
                                         )}
                                         <Badge variant="outline" className="text-indigo-600 border-indigo-100 bg-indigo-50/50 font-black">+{sm.points}</Badge>
@@ -694,7 +695,7 @@ function SideMissionBoard() {
                             </div>
                             <p className="text-[11px] font-medium text-slate-500 leading-snug">{sm.desc}</p>
 
-                            {missions.filter(m => m.mission_type.includes(sm.title) && m.status === 'REJECTED').map(rm => (
+                            {missions.filter(m => m.mission_type.includes(sm.title) && m.status === SideMissionStatus.REJECTED).map(rm => (
                                 <div key={rm.id} className="mt-3 p-3 rounded-xl bg-red-50 border border-red-100 text-[10px] font-bold text-red-600 flex items-start gap-2">
                                     <XCircle className="w-3 h-3 shrink-0 mt-0.5" />
                                     <span>반려 사유: {rm.admin_feedback || "증빙 자료를 다시 확인해 주세요."}</span>
@@ -711,7 +712,7 @@ function SideMissionBoard() {
                 })}
 
                 <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                    <DialogContent className="sm:max-w-[425px] rounded-3xl p-0 overflow-hidden border-none shadow-2xl">
+                    <DialogContent className="sm:max-w-[425px] rounded-brand p-0 overflow-hidden border-none shadow-2xl">
                         <div className="p-8 pb-6 bg-indigo-50">
                             <DialogTitle className="text-2xl font-black text-indigo-900 tracking-tight mb-2">
                                 {selectedMission?.title} 제출
@@ -779,8 +780,8 @@ export default function MissionPage() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen bg-[#F9F8F3]">
-                <div className="w-8 h-8 rounded-full border-4 border-[#FF5C00] border-t-transparent animate-spin" />
+            <div className="flex items-center justify-center min-h-screen bg-brand-bg">
+                <div className="w-8 h-8 rounded-full border-4 border-brand-primary border-t-transparent animate-spin" />
             </div>
         );
     }
@@ -873,12 +874,12 @@ export default function MissionPage() {
                     />
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <Card className="shadow-sm border-slate-100 rounded-3xl overflow-hidden bg-white">
+                        <Card className="shadow-sm border-slate-100 rounded-brand overflow-hidden bg-white">
                             <CardHeader className="p-8 pb-4">
                                 <div className="flex items-center justify-between mb-1">
                                     <div className="flex items-center gap-3">
                                         <CardTitle className="text-lg font-black text-slate-800 flex items-center tracking-tight">
-                                            {!isBlog ? <Coffee className="w-5 h-5 mr-3 text-[#FF5C00]" /> : <BookOpen className="w-5 h-5 mr-3 text-[#0052CC]" />}
+                                            {!isBlog ? <Coffee className="w-5 h-5 mr-3 text-brand-primary" /> : <BookOpen className="w-5 h-5 mr-3 text-[#0052CC]" />}
                                             활동 목표
                                         </CardTitle>
                                         <button 
@@ -962,12 +963,12 @@ export default function MissionPage() {
                                 <div className="mt-8 space-y-3">
                                     <Button
                                         onClick={handleRewardRequest}
-                                        disabled={!isEligibleForReward || isRequestingReward || data.currentMission?.status === 'PENDING_APPROVAL' || data.currentMission?.status === 'completed'}
-                                        className="w-full h-14 rounded-2xl bg-[#FF5C00] hover:bg-[#E63900] text-white font-black shadow-lg shadow-orange-100/50 disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none transition-all"
+                                        disabled={!isEligibleForReward || isRequestingReward || data.currentMission?.status === MissionStatus.PENDING_APPROVAL || data.currentMission?.status === MissionStatus.COMPLETED}
+                                        className="w-full h-14 rounded-2xl bg-brand-primary hover:bg-brand-primary-hover text-white font-black shadow-lg shadow-orange-100/50 disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none transition-all"
                                     >
-                                        {isRequestingReward ? <RefreshCcw className="w-5 h-5 animate-spin" /> : 
-                                         data.currentMission?.status === 'PENDING_APPROVAL' ? "최종 승인 대기 중" :
-                                         data.currentMission?.status === 'completed' ? "모든 미션 완료 🏆" :
+                                        {isRequestingReward ? <RefreshCcw className="w-5 h-5 animate-spin" /> :
+                                         data.currentMission?.status === MissionStatus.PENDING_APPROVAL ? "최종 승인 대기 중" :
+                                         data.currentMission?.status === MissionStatus.COMPLETED ? "모든 미션 완료 🏆" :
                                         "미션 최종 완료하기"}
                                     </Button>
                                     {!isEligibleForReward && (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { MissionStatus, StampStatus } from "@/types/mission";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -51,7 +52,7 @@ function EssentialTaskList({ team }: { team: string }) {
     ];
 
     return (
-        <div className="rounded-[28px] bg-white border border-slate-100 shadow-[0_2px_16px_rgba(0,0,0,0.05)] overflow-hidden">
+        <div className="rounded-brand bg-white border border-slate-100 shadow-[0_2px_16px_rgba(0,0,0,0.05)] overflow-hidden">
 
             {/* ── Header ───────────────────────────────────────────── */}
             <div className={cn(
@@ -79,7 +80,7 @@ function EssentialTaskList({ team }: { team: string }) {
                 </div>
                 <Link
                     href="/dashboard/mission"
-                    className="flex items-center gap-1 text-[10px] font-black text-[#FF5C00] hover:underline uppercase tracking-widest shrink-0"
+                    className="flex items-center gap-1 text-[10px] font-black text-brand-primary hover:underline uppercase tracking-widest shrink-0"
                 >
                     제출 →
                 </Link>
@@ -105,12 +106,12 @@ function EssentialTaskList({ team }: { team: string }) {
                 <div className="px-6 py-5 space-y-4">
                     {/* Primary task */}
                     <div className="flex items-start gap-4">
-                        <div className="w-7 h-7 rounded-full bg-[#FFF5F1] border border-[#FFD9C6] flex items-center justify-center shrink-0 mt-0.5">
-                            <span className="text-[10px] font-black text-[#FF5C00] leading-none">01</span>
+                        <div className="w-7 h-7 rounded-full bg-brand-primary/5 border border-brand-primary/20 flex items-center justify-center shrink-0 mt-0.5">
+                            <span className="text-[10px] font-black text-brand-primary leading-none">01</span>
                         </div>
                         <div className="min-w-0 flex-1">
                             <p className="text-sm font-black text-slate-800 leading-tight">
-                                가이드북 사용후기 포스팅 <span className="text-[#FF5C00]">2건</span>
+                                가이드북 사용후기 포스팅 <span className="text-brand-primary">2건</span>
                             </p>
                             <p className="text-[11px] font-medium text-slate-400 mt-0.5">
                                 오디오가이드 / 가이드북 후기 · 포스팅 2건 모두 제출
@@ -126,7 +127,7 @@ function EssentialTaskList({ team }: { team: string }) {
                             className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-100/60 transition-colors"
                         >
                             <span className="flex items-center gap-2">
-                                <span className="w-5 h-5 rounded-md bg-[#FF5C00] flex items-center justify-center shrink-0">
+                                <span className="w-5 h-5 rounded-md bg-brand-primary flex items-center justify-center shrink-0">
                                     <Check className="w-3 h-3 text-white" />
                                 </span>
                                 <span className="text-[11px] font-black text-slate-700 uppercase tracking-widest">
@@ -159,7 +160,7 @@ function EssentialTaskList({ team }: { team: string }) {
             {/* ── Footer ───────────────────────────────────────────── */}
             <div className="px-6 pb-5">
                 <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-100">
-                    <Sparkles className="w-3 h-3 text-[#FF5C00] shrink-0" />
+                    <Sparkles className="w-3 h-3 text-brand-primary shrink-0" />
                     <p className="text-[10px] font-bold text-slate-500 leading-snug">
                         미션 완료 후 &lsquo;활동 제출&rsquo; 탭에서 인증 및 제출해주세요.
                     </p>
@@ -171,13 +172,11 @@ function EssentialTaskList({ team }: { team: string }) {
 
 // ── Mission Stamp Board ─────────────────────────────────────────────────────
 
-type StampState = 'none' | 'pending' | 'approved';
-
 interface StampSlotProps {
     label: string;
     sublabel: string;
     icon: React.ReactNode;
-    state: StampState;
+    state: StampStatus;
     href: string;
     accentColor: string;   // tailwind bg class for lit state
     ringColor: string;     // tailwind ring/border class
@@ -185,9 +184,9 @@ interface StampSlotProps {
 }
 
 function StampSlot({ label, sublabel, icon, state, href, accentColor, ringColor, stampLabel }: StampSlotProps) {
-    const isLit  = state !== 'none';
-    const isDone = state === 'approved';
-    const isPend = state === 'pending';
+    const isLit  = state !== StampStatus.NONE;
+    const isDone = state === StampStatus.APPROVED;
+    const isPend = state === StampStatus.PENDING;
 
     return (
         <Link href={href} className="flex flex-col items-center gap-2.5 group flex-1 min-w-0 active:scale-95 transition-transform">
@@ -255,24 +254,24 @@ function MissionStampBoard() {
     const dDay     = Math.max(0, dDiff);
     const progress = Math.round((today.getDate() / lastDay) * 100);
 
-    const [stamps, setStamps] = useState<{ essential: StampState; blog: StampState; cafe: StampState }>({
-        essential: 'none', blog: 'none', cafe: 'none'
+    const [stamps, setStamps] = useState<{ essential: StampStatus; blog: StampStatus; cafe: StampStatus }>({
+        essential: StampStatus.NONE, blog: StampStatus.NONE, cafe: StampStatus.NONE
     });
 
     useEffect(() => {
         getStampStatus().then(res => setStamps(res as any));
     }, []);
 
-    const litCount = [stamps.essential, stamps.blog, stamps.cafe].filter(s => s !== 'none').length;
+    const litCount = [stamps.essential, stamps.blog, stamps.cafe].filter(s => s !== StampStatus.NONE).length;
 
     return (
-        <div className="rounded-[28px] bg-white border border-slate-100 shadow-[0_2px_16px_rgba(0,0,0,0.05)] overflow-hidden">
+        <div className="rounded-brand bg-white border border-slate-100 shadow-[0_2px_16px_rgba(0,0,0,0.05)] overflow-hidden">
 
             {/* Header row */}
             <div className="px-6 pt-5 pb-4 flex items-center justify-between border-b border-slate-50">
                 <div className="flex items-center gap-2.5">
-                    <div className="w-6 h-6 rounded-lg bg-[#FFF5F1] flex items-center justify-center">
-                        <Trophy className="w-3.5 h-3.5 text-[#FF5C00]" />
+                    <div className="w-6 h-6 rounded-lg bg-brand-primary/5 flex items-center justify-center">
+                        <Trophy className="w-3.5 h-3.5 text-brand-primary" />
                     </div>
                     <p className="text-[11px] font-black text-slate-500 uppercase tracking-[0.12em]">
                         {today.getMonth() + 1}월 미션 스탬프
@@ -296,7 +295,7 @@ function MissionStampBoard() {
             <div className="px-6 pt-3 pb-1">
                 <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden">
                     <div
-                        className="h-full bg-gradient-to-r from-[#FF5C00] to-amber-400 rounded-full transition-all duration-700"
+                        className="h-full bg-gradient-to-r from-brand-primary to-amber-400 rounded-full transition-all duration-700"
                         style={{ width: `${progress}%` }}
                     />
                 </div>
@@ -312,8 +311,8 @@ function MissionStampBoard() {
                         icon={<Award className="w-7 h-7" />}
                         state={stamps.essential}
                         href="/dashboard/mission"
-                        accentColor="#FF5C00"
-                        ringColor="border-[#FF5C00]"
+                        accentColor="rgb(255, 92, 0)"
+                        ringColor="border-brand-primary"
                         stampLabel="필수완료"
                     />
                     <StampSlot
@@ -346,7 +345,7 @@ function MissionStampBoard() {
                         </p>
                     ) : litCount < 3 ? (
                         <p className="text-[10px] font-bold text-slate-400">
-                            <span className="text-[#FF5C00] font-black">{litCount}개</span> 제출됨 &middot; {3 - litCount}개 더 남았습니다
+                            <span className="text-brand-primary font-black">{litCount}개</span> 제출됨 &middot; {3 - litCount}개 더 남았습니다
                         </p>
                     ) : (
                         <p className="text-[10px] font-black text-emerald-500">
@@ -360,7 +359,7 @@ function MissionStampBoard() {
             <div className="px-6 pb-5">
                 <Button
                     asChild
-                    className="w-full h-11 min-h-[44px] rounded-xl bg-[#FF5C00] hover:bg-[#E63900] text-white font-black text-sm shadow-lg shadow-orange-100/50 transition-all hover:scale-[1.02] active:scale-95"
+                    className="w-full h-11 min-h-[44px] rounded-xl bg-brand-primary hover:bg-brand-primary-hover text-white font-black text-sm shadow-lg shadow-orange-100/50 transition-all hover:scale-[1.02] active:scale-95"
                 >
                     <Link href="/dashboard/mission" className="flex items-center justify-center gap-2">
                         필수 활동 제출하기
@@ -459,11 +458,11 @@ function DashboardContent() {
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] py-32 bg-white/50 rounded-[40px] border border-slate-100 shadow-inner mx-6 lg:mx-10 my-10">
+            <div className="flex flex-col items-center justify-center min-h-[60vh] py-32 bg-white/50 rounded-brand-xl border border-slate-100 shadow-inner mx-6 lg:mx-10 my-10">
                 <div className="relative w-16 h-16 mb-6">
                     <div className="absolute inset-0 rounded-2xl bg-orange-100 animate-pulse" />
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-8 h-8 rounded-full border-4 border-white border-t-[#FF5C00] animate-spin" />
+                        <div className="w-8 h-8 rounded-full border-4 border-white border-t-brand-primary animate-spin" />
                     </div>
                 </div>
                 <p className="text-slate-400 font-black text-xs uppercase tracking-widest">Initializing Dashboard</p>
@@ -478,9 +477,9 @@ function DashboardContent() {
             {/* Minimal Welcome Header */}
             <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8">
                 <div className="space-y-2">
-                    <Badge className="bg-[#FFF5F1] text-[#FF5C00] hover:bg-[#FFF5F1] border-none font-black px-4 py-1.5 rounded-full text-[10px] tracking-widest">CREW OVERVIEW</Badge>
+                    <Badge className="bg-brand-primary/5 text-brand-primary hover:bg-brand-primary/5 border-none font-black px-4 py-1.5 rounded-full text-[10px] tracking-widest">CREW OVERVIEW</Badge>
                     <h1 className="text-xl lg:text-2xl font-black text-slate-900 tracking-tight leading-tight">
-                        <span className="text-[#FF5C00]">{data.nickname}</span>의 크루 활동 대시보드
+                        <span className="text-brand-primary">{data.nickname}</span>의 크루 활동 대시보드
                     </h1>
                 </div>
                 {data.role === 'admin' && (
@@ -499,10 +498,10 @@ function DashboardContent() {
             </div>
             
             {/* Rejection Notification Banner */}
-            {data.currentMission?.status === 'REJECTED' && (
+            {data.currentMission?.status === MissionStatus.REJECTED && (
                 <div className="animate-in fade-in slide-in-from-top-4 duration-500">
                     <Link href="/dashboard/mission">
-                        <div className="bg-amber-50 border border-amber-200 rounded-[24px] p-6 flex flex-col md:flex-row items-center justify-between gap-4 group cursor-pointer hover:shadow-md transition-all">
+                        <div className="bg-amber-50 border border-amber-200 rounded-brand p-6 flex flex-col md:flex-row items-center justify-between gap-4 group cursor-pointer hover:shadow-md transition-all">
                             <div className="flex items-center gap-4">
                                 <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center text-amber-600 shadow-sm shrink-0">
                                     <AlertCircle className="w-6 h-6" />
@@ -539,7 +538,7 @@ function DashboardContent() {
 
 export default function DashboardPage() {
     return (
-        <Suspense fallback={<div className="min-h-screen bg-[#F9F8F3]" />}>
+        <Suspense fallback={<div className="min-h-screen bg-brand-bg" />}>
             <DashboardContent />
         </Suspense>
     );

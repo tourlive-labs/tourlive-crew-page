@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { useState, useEffect } from "react";
+import { MissionStatus, normalizeMissionStatus } from "@/types/mission";
 import { 
     Tabs, 
     TabsContent, 
@@ -61,15 +62,23 @@ export default function AdminMissionsPage() {
 
     async function loadData() {
         setLoading(true);
-        const [ess, side, setl] = await Promise.all([
-            getPendingEssentialMissions(),
-            getPendingSideMissions(),
-            getPendingSettlements()
-        ]);
-        setEssentialMissions(ess.data || []);
-        setSideMissions(side.data || []);
-        setSettlements(setl.data || []);
-        setLoading(false);
+        try {
+            const [ess, side, setl] = await Promise.all([
+                getPendingEssentialMissions(),
+                getPendingSideMissions(),
+                getPendingSettlements()
+            ]);
+            setEssentialMissions((ess.data || []).map(m => ({
+                ...m,
+                status: normalizeMissionStatus(m.status)
+            })));
+            setSideMissions(side.data || []);
+            setSettlements(setl.data || []);
+        } catch (error) {
+            console.error("[AdminMissionsPage] loadData Error:", error);
+        } finally {
+            setLoading(false);
+        }
     }
 
     const handleApprove = async (id: string, type: 'essential' | 'side') => {
@@ -232,11 +241,11 @@ export default function AdminMissionsPage() {
                                                 <div className="flex flex-col">
                                                     <span className="font-black text-sm text-slate-800">{m.profiles?.nickname}</span>
                                                     <Badge className={
-                                                        m.status === 'REJECTED' || m.status === 'rejected' ? "bg-red-50 text-red-600 text-[9px] w-fit px-1.5 border-none mt-1" :
-                                                        m.profiles?.selected_activity === 'naver_blog' ? "bg-blue-50 text-blue-600 text-[9px] w-fit px-1.5 border-none mt-1" : 
+                                                        m.status === MissionStatus.REJECTED ? "bg-red-50 text-red-600 text-[9px] w-fit px-1.5 border-none mt-1" :
+                                                        m.profiles?.selected_activity === 'naver_blog' ? "bg-blue-50 text-blue-600 text[9px] w-fit px-1.5 border-none mt-1" :
                                                         "bg-orange-50 text-orange-600 text-[9px] w-fit px-1.5 border-none mt-1"
                                                     }>
-                                                        {m.status === 'REJECTED' || m.status === 'rejected' ? 'REJECTED' : (m.profiles?.selected_activity === 'naver_blog' ? 'BLOG' : 'CAFE')}
+                                                        {m.status === MissionStatus.REJECTED ? 'REJECTED' : (m.profiles?.selected_activity === 'naver_blog' ? 'BLOG' : 'CAFE')}
                                                     </Badge>
                                                 </div>
                                             </TableCell>
@@ -253,7 +262,7 @@ export default function AdminMissionsPage() {
                                                     <div className="max-w-[300px] truncate text-[11px] font-medium text-slate-600" title={formatSurvey(m.survey_data)}>
                                                         {formatSurvey(m.survey_data)}
                                                     </div>
-                                                    {(m.status === 'REJECTED' || m.status === 'rejected') && (
+                                                    {m.status === MissionStatus.REJECTED && (
                                                         <div className="text-[10px] font-bold text-red-500 bg-red-50 px-2 py-0.5 rounded border border-red-100 w-fit">
                                                             Reason: {m.rejection_reason || m.admin_feedback || "No reason provided"}
                                                         </div>

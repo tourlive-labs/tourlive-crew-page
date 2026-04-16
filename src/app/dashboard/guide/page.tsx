@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import {
-    ChevronLeft,
     BookOpen,
     Coffee,
     Target,
@@ -15,34 +14,27 @@ import {
     Link as LinkIcon,
     Quote
 } from "lucide-react";
+import PageHeader from "@/components/shared/PageHeader";
 
 export default function GuidePage() {
     return (
-        <div className="min-h-screen bg-[#F8F9FA] selection:bg-[#FF5C00] selection:text-white font-sans antialiased py-16 px-10">
+        <div className="min-h-screen bg-brand-bg selection:bg-brand-primary selection:text-white font-sans antialiased py-16 px-10">
             <div className="max-w-4xl mx-auto">
-                <div className="flex items-center gap-4 mb-10">
-                    <Button asChild variant="ghost" className="rounded-2xl hover:bg-white border-none text-slate-400 group">
-                        <Link href="/dashboard" className="flex items-center gap-2">
-                            <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-                            대시보드로 돌아가기
-                        </Link>
-                    </Button>
-                </div>
-
-                <div className="flex flex-col gap-2 mb-12">
-                    <div className="flex items-center gap-2">
-                        <span className="px-3 py-1 rounded-full bg-slate-800 text-white text-[10px] font-black uppercase tracking-wider">Manual</span>
-                        <span className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Activity Guide v1.0</span>
-                    </div>
-                    <h1 className="text-4xl font-black text-slate-800 tracking-tight">크루 활동 가이드라인</h1>
-                    <p className="text-lg text-slate-500 font-medium">성공적인 투어라이브 크루 활동을 위한 상세 지침서입니다.</p>
+                <div className="mb-12">
+                    <PageHeader
+                        title="크루 활동 가이드라인"
+                        subtitle="성공적인 투어라이브 크루 활동을 위한 상세 지침서입니다."
+                        backHref="/dashboard"
+                        badge="Manual"
+                        badgeSub="Activity Guide v1.0"
+                    />
                 </div>
 
                 <div className="grid gap-10">
                     {/* Cafe Section */}
-                    <Card className="shadow-[0_4px_24px_rgba(0,0,0,0.04)] border-none rounded-[40px] overflow-hidden bg-white p-2">
+                    <Card className="shadow-[0_4px_24px_rgba(0,0,0,0.04)] border-none rounded-brand-xl overflow-hidden bg-white p-2">
                         <CardHeader className="p-10 pb-4">
-                            <div className="w-16 h-16 rounded-3xl bg-[#FFF5F1] flex items-center justify-center text-[#FF5C00] mb-6">
+                            <div className="w-16 h-16 rounded-brand bg-brand-primary/5 flex items-center justify-center text-brand-primary mb-6">
                                 <Coffee className="w-8 h-8" />
                             </div>
                             <CardTitle className="text-2xl font-black text-slate-800 tracking-tight">네이버 지식카페 활동</CardTitle>
@@ -52,17 +44,17 @@ export default function GuidePage() {
                         </CardHeader>
                         <CardContent className="p-10 pt-4 space-y-8">
                             <div className="grid sm:grid-cols-3 gap-6">
-                                <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100">
+                                <div className="p-6 rounded-brand bg-slate-50 border border-slate-100">
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Requirement 01</span>
                                     <h4 className="font-extrabold text-slate-800 text-base leading-tight">여행 정보게시글</h4>
                                     <p className="text-xs text-slate-500 font-medium mt-2 leading-relaxed">월 5건 이상의 유익한 여행 정보를 공유해 주세요.</p>
                                 </div>
-                                <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100">
+                                <div className="p-6 rounded-brand bg-slate-50 border border-slate-100">
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Requirement 02</span>
                                     <h4 className="font-extrabold text-slate-800 text-base leading-tight">활발한 댓글 참여</h4>
                                     <p className="text-xs text-slate-500 font-medium mt-2 leading-relaxed">월 30건 이상의 소통 댓글을 남겨주세요.</p>
                                 </div>
-                                <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100">
+                                <div className="p-6 rounded-brand bg-slate-50 border border-slate-100">
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Requirement 03</span>
                                     <h4 className="font-extrabold text-slate-800 text-base leading-tight">사용후기 미션</h4>
                                     <p className="text-xs text-slate-500 font-medium mt-2 leading-relaxed">매월 지정된 사용후기 게시글 1건을 작성합니다.</p>
@@ -72,9 +64,9 @@ export default function GuidePage() {
                     </Card>
 
                     {/* Blog Section */}
-                    <Card className="shadow-[0_4px_24px_rgba(0,0,0,0.04)] border-none rounded-[40px] overflow-hidden bg-white p-2">
+                    <Card className="shadow-[0_4px_24px_rgba(0,0,0,0.04)] border-none rounded-brand-xl overflow-hidden bg-white p-2">
                         <CardHeader className="p-10 pb-4">
-                            <div className="w-16 h-16 rounded-3xl bg-[#F0F5FF] flex items-center justify-center text-[#0052CC] mb-6">
+                            <div className="w-16 h-16 rounded-brand bg-[#F0F5FF] flex items-center justify-center text-[#0052CC] mb-6">
                                 <BookOpen className="w-8 h-8" />
                             </div>
                             <CardTitle className="text-2xl font-black text-slate-800 tracking-tight">네이버 블로그 활동</CardTitle>
@@ -84,12 +76,12 @@ export default function GuidePage() {
                         </CardHeader>
                         <CardContent className="p-10 pt-4 space-y-8">
                             <div className="grid sm:grid-cols-2 gap-6">
-                                <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100">
+                                <div className="p-6 rounded-brand bg-slate-50 border border-slate-100">
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Requirement</span>
                                     <h4 className="font-extrabold text-slate-800 text-base leading-tight">리뷰 게시글 작성</h4>
                                     <p className="text-xs text-slate-500 font-medium mt-2 leading-relaxed">월 2건의 투어라이브 상품(가이드북/오디오가이드) 상세 리뷰를 작성합니다.</p>
                                 </div>
-                                <div className="p-6 rounded-3xl bg-slate-50 border border-slate-100">
+                                <div className="p-6 rounded-brand bg-slate-50 border border-slate-100">
                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Checklist</span>
                                     <h4 className="font-extrabold text-slate-800 text-base leading-tight">필수 항목 준수</h4>
                                     <p className="text-xs text-slate-500 font-medium mt-2 leading-relaxed">아래의 5대 필수 항목을 반드시 포함하여 작성해야 합니다.</p>
@@ -99,7 +91,7 @@ export default function GuidePage() {
                     </Card>
 
                     {/* Checklist Section */}
-                    <Card className="shadow-[0_4px_24px_rgba(0,0,0,0.04)] border-none rounded-[40px] overflow-hidden bg-slate-900 text-white p-2">
+                    <Card className="shadow-[0_4px_24px_rgba(0,0,0,0.04)] border-none rounded-brand-xl overflow-hidden bg-slate-900 text-white p-2">
                         <CardHeader className="p-10 pb-4">
                             <div className="flex items-center justify-between">
                                 <div>
@@ -108,7 +100,7 @@ export default function GuidePage() {
                                         사용후기글 작성 시 반드시 지켜야 할 5가지 규칙입니다.
                                     </CardDescription>
                                 </div>
-                                <Target className="w-12 h-12 text-[#FF5C00] opacity-20" />
+                                <Target className="w-12 h-12 text-brand-primary opacity-20" />
                             </div>
                         </CardHeader>
                         <CardContent className="p-10 pt-4 grid gap-4">
@@ -119,8 +111,8 @@ export default function GuidePage() {
                                 { title: "하단 배너", desc: "투어라이브 크루 공식 배너 이미지", icon: FileText },
                                 { title: "필수 문구", desc: "원고료 기재 등 필수 하단 멘트 포함", icon: Quote },
                             ].map((item, idx) => (
-                                <div key={idx} className="flex items-center gap-6 p-5 rounded-[24px] bg-slate-800/50 border border-white/5 group hover:bg-slate-800 transition-all">
-                                    <div className="w-12 h-12 rounded-2xl bg-slate-700 flex items-center justify-center text-slate-300 group-hover:bg-[#FF5C00] group-hover:text-white transition-all shrink-0 font-black">
+                                <div key={idx} className="flex items-center gap-6 p-5 rounded-brand bg-slate-800/50 border border-white/5 group hover:bg-slate-800 transition-all">
+                                    <div className="w-12 h-12 rounded-2xl bg-slate-700 flex items-center justify-center text-slate-300 group-hover:bg-brand-primary group-hover:text-white transition-all shrink-0 font-black">
                                         {idx + 1}
                                     </div>
                                     <div className="overflow-hidden">

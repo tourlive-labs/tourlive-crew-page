@@ -126,10 +126,10 @@ export default function MyPage() {
     if (loading) {
         return (
             <div className="p-10 space-y-8 animate-pulse">
-                <Skeleton className="h-[400px] w-full rounded-[40px]" />
+                <Skeleton className="h-[400px] w-full rounded-brand-xl" />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <Skeleton className="h-48 w-full rounded-3xl" />
-                    <Skeleton className="h-48 w-full rounded-3xl" />
+                    <Skeleton className="h-48 w-full rounded-brand" />
+                    <Skeleton className="h-48 w-full rounded-brand" />
                 </div>
             </div>
         );
@@ -146,8 +146,8 @@ export default function MyPage() {
         <div className="max-w-[1200px] mx-auto px-6 py-10 lg:px-10 lg:py-16 space-y-16 animate-in fade-in duration-700">
             {/* My Crew Banner Generator Section */}
             <section className={cn(
-                "transition-all duration-500 rounded-[40px]",
-                isFlashing && "ring-4 ring-orange-400 ring-offset-8 shadow-2xl shadow-orange-200 scale-[1.02]"
+                "transition-all duration-500 rounded-brand-xl",
+                isFlashing && "ring-4 ring-brand-primary ring-offset-8 shadow-2xl shadow-brand-primary/20 scale-[1.02]"
             )}>
                 <CrewBannerGenerator 
                     nickname={data.nickname}
@@ -161,14 +161,14 @@ export default function MyPage() {
             {/* Atomic Edit Sections (2x2 Grid) */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                 {/* Section 1: Crew Identity */}
-                <Card className="rounded-[40px] border-slate-100 shadow-sm overflow-hidden bg-white hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-500">
+                <Card className="rounded-brand-xl border-slate-100 shadow-sm overflow-hidden bg-white hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-500">
                     <CardHeader className="p-8 flex flex-row items-center justify-between border-b border-slate-50 bg-slate-50/30">
                         <CardTitle className="text-xl font-black flex items-center gap-3 text-slate-800">
-                            <ShieldCheck className="w-6 h-6 text-[#FF5C00]" />
+                            <ShieldCheck className="w-6 h-6 text-brand-primary" />
                             크루 활동 정보
                         </CardTitle>
                         {editingSection !== 'section1' && (
-                            <Button variant="ghost" onClick={() => handleEdit('section1', { nickname: data.nickname })} className="text-[#FF5C00] font-black gap-2 hover:bg-orange-50 rounded-xl">
+                            <Button variant="ghost" onClick={() => handleEdit('section1', { nickname: data.nickname })} className="text-brand-primary font-black gap-2 hover:bg-brand-primary/5 rounded-xl">
                                 <Edit2 className="w-4 h-4" /> 수정
                             </Button>
                         )}
@@ -200,9 +200,9 @@ export default function MyPage() {
                                         <Lock className="w-2.5 h-2.5" /> 변경 불가
                                     </span>
                                 </label>
-                                <span className="font-black text-[#FF5C00] bg-orange-50 px-4 py-2 rounded-xl w-fit flex items-center gap-2">
+                                <span className="font-black text-brand-primary bg-brand-primary/5 px-4 py-2 rounded-xl w-fit flex items-center gap-2">
                                     {data.selected_activity === 'naver_cafe' ? '네이버 카페' : '네이버 블로그'}
-                                    <Lock className="w-3 h-3 text-[#FF5C00]/50" />
+                                    <Lock className="w-3 h-3 text-brand-primary/50" />
                                 </span>
                                 <p className="text-[10px] text-slate-300 font-medium mt-0.5">
                                     온보딩 시 등록된 활동 유형으로 수정할 수 없습니다.
@@ -222,14 +222,14 @@ export default function MyPage() {
                 </Card>
  
                 {/* Section 2: Basic Info (Consolidated) */}
-                <Card className="rounded-[40px] border-slate-100 shadow-sm overflow-hidden bg-white hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-500">
+                <Card className="rounded-brand-xl border-slate-100 shadow-sm overflow-hidden bg-white hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-500">
                     <CardHeader className="p-8 flex flex-row items-center justify-between border-b border-slate-50 bg-slate-50/30">
                         <CardTitle className="text-xl font-black flex items-center gap-3 text-slate-800">
-                            <User className="w-6 h-6 text-[#FF5C00]" />
+                            <User className="w-6 h-6 text-brand-primary" />
                             기본 회원 정보
                         </CardTitle>
                         {editingSection !== 'section2' && (
-                            <Button variant="ghost" onClick={() => handleEdit('section2', { full_name: data.full_name, phone_number: data.phone_number, naver_id: data.naver_id })} className="text-[#FF5C00] font-black gap-2 hover:bg-orange-50 rounded-xl">
+                            <Button variant="ghost" onClick={() => handleEdit('section2', { full_name: data.full_name, phone_number: data.phone_number, naver_id: data.naver_id })} className="text-brand-primary font-black gap-2 hover:bg-brand-primary/5 rounded-xl">
                                 <Edit2 className="w-4 h-4" /> 수정
                             </Button>
                         )}
@@ -282,14 +282,14 @@ export default function MyPage() {
                 </Card>
  
                 {/* Section 4: Banner & Travel Info */}
-                <Card className="rounded-[40px] border-slate-100 shadow-sm overflow-hidden bg-white hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-500 lg:col-span-1">
+                <Card className="rounded-brand-xl border-slate-100 shadow-sm overflow-hidden bg-white hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-500 lg:col-span-1">
                     <CardHeader className="p-8 flex flex-row items-center justify-between border-b border-slate-50 bg-slate-50/30">
                         <CardTitle className="text-xl font-black flex items-center gap-3 text-slate-800">
-                            <Globe className="w-6 h-6 text-[#FF5C00]" />
+                            <Globe className="w-6 h-6 text-brand-primary" />
                             배너 및 여행 정보
                         </CardTitle>
                         {editingSection !== 'section4' && (
-                            <Button variant="ghost" onClick={() => handleEdit('section4', { travel_country: data.travel_country, travel_city: data.travel_city, hashtag_1: data.hashtag_1, hashtag_2: data.hashtag_2, hashtag_3: data.hashtag_3 })} className="text-[#FF5C00] font-black gap-2 hover:bg-orange-50 rounded-xl">
+                            <Button variant="ghost" onClick={() => handleEdit('section4', { travel_country: data.travel_country, travel_city: data.travel_city, hashtag_1: data.hashtag_1, hashtag_2: data.hashtag_2, hashtag_3: data.hashtag_3 })} className="text-brand-primary font-black gap-2 hover:bg-brand-primary/5 rounded-xl">
                                 <Edit2 className="w-4 h-4" /> 수정
                             </Button>
                         )}
@@ -321,8 +321,8 @@ export default function MyPage() {
                                      const key = `hashtag_${i}`;
                                      return (
                                          <div key={key} className="flex items-center gap-3">
-                                             <div className="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center shrink-0">
-                                                 <Hash className="w-4 h-4 text-[#FF5C00]" />
+                                             <div className="w-10 h-10 rounded-lg bg-brand-primary/5 flex items-center justify-center shrink-0">
+                                                 <Hash className="w-4 h-4 text-brand-primary" />
                                              </div>
                                              {editingSection === 'section4' ? (
                                                  <Input value={editValues[key] || ""} placeholder="#해시태그" onChange={(e) => setEditValues({ ...editValues, [key]: e.target.value })} className="h-11 rounded-xl border-slate-200 font-bold" />
@@ -347,14 +347,14 @@ export default function MyPage() {
                 </Card>
  
                 {/* Section 0: Profile Photo Management (Moved to Last) */}
-                <Card className="rounded-[40px] border-slate-100 shadow-sm overflow-hidden bg-white hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-500">
+                <Card className="rounded-brand-xl border-slate-100 shadow-sm overflow-hidden bg-white hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-500">
                     <CardHeader className="p-8 flex flex-row items-center justify-between border-b border-slate-50 bg-slate-50/30">
                         <CardTitle className="text-xl font-black flex items-center gap-3 text-slate-800">
-                            <ImageIcon className="w-6 h-6 text-[#FF5C00]" />
+                            <ImageIcon className="w-6 h-6 text-brand-primary" />
                             배너 사진 관리
                         </CardTitle>
                         {editingSection !== 'section0' ? (
-                            <Button variant="ghost" onClick={() => setEditingSection('section0')} className="text-[#FF5C00] font-black gap-2 hover:bg-orange-50 rounded-xl transition-all">
+                            <Button variant="ghost" onClick={() => setEditingSection('section0')} className="text-brand-primary font-black gap-2 hover:bg-brand-primary/5 rounded-xl transition-all">
                                  <Edit2 className="w-4 h-4" /> 수정
                             </Button>
                         ) : (
@@ -371,7 +371,7 @@ export default function MyPage() {
                     <CardContent className="p-8 space-y-6">
                         <div className="flex flex-col items-center gap-6">
                             <div className="relative group">
-                                <div className="w-32 h-32 rounded-3xl overflow-hidden border-4 border-white shadow-md relative bg-slate-100 transition-transform group-hover:scale-105 duration-500">
+                                <div className="w-32 h-32 rounded-brand overflow-hidden border-4 border-white shadow-md relative bg-slate-100 transition-transform group-hover:scale-105 duration-500">
                                     <img 
                                         src={previewUrl || data.banner_image_url || "/default-avatar.png"} 
                                         alt="Profile Preview" 
