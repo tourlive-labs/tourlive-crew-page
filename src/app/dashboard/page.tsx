@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import {
     CheckCircle2,
     FileText,
-    Bell,
     Users,
     ExternalLink,
     Coffee,
@@ -16,7 +15,6 @@ import {
     HelpCircle,
     ShieldCheck,
     Trophy,
-    Target,
     Award,
     Sparkles,
     ArrowRight,
@@ -28,122 +26,51 @@ import {
 } from "lucide-react";
 import { Suspense } from "react";
 import { getDashboardData, getStampStatus } from "@/app/actions/dashboard";
-import { submitMission } from "@/app/actions/mission";
-import { signOut } from "@/app/actions/auth";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
-import { Skeleton } from "@/components/ui/skeleton";
-
-function MonthlyMissionCard({ currentMission }: { currentMission: any }) {
-    const router = useRouter();
-    const currentMonth = new Date().getMonth() + 1;
-    
-    // Calculate progress (this is a placeholder until real mission data is integrated)
-    // For now, let's assume 1 mission submitted = 100% for the summary view
-    const progress = (currentMission?.status && currentMission.status !== 'none') ? 100 : 0;
-
-    return (
-        <Card className="shadow-sm border-slate-100 rounded-3xl overflow-hidden bg-white p-2">
-            <CardHeader className="p-8 pb-4">
-                <div className="flex items-center justify-between mb-2">
-                    <CardTitle className="text-lg font-black text-slate-800 tracking-tight">
-                        {currentMonth}월 미션 현황
-                    </CardTitle>
-                </div>
-                <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <span className="text-sm font-bold text-slate-500">이번 달 필수 활동 {progress}% 완료</span>
-                        <span className="text-xs font-black text-[#FF5C00]">{progress}/100%</span>
-                    </div>
-                    <div className="w-full h-2 bg-slate-50 rounded-full overflow-hidden">
-                        <div 
-                            className="h-full bg-[#FF5C00] transition-all duration-700 ease-out rounded-full"
-                            style={{ width: `${progress}%` }}
-                        />
-                    </div>
-                </div>
-            </CardHeader>
-            <CardContent className="px-8 pb-8 pt-4">
-                <Button 
-                    asChild
-                    className="h-14 w-full rounded-2xl bg-[#FF5C00] hover:bg-[#E63900] text-white font-black shadow-lg shadow-orange-100/50 transition-all hover:scale-[1.02]"
-                >
-                    <Link href="/dashboard/mission" className="flex items-center justify-center gap-2">
-                        필수 활동 제출하러 가기
-                        <ArrowRight className="w-5 h-5" />
-                    </Link>
-                </Button>
-            </CardContent>
-        </Card>
-    );
-}
-
-
-function DashboardHeader({ nickname, role }: { nickname: string, role: string }) {
-    return (
-        <div className="flex items-center justify-between mb-16">
-            <h1 className="text-[25px] font-black text-slate-900 tracking-tight leading-tight">
-                투어라이브 크루 <span className="text-[#FF5C00]">{nickname}</span>님의 대시보드
-            </h1>
-            <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-white/80 backdrop-blur-sm border border-slate-100 shadow-sm">
-                    <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none">Tourlive Crew</span>
-                    <span className="w-px h-3 bg-slate-200 mx-1" />
-                    <span className="text-sm font-black text-slate-800 leading-none">14기</span>
-                </div>
-                {role === 'admin' && (
-                    <Button 
-                        variant="outline" 
-                        size="sm" 
-                        asChild
-                        className="border-[#FF5C00] text-[#FF5C00] hover:bg-[#FF5C00] hover:text-white font-black rounded-xl text-xs h-9 px-4"
-                    >
-                        <Link href="/admin/missions">관리자 페이지</Link>
-                    </Button>
-                )}
-                <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => signOut()}
-                    className="text-slate-400 hover:text-slate-900 font-bold text-xs"
-                >
-                    로그아웃
-                </Button>
-            </div>
-        </div>
-    );
-}
 
 // ── Mandatory Task List ─────────────────────────────────────────────────────
 
-function EssentialTaskList({ team }: { team: string }) {
-    const isCafe   = team === 'naver_cafe';
-    const month    = new Date().getMonth() + 1;
+/** Blog checklist: 5 items a poster must satisfy per post */
+const BLOG_CHECKLIST = [
+    "투어라이브 앱 캡처 사진 5장 이상",
+    "직접 찍은 사진 5장 이상",
+    "UTM 링크 네이버 ID가 포함된 상품 링크 삽입",
+    "투어라이브 크루 공식 배너 이미지",
+    "활동비 기재 등 필수 하단 멘트 포함",
+];
 
-    const blogTasks = [
-        { num: "01", title: "가이드북 사용후기 포스팅", sub: "오디오가이드 / 가이드북 후기 미션" },
-        { num: "02", title: "UTM 소스 링크 삽입", sub: "포스팅 내 공식 링크 내용 포함" },
-        { num: "03", title: "필수 멘트 작성", sub: "지정 멘트 텊플릿 빠짐없이 포함" },
-    ];
+function EssentialTaskList({ team }: { team: string }) {
+    const isCafe = team === 'naver_cafe';
+    const month  = new Date().getMonth() + 1;
+    const [showChecklist, setShowChecklist] = useState(false);
+
     const cafeTasks = [
-        { num: "01", title: "여행 정보 게시글 5건 등록", sub: "유럽/일본 여행에 관련된 유익한 정보를 자유롭게 공유해주세요." },
+        { num: "01", title: "여행 정보 게시글 5건 등록",    sub: "유럽/일본 여행에 관련된 유익한 정보를 자유롭게 공유해주세요." },
         { num: "02", title: "지식여행 카페 댓글 30건 작성", sub: "본인 게시글 댓글 제외" },
-        { num: "03", title: "가이드북 사용후기 1건 작성", sub: "이미지 5장 이상 포함 필수" },
+        { num: "03", title: "가이드북 사용후기 1건 작성",   sub: "이미지 5장 이상 포함 필수" },
     ];
-    const tasks = isCafe ? cafeTasks : blogTasks;
 
     return (
         <div className="rounded-[28px] bg-white border border-slate-100 shadow-[0_2px_16px_rgba(0,0,0,0.05)] overflow-hidden">
-            {/* Header */}
-            <div className="px-6 pt-5 pb-4 flex items-center justify-between border-b border-slate-50">
+
+            {/* ── Header ───────────────────────────────────────────── */}
+            <div className={cn(
+                "px-6 pt-5 pb-4 flex items-center justify-between border-b border-slate-50",
+            )}>
                 <div className="flex items-center gap-2.5">
-                    <div className="w-7 h-7 rounded-xl bg-slate-900 flex items-center justify-center shrink-0">
-                        <Check className="w-3.5 h-3.5 text-white" />
+                    {/* Icon differs by team */}
+                    <div className={cn(
+                        "w-7 h-7 rounded-xl flex items-center justify-center shrink-0",
+                        isCafe ? "bg-indigo-900" : "bg-slate-900"
+                    )}>
+                        {isCafe
+                            ? <Coffee  className="w-3.5 h-3.5 text-white" />
+                            : <BookOpen className="w-3.5 h-3.5 text-white" />
+                        }
                     </div>
                     <div>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.14em] leading-none">
-                            {month}월 필수 활동
+                            {month}월 필수 활동 &middot; {isCafe ? "카페" : "블로그"}
                         </p>
                         <p className="text-base font-black text-slate-900 leading-tight mt-0.5">
                             이번 달 완료해야 할 미션
@@ -158,28 +85,83 @@ function EssentialTaskList({ team }: { team: string }) {
                 </Link>
             </div>
 
-            {/* Numbered task rows */}
-            <div className="px-6 py-4 space-y-0 divide-y divide-slate-50">
-                {tasks.map((t, i) => (
-                    <div key={i} className="flex items-start gap-4 py-3.5">
-                        {/* Number badge */}
-                        <div className="w-7 h-7 rounded-full bg-[#FFF5F1] border border-[#FFD9C6] flex items-center justify-center shrink-0 mt-0.5">
-                            <span className="text-[10px] font-black text-[#FF5C00] leading-none">{t.num}</span>
+            {isCafe ? (
+                /* ── Cafe: 3 numbered rows ─────────────────────────── */
+                <div className="px-6 py-4 divide-y divide-slate-50">
+                    {cafeTasks.map((t, i) => (
+                        <div key={i} className="flex items-start gap-4 py-3.5">
+                            <div className="w-7 h-7 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0 mt-0.5">
+                                <span className="text-[10px] font-black text-indigo-500 leading-none">{t.num}</span>
+                            </div>
+                            <div className="min-w-0">
+                                <p className="text-sm font-black text-slate-800 leading-tight">{t.title}</p>
+                                <p className="text-[11px] font-medium text-slate-400 mt-0.5 leading-snug">{t.sub}</p>
+                            </div>
                         </div>
-                        <div className="min-w-0">
-                            <p className="text-sm font-black text-slate-800 leading-tight">{t.title}</p>
-                            <p className="text-[11px] font-medium text-slate-400 mt-0.5 leading-snug">{t.sub}</p>
+                    ))}
+                </div>
+            ) : (
+                /* ── Blog: single task + 5-item checklist ──────────── */
+                <div className="px-6 py-5 space-y-4">
+                    {/* Primary task */}
+                    <div className="flex items-start gap-4">
+                        <div className="w-7 h-7 rounded-full bg-[#FFF5F1] border border-[#FFD9C6] flex items-center justify-center shrink-0 mt-0.5">
+                            <span className="text-[10px] font-black text-[#FF5C00] leading-none">01</span>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <p className="text-sm font-black text-slate-800 leading-tight">
+                                가이드북 사용후기 포스팅 <span className="text-[#FF5C00]">2건</span>
+                            </p>
+                            <p className="text-[11px] font-medium text-slate-400 mt-0.5">
+                                오디오가이드 / 가이드북 후기 · 포스팅 2건 모두 제출
+                            </p>
                         </div>
                     </div>
-                ))}
-            </div>
 
-            {/* Footer */}
+                    {/* 5-checklist section */}
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50/70 overflow-hidden">
+                        {/* Checklist header / toggle */}
+                        <button
+                            onClick={() => setShowChecklist(v => !v)}
+                            className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-100/60 transition-colors"
+                        >
+                            <span className="flex items-center gap-2">
+                                <span className="w-5 h-5 rounded-md bg-[#FF5C00] flex items-center justify-center shrink-0">
+                                    <Check className="w-3 h-3 text-white" />
+                                </span>
+                                <span className="text-[11px] font-black text-slate-700 uppercase tracking-widest">
+                                    5가지 체크리스트 필수
+                                </span>
+                            </span>
+                            <span className={cn(
+                                "text-[10px] font-black text-slate-400 transition-transform duration-200",
+                                showChecklist ? "rotate-180" : ""
+                            )}>▾</span>
+                        </button>
+
+                        {/* Checklist items */}
+                        {showChecklist && (
+                            <div className="px-4 pb-3 space-y-2 border-t border-slate-100 pt-3 animate-in fade-in slide-in-from-top-1 duration-200">
+                                {BLOG_CHECKLIST.map((item, i) => (
+                                    <div key={i} className="flex items-start gap-2.5">
+                                        <div className="w-4 h-4 rounded border border-slate-200 bg-white flex items-center justify-center shrink-0 mt-0.5">
+                                            <span className="text-[8px] font-black text-slate-300">{i + 1}</span>
+                                        </div>
+                                        <p className="text-[11px] font-medium text-slate-600 leading-snug">{item}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* ── Footer ───────────────────────────────────────────── */}
             <div className="px-6 pb-5">
                 <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-100">
                     <Sparkles className="w-3 h-3 text-[#FF5C00] shrink-0" />
                     <p className="text-[10px] font-bold text-slate-500 leading-snug">
-                        미션 완료 후 '활동 제출' 탭에서 인증 및 제출해주세요.
+                        미션 완료 후 &lsquo;활동 제출&rsquo; 탭에서 인증 및 제출해주세요.
                     </p>
                 </div>
             </div>

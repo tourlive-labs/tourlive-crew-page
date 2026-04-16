@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, Hash, Sparkles, User, Mail, Phone, Calendar, ShieldCheck, Trophy, Edit2, Check, X, Loader2, Globe, Link2, ImageIcon, Upload } from "lucide-react";
+import { MapPin, Hash, Sparkles, User, Mail, Phone, Calendar, ShieldCheck, Trophy, Edit2, Check, X, Loader2, Globe, Link2, ImageIcon, Upload, Lock } from "lucide-react";
 import { getDashboardData, updateProfile } from "@/app/actions/dashboard";
 import { Skeleton } from "@/components/ui/skeleton";
 import CrewBannerGenerator from "@/components/dashboard/CrewBannerGenerator";
@@ -168,7 +168,7 @@ export default function MyPage() {
                             크루 활동 정보
                         </CardTitle>
                         {editingSection !== 'section1' && (
-                            <Button variant="ghost" onClick={() => handleEdit('section1', { nickname: data.nickname, selected_activity: data.selected_activity })} className="text-[#FF5C00] font-black gap-2 hover:bg-orange-50 rounded-xl">
+                            <Button variant="ghost" onClick={() => handleEdit('section1', { nickname: data.nickname })} className="text-[#FF5C00] font-black gap-2 hover:bg-orange-50 rounded-xl">
                                 <Edit2 className="w-4 h-4" /> 수정
                             </Button>
                         )}
@@ -194,25 +194,19 @@ export default function MyPage() {
                             </div>
  
                             <div className="flex flex-col gap-1">
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Activity Type</label>
-                                {editingSection === 'section1' ? (
-                                    <Select 
-                                        value={editValues.selected_activity || ""} 
-                                        onValueChange={(val) => setEditValues({ ...editValues, selected_activity: val })}
-                                    >
-                                        <SelectTrigger className="h-12 rounded-xl border-slate-200 font-bold">
-                                            <SelectValue placeholder="활동 분야 선택" />
-                                        </SelectTrigger>
-                                        <SelectContent className="rounded-xl border-slate-100">
-                                            <SelectItem value="naver_cafe">네이버 카페</SelectItem>
-                                            <SelectItem value="personal_blog">네이버 블로그</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                ) : (
-                                    <span className="font-black text-[#FF5C00] bg-orange-50 px-4 py-2 rounded-xl w-fit">
-                                        {data.selected_activity === 'naver_cafe' ? '네이버 카페' : '네이버 블로그'}
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                                    Activity Type
+                                    <span className="inline-flex items-center gap-1 text-[9px] font-black text-slate-300 bg-slate-50 border border-slate-100 px-1.5 py-0.5 rounded-full">
+                                        <Lock className="w-2.5 h-2.5" /> 변경 불가
                                     </span>
-                                )}
+                                </label>
+                                <span className="font-black text-[#FF5C00] bg-orange-50 px-4 py-2 rounded-xl w-fit flex items-center gap-2">
+                                    {data.selected_activity === 'naver_cafe' ? '네이버 카페' : '네이버 블로그'}
+                                    <Lock className="w-3 h-3 text-[#FF5C00]/50" />
+                                </span>
+                                <p className="text-[10px] text-slate-300 font-medium mt-0.5">
+                                    온보딩 시 등록된 활동 유형으로 수정할 수 없습니다.
+                                </p>
                             </div>
                         </div>
  

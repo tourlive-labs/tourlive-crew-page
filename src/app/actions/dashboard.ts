@@ -254,6 +254,10 @@ export async function updateProfile(updates: any) {
 
     try {
         let finalUpdates = { ...updates };
+
+        // ── IMMUTABLE FIELDS: strip these regardless of what the client sends ──
+        // selected_activity is set permanently during onboarding and must never change.
+        delete finalUpdates.selected_activity;
         let bannerImageUrl = null;
 
         // 2. Handle FormData for image uploads
