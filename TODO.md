@@ -1,6 +1,6 @@
 # Supporters Hub — 잔여 개선 항목
 
-> 마지막 업데이트: 2026-04-16  
+> 마지막 업데이트: 2026-04-16 (커밋 00c12fe)  
 > 이미 완료된 항목(에러 핸들링 1차, 디자인 토큰 `/dashboard`, PageHeader 컴포넌트, MissionStatus Enum)은 제외됨
 
 ---
@@ -24,26 +24,8 @@
 - **문제**: `fetchActiveBatch`에서 error 무시, `is_active` 배치가 없으면 `activeBatch = null`인 채로 폼 표시. "현재 모집 중이 아닙니다" 같은 안내 없음
 - **수정 방향**: `error` 변수 체크 + `activeBatch === null`일 때 모집 마감 안내 UI 추가
 
-### #1 브랜드 토큰 미적용 — `/dashboard` 외 영역
-- **파일**: `src/app/login/page.tsx`, `src/app/page.tsx`, `src/app/admin/page.tsx`, `src/app/admin/missions/page.tsx`, `src/components/CrewOnboardingForm.tsx`, `src/components/CrewManagementClient.tsx`, `src/components/AdminFilters.tsx`
-- **문제**: `bg-[#F8F9FA]`, `bg-[#FF5C00]`, `rounded-[32px]` 등 하드코딩 값이 대량 잔존
-- **수정 방향**: `/dashboard` 폴더에 적용한 것과 동일하게 브랜드 토큰으로 일괄 교체
-
-주요 파일별 잔여 항목:
-| 파일 | 남은 값 |
-|---|---|
-| `login/page.tsx` | `bg-[#F8F9FA]`, `bg-[#FF5C00]`, `hover:bg-[#E65300]`, `rounded-[32px]`, `text-[#FF5C00]` |
-| `app/page.tsx` | `bg-[#F8F9FA]`, `border-[#FF5C00]` |
-| `admin/page.tsx` | `bg-[#FDFCF9]` |
-| `admin/missions/page.tsx` | `text-[#FF5C00]` 12곳, `rounded-[32px]` 3곳 |
-| `CrewOnboardingForm.tsx` | `bg-[#F8F9FA]`, `rounded-[32px]`, `rounded-[24px]`, `bg-[#FF5C00]` |
-| `CrewManagementClient.tsx` | `rounded-[40px]` |
-| `AdminFilters.tsx` | `rounded-3xl` |
-
-### #2 네이티브 `<select>` vs shadcn/ui `<Select>` 혼용
-- **파일**: `src/app/admin/missions/page.tsx:193`
-- **문제**: 팀 필터에 네이티브 `<select>` 사용. 같은 폼 안에서 shadcn/ui `<Input>`과 혼재 → 포커스/스타일 불일치
-- **수정 방향**: shadcn/ui `<Select>` 컴포넌트로 교체
+- ✅ **#1 브랜드 토큰 미적용 — `/dashboard` 외 영역** — `login`, `page`, `admin`, `missions`, `CrewOnboardingForm`, `CrewManagementClient`, `AdminFilters` 전체 교체 완료
+- ✅ **#2 네이티브 `<select>` vs shadcn/ui `<Select>` 혼용** — `admin/missions/page.tsx` 팀 필터 교체 완료
 
 ---
 
@@ -98,3 +80,5 @@
 - ✅ **디자인 토큰 적용 (`/dashboard`)** — 121곳 하드코딩 값 교체
 - ✅ **`PageHeader` 컴포넌트** — `src/components/shared/PageHeader.tsx` 생성, notice/faq/guide 페이지 적용
 - ✅ **`MissionStatus` Enum** — `src/types/mission.ts` 생성, 9개 파일 28곳 string literal 교체
+- ✅ **#1 브랜드 토큰 전체 적용** — login/onboarding/admin/missions 등 7개 파일, 하드코딩 hex·rounded 값 전량 교체
+- ✅ **#2 네이티브 `<select>` 교체** — `admin/missions/page.tsx` 팀 필터 → shadcn/ui `<Select>`
