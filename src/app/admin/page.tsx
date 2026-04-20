@@ -87,7 +87,7 @@ export default async function AdminPage() {
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
                     <div className="space-y-2">
                         <div className="flex items-center gap-3">
-                            <span className="bg-orange-500 text-white text-[10px] font-black px-2 py-0.5 rounded-md uppercase tracking-tighter">Admin Portal</span>
+                            <span className="bg-orange-500 text-white text-[10px] font-black px-2 py-0.5 rounded-md uppercase tracking-tighter">관리자</span>
                             <h1 className="text-3xl font-black text-slate-900 tracking-tight">크루 멤버 관리</h1>
                         </div>
                         <p className="text-slate-400 font-bold text-lg">전체 기수 활동 현황 및 수료 대상자 마스터 리스트</p>

@@ -3,6 +3,15 @@
 import { createClient } from "@/utils/supabase/server";
 import { MissionStatus, SideMissionStatus } from "@/types/mission";
 
+type Stamp = {
+    id: string;
+    type: 'essential' | 'optional';
+    title: string;
+    status: string;
+    date: string;
+    icon?: string;
+};
+
 export async function getCalendarStamps() {
     try {
         const supabase = await createClient();
@@ -45,7 +54,7 @@ export async function getCalendarStamps() {
             console.error("[CalendarStamps] Side Missions Error:", sideMissionsError);
         }
 
-        const stamps: any[] = [];
+        const stamps: Stamp[] = [];
 
         missions?.forEach(m => {
             stamps.push({

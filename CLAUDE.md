@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Styling**: Tailwind CSS v4 (`@tailwindcss/postcss`) + shadcn/ui (Radix UI 기반)
 - **Backend**: Supabase (Auth, PostgreSQL, Storage, RLS)
 - **Forms**: react-hook-form + zod v4
-- **AI**: @anthropic-ai/sdk (미션 검증), @google/generative-ai (용도 미확정)
+- **AI**: @anthropic-ai/sdk (미션 검증 — `claude-3-haiku-20240307`)
 - **Deploy**: Vercel (standalone mode, main 브랜치 자동 배포)
 - **Package Manager**: npm
 
@@ -29,7 +29,7 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=        # 서버 전용
 ANTHROPIC_API_KEY=                # AI 미션 검증용
-GOOGLE_GENERATIVE_AI_API_KEY=     # AI 기능용
+GOOGLE_GENERATIVE_AI_API_KEY=     # AI 기능용 (역할 미확정)
 ```
 
 ## 아키텍처 개요
@@ -43,6 +43,33 @@ GOOGLE_GENERATIVE_AI_API_KEY=     # AI 기능용
 /admin 접근 + 비관리자 → /dashboard (307)
 ```
 루트 경로 `/`는 역할에 따라 /admin 또는 /dashboard로 자동 리다이렉트.
+
+### 어드민 인증 패턴
+어드민 판별은 두 경로를 모두 확인함:
+```ts
+const isRootAdmin = user.email === "root@tourlive.co.kr";
+const hasAdminRole = profile?.role === "admin";
+const isAnyAdmin = isRootAdmin || hasAdminRole;
+```
+Server Action에서도 동일 패턴으로 직접 검증 (미들웨어만 믿지 않음).
+
+### DB 테이블 구조 및 관계
+핵심 테이블과 관계:
+```
+auth.users (Supabase Auth)
+  └── crews          (user_id FK)  ← 중간 조인 테이블
+       └── profiles  (crew_id FK)  ← 역할, 닉네임, 활동 유형 등 저장
+            ├── missions            (profile_id FK)  ← 필수 미션
+            ├── side_missions       (profile_id FK)  ← 사이드 미션
+            └── point_settlements   (profile_id FK)  ← 포인트 정산
+```
+
+**중요**: user_id → profile 조회는 반드시 2단계:
+```ts
+const { data: crew } = await supabase.from('crews').select('id').eq('user_id', user.id).maybeSingle();
+const { data: profile } = await supabase.from('profiles').select(...).eq('crew_id', crew.id).maybeSingle();
+```
+`auth.users.id`로 `profiles`를 직접 조회하면 안 됨.
 
 ### Server Action 패턴
 모든 데이터 뮤테이션은 `src/app/actions/`의 Server Action으로 처리.  
@@ -64,8 +91,16 @@ if (error) { console.error('[actionName]', error); return { error: '...' } }
 
 ### 핵심 도메인 개념
 - **미션 상태**: `src/types/mission.ts`의 `MissionStatus` enum 사용. string literal 직접 사용 금지.
+  - DB에 소문자 `'rejected'`와 대문자 `'REJECTED'` 혼용 레거시 존재 → 반드시 `normalizeMissionStatus()` 통과 후 사용.
 - **서포터즈 라이프사이클**: 온보딩 → 3개월 활동(미션/챌린지/사이드미션) → 종료
-- **포인트 정산**: 필수미션 50,000₩ 고정, 사이드미션 가변. `point_settlements` 테이블에 기록.
+- **포인트 정산**: 필수미션 승인 시 50,000₩ `point_settlements` 자동 생성. 사이드미션은 유형별 가변(앱리뷰 10,000₩, 포토리뷰 2,000₩, 트랙댓글 1,000₩, 오류제보 3,000₩). `getAdminLeaderboard()`의 필수미션 포인트는 30,000₩으로 별도 계산 — 정산 금액과 다름(주의).
+
+### 미션 검증 흐름 (AI)
+`verifyMissionContent()` (server action, `actions/mission.ts`):
+1. `selected_activity === 'naver_cafe'`이면 AI 스킵 — URL만 확인 후 `isManualCafe: true` 반환
+2. 블로그: Naver 모바일 URL로 변환 → cheerio로 HTML 스크래핑 → Claude Haiku로 검증
+3. AI 결과 파싱 실패 시 `[AI Parse Error - Manual Review Required]`로 자동 통과
+4. `verifyMissionContent` 통과 → `CHECKING` 상태. 사용자가 최종 제출 버튼 클릭 시 → `PENDING_APPROVAL`.
 
 ## 디자인 시스템
 
@@ -97,9 +132,11 @@ border-radius:
 - `Promise.all` 사용 시 반드시 `try/catch` + `finally`로 로딩 상태 관리
 
 ## 알려진 이슈 및 주의사항
-- **`manage/` 라우트**: 미사용 상태, 정리 필요
+- **`manage/` 라우트**: 미사용 상태, 정리 필요 (middleware.ts에서 isAdminPath에 포함됨)
 - **`CrewBannerGenerator.tsx`**: `html-to-image`는 클라이언트 전용 — SSR에서 `dynamic(() => import(...), { ssr: false })` 필요
 - **AI SDK 중복**: Anthropic(미션 검증)과 Google AI 두 개 병존, 역할 정리 필요
 - **Tailwind v4**: 설정 방식이 v3와 다름 (`@tailwindcss/postcss` 플러그인 사용, `tailwind.config.ts` 없음)
-- **브랜드 토큰 미적용 구역**: `login/`, `admin/`, `onboarding/`, `CrewOnboardingForm.tsx` 등에 하드코딩 값 잔존 (TODO.md #1 참조)
-- **에러 핸들링 미완성**: `dashboard/page.tsx` 공백 화면(#6), `onboarding.ts` 중복체크 에러 미처리(#7), `admin/page.tsx` fetchError 미사용(#8) — TODO.md 참조
+- **`any` 타입 잔존**: `AuthProvider.tsx`(`user: any`), `mypage/page.tsx`(3곳), `calendar.ts`(`stamps: any[]`) — TODO.md #10-12 참조
+- **`notice/page.tsx`**: 공지사항이 `const notices = [...]` 하드코딩, DB 미연동. 카드에 `cursor-pointer`만 있고 `onClick`/`href` 없음 — TODO.md #4
+- **`faq/page.tsx`**: 마크다운 파싱 없이 문자열 처리 — TODO.md #5
+- **영어 텍스트 혼용**: `MarkPaidButton.tsx`, `admin/missions/page.tsx`, `Sidebar.tsx` 등 — TODO.md #3

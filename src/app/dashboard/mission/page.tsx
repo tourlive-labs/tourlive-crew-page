@@ -31,7 +31,8 @@ import {
     Smartphone,
     Star,
     Lock,
-    CheckSquare
+    CheckSquare,
+    Check
 } from "lucide-react";
 import { getDashboardData } from "@/app/actions/dashboard";
 import { submitMission, verifyMissionContent, updateCafeCounts, submitSurvey, requestReward } from "@/app/actions/mission";
@@ -54,6 +55,16 @@ function MissionSubmissionCard({ currentMission, goalCount, isCafeTeam, onRefres
         utm: false,
         mention: false
     });
+    const [blogChecks, setBlogChecks] = useState({
+        app_capture: false,
+        own_photos: false,
+        utm: false,
+        banner: false,
+    });
+    const [pastedContent, setPastedContent] = useState("");
+    const MANDATORY_MENTION = "이 글은 투어라이브 크루 활동의 일환으로";
+    const hasMandatoryMention = pastedContent.includes(MANDATORY_MENTION);
+    const allBlogChecksPass = blogChecks.app_capture && blogChecks.own_photos && blogChecks.utm && blogChecks.banner && hasMandatoryMention;
 
     const router = useRouter();
 
@@ -196,26 +207,55 @@ function MissionSubmissionCard({ currentMission, goalCount, isCafeTeam, onRefres
                         </div>
                     ) : (
                         <div className="space-y-6 mt-6">
-                            <div className="p-6 rounded-2xl bg-orange-50 border border-orange-100/50">
-                                <h4 className="text-sm font-black text-orange-800 mb-3 flex items-center gap-2">
-                                    <AlertCircle className="w-4 h-4" />
-                                    링크 {currentSlotIndex} - 필수 체크리스트
-                                </h4>
-                                <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    {[
-                                        "앱 캡처 5장 이상",
-                                        "직접 찍은 사진 5장 이상",
-                                        "UTM 링크 포함",
-                                        "크루 배너 삽입",
-                                        "하단 필수 멘트 포함"
-                                    ].map((item, idx) => (
-                                        <li key={idx} className="flex items-center gap-2 text-xs font-bold text-orange-700">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-orange-400" />
-                                            {item}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
+                            {!isCafeTeam && (
+                                <div className="p-6 rounded-2xl bg-orange-50 border border-orange-100/50 space-y-3">
+                                    <h4 className="text-sm font-black text-orange-800 flex items-center gap-2">
+                                        <CheckSquare className="w-4 h-4" />
+                                        링크 {currentSlotIndex} - 필수 자가 체크 (5가지 모두 완료 후 제출 가능)
+                                    </h4>
+                                    <div className="space-y-2">
+                                        {[
+                                            { key: 'app_capture' as const, label: '투어라이브 어플 캡처 사진 5장 이상 포함' },
+                                            { key: 'own_photos' as const, label: '직접 찍은 사진 5장 이상 포함' },
+                                            { key: 'utm' as const, label: '투어/가이드북 UTM 링크 첨부' },
+                                            { key: 'banner' as const, label: '크루 배너 이미지 삽입' },
+                                        ].map(({ key, label }) => (
+                                            <label key={key} className="flex items-center gap-3 cursor-pointer group">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={blogChecks[key]}
+                                                    onChange={(e) => setBlogChecks(prev => ({ ...prev, [key]: e.target.checked }))}
+                                                    className="w-5 h-5 rounded border-orange-300 text-orange-600 focus:ring-orange-500"
+                                                />
+                                                <span className="text-sm font-bold text-slate-700 group-hover:text-orange-700 transition-colors">{label}</span>
+                                            </label>
+                                        ))}
+                                        <div className="pt-2 border-t border-orange-100">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <div className={cn(
+                                                    "w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors",
+                                                    hasMandatoryMention ? "bg-orange-500 border-orange-500" : "border-orange-300 bg-white"
+                                                )}>
+                                                    {hasMandatoryMention && <Check className="w-3 h-3 text-white" />}
+                                                </div>
+                                                <span className="text-sm font-bold text-slate-700">하단 필수 멘트 포함</span>
+                                                <span className={cn(
+                                                    "text-[10px] font-black px-2 py-0.5 rounded-full",
+                                                    hasMandatoryMention ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-400"
+                                                )}>
+                                                    {hasMandatoryMention ? "필수 하단 멘트 확인됨" : "하단 멘트가 보이지 않습니다"}
+                                                </span>
+                                            </div>
+                                            <textarea
+                                                value={pastedContent}
+                                                onChange={(e) => setPastedContent(e.target.value)}
+                                                placeholder="포스팅 본문을 붙여넣으세요. '이 글은 투어라이브 크루 활동의 일환으로...' 문구를 자동으로 감지합니다."
+                                                className="w-full h-24 p-3 text-xs font-medium rounded-xl border border-orange-200 bg-white resize-none focus:ring-1 focus:ring-orange-400 outline-none transition-all"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                             <div className="flex flex-col gap-3">
                                 <Label className="text-sm font-black text-slate-700 ml-1">제출 링크 {currentSlotIndex}</Label>
                                 <Input
@@ -320,7 +360,7 @@ function MissionSubmissionCard({ currentMission, goalCount, isCafeTeam, onRefres
                                 ) : (
                                     <Button 
                                         onClick={handleLinkSubmit}
-                                        disabled={!link || isSubmitting || (isCafeTeam && (!cafeChecks.images || !cafeChecks.utm || !cafeChecks.mention))}
+                                        disabled={!link || isSubmitting || (!isCafeTeam && !allBlogChecksPass) || (isCafeTeam && (!cafeChecks.images || !cafeChecks.utm || !cafeChecks.mention))}
                                         className="h-14 w-full rounded-2xl bg-brand-primary hover:bg-brand-primary-hover text-white font-black shadow-lg shadow-orange-100/50 mt-2 animate-in slide-in-from-bottom-2 fade-in duration-300"
                                     >
                                         {isSubmitting ? (

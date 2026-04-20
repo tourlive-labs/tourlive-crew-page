@@ -1,16 +1,17 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter, usePathname } from "next/navigation";
 
-const AuthContext = createContext<{ user: any | null }>({ user: null });
+const AuthContext = createContext<{ user: User | null }>({ user: null });
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
     const supabase = createClient();
     const router = useRouter();
     const pathname = usePathname();
-    const [user, setUser] = useState<any | null>(null);
+    const [user, setUser] = useState<User | null>(null);
 
     useEffect(() => {
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {

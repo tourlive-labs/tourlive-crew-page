@@ -4,6 +4,34 @@ import React, { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, Hash, Sparkles, User, Mail, Phone, Calendar, ShieldCheck, Trophy, Edit2, Check, X, Loader2, Globe, Link2, ImageIcon, Upload, Lock } from "lucide-react";
 import { getDashboardData, updateProfile } from "@/app/actions/dashboard";
+import { getCalendarStamps } from "@/app/actions/calendar";
+
+type ProfileData = {
+    nickname: string | null;
+    naver_id: string | null;
+    team: string | null;
+    term: string | null;
+    role: string | null;
+    travel_country: string | null;
+    travel_city: string | null;
+    hashtag_1: string | null;
+    hashtag_2: string | null;
+    hashtag_3: string | null;
+    banner_image_url: string | null;
+    full_name: string | null;
+    phone_number: string | null;
+    tourlive_email: string | null;
+    contact_email: string | null;
+};
+type StampData = {
+    id: string;
+    type: 'essential' | 'optional';
+    title: string;
+    status: string;
+    date: string;
+    icon?: string;
+};
+
 import { Skeleton } from "@/components/ui/skeleton";
 import CrewBannerGenerator from "@/components/dashboard/CrewBannerGenerator";
 import { Button } from "@/components/ui/button";
@@ -12,11 +40,132 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
+function ActivityCalendar() {
+    const [stamps, setStamps] = useState<StampData[]>([]);
+    const [selectedDate, setSelectedDate] = useState<string | null>(null);
+    const [viewDate, setViewDate] = useState(() => new Date());
+
+    useEffect(() => {
+        getCalendarStamps().then(res => setStamps(res.data || []));
+    }, []);
+
+    const viewYear = viewDate.getFullYear();
+    const viewMonth = viewDate.getMonth();
+    const firstDayOfWeek = new Date(viewYear, viewMonth, 1).getDay();
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const todayStr = new Date().toISOString().split('T')[0];
+    const monthStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`;
+
+    const stampsByDate = stamps.reduce<Record<string, StampData[]>>((acc, s) => {
+        if (!acc[s.date]) acc[s.date] = [];
+        acc[s.date].push(s);
+        return acc;
+    }, {});
+
+    const handlePrev = () => setViewDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
+    const handleNext = () => setViewDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
+
+    const cells = Array.from({ length: firstDayOfWeek + daysInMonth }, (_, i) =>
+        i < firstDayOfWeek ? null : i - firstDayOfWeek + 1
+    );
+
+    return (
+        <Card className="rounded-brand-xl border-slate-100 shadow-sm overflow-hidden bg-white">
+            <CardHeader className="p-8 flex flex-row items-center justify-between border-b border-slate-50 bg-slate-50/30">
+                <CardTitle className="text-xl font-black flex items-center gap-3 text-slate-800">
+                    <Calendar className="w-6 h-6 text-brand-primary" />
+                    활동 캘린더
+                </CardTitle>
+                <div className="flex items-center gap-2">
+                    <button onClick={handlePrev} className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors text-lg font-black">‹</button>
+                    <span className="text-sm font-black text-slate-800 w-24 text-center">{viewYear}년 {viewMonth + 1}월</span>
+                    <button onClick={handleNext} className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors text-lg font-black">›</button>
+                </div>
+            </CardHeader>
+            <CardContent className="p-8">
+                <div className="grid grid-cols-7 mb-2">
+                    {['일', '월', '화', '수', '목', '금', '토'].map(d => (
+                        <div key={d} className="text-center text-[10px] font-black text-slate-300 py-1">{d}</div>
+                    ))}
+                </div>
+                <div className="grid grid-cols-7 gap-1">
+                    {cells.map((day, idx) => {
+                        if (!day) return <div key={`e-${idx}`} />;
+                        const dateStr = `${monthStr}-${String(day).padStart(2, '0')}`;
+                        const dayStamps = stampsByDate[dateStr] || [];
+                        const hasEssential = dayStamps.some(s => s.type === 'essential');
+                        const hasOptional = dayStamps.some(s => s.type === 'optional');
+                        const isToday = dateStr === todayStr;
+                        const isSelected = selectedDate === dateStr;
+
+                        return (
+                            <button
+                                key={dateStr}
+                                onClick={() => dayStamps.length > 0 ? setSelectedDate(isSelected ? null : dateStr) : undefined}
+                                className={cn(
+                                    "relative flex flex-col items-center py-2 rounded-xl transition-all",
+                                    dayStamps.length > 0 ? "cursor-pointer hover:ring-1 hover:ring-slate-200" : "cursor-default",
+                                    isSelected ? "ring-1 ring-brand-primary" : "",
+                                    hasEssential && hasOptional
+                                        ? "bg-gradient-to-br from-[#FFD6E0]/50 to-[#D6E4FF]/50"
+                                        : hasEssential ? "bg-[#FFD6E0]/50"
+                                        : hasOptional ? "bg-[#D6E4FF]/50" : ""
+                                )}
+                            >
+                                <span className={cn(
+                                    "text-[12px] font-bold leading-none",
+                                    isToday ? "text-brand-primary font-black" : dayStamps.length > 0 ? "text-slate-800" : "text-slate-400"
+                                )}>{day}</span>
+                                {isToday && <div className="w-1 h-1 rounded-full bg-brand-primary mt-1" />}
+                                {!isToday && dayStamps.length > 0 && (
+                                    <div className="flex gap-0.5 mt-1">
+                                        {hasEssential && <div className="w-1.5 h-1.5 rounded-full bg-brand-primary" />}
+                                        {hasOptional && <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />}
+                                    </div>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {selectedDate && stampsByDate[selectedDate] && (
+                    <div className="mt-6 p-4 rounded-2xl bg-slate-50 border border-slate-100 animate-in fade-in slide-in-from-top-2 duration-200 space-y-3">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{selectedDate} 활동 내역</p>
+                        {stampsByDate[selectedDate].map(s => (
+                            <div key={s.id} className={cn(
+                                "flex items-center gap-3 p-3 rounded-xl",
+                                s.type === 'essential' ? "bg-[#FFD6E0]/60 border border-pink-100" : "bg-[#D6E4FF]/60 border border-blue-100"
+                            )}>
+                                <span className="text-lg">{s.icon || (s.type === 'essential' ? '🏆' : '🎯')}</span>
+                                <div>
+                                    <p className="text-xs font-black text-slate-800">{s.title}</p>
+                                    <p className="text-[10px] font-bold text-slate-500">{s.status}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                <div className="mt-6 flex items-center gap-6 justify-center">
+                    <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-md bg-[#FFD6E0] border border-pink-100" />
+                        <span className="text-[10px] font-bold text-slate-500">필수 활동</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 rounded-md bg-[#D6E4FF] border border-blue-100" />
+                        <span className="text-[10px] font-bold text-slate-500">추가 활동</span>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
 export default function MyPage() {
-    const [data, setData] = useState<any>(null);
+    const [data, setData] = useState<ProfileData | null>(null);
     const [loading, setLoading] = useState(true);
     const [editingSection, setEditingSection] = useState<string | null>(null);
-    const [editValues, setEditValues] = useState<any>({});
+    const [editValues, setEditValues] = useState<Record<string, string | null>>({});
     const [isSaving, setIsSaving] = useState(false);
     const [isFlashing, setIsFlashing] = useState(false);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -34,7 +183,7 @@ export default function MyPage() {
         loadProfile();
     }, [loadProfile]);
 
-    const handleEdit = (sectionId: string, initialValues: any) => {
+    const handleEdit = (sectionId: string, initialValues: Record<string, string | null>) => {
         setEditingSection(sectionId);
         setEditValues(initialValues);
     };
@@ -68,7 +217,7 @@ export default function MyPage() {
                 result = await updateProfile(formData);
                 
                 if (result.success && result.banner_image_url) {
-                    setData((prev: any) => ({ ...prev, banner_image_url: result.banner_image_url }));
+                    setData((prev) => prev ? { ...prev, banner_image_url: result.banner_image_url ?? null } : prev);
                     setPreviewUrl(null);
                     setSelectedFile(null);
                     setEditingSection(null);
@@ -101,7 +250,7 @@ export default function MyPage() {
                 // 2. Update via Action
                 result = await updateProfile(updates);
                 if (result.success) {
-                    setData((prev: any) => ({ ...prev, ...updates }));
+                    setData((prev) => prev ? { ...prev, ...updates } : prev);
                     setEditingSection(null);
                     toast.success("프로필 정보가 성공적으로 업데이트되었습니다! ✨");
 
@@ -138,7 +287,7 @@ export default function MyPage() {
     if (!data) return <div className="p-10 text-slate-500 font-bold">프로필 정보를 불러올 수 없습니다.</div>;
 
     const hashtags = [data.hashtag_1, data.hashtag_2, data.hashtag_3]
-        .filter(Boolean)
+        .filter((tag): tag is string => Boolean(tag))
         .map(tag => tag.replace(/^#/, '')); // Pass clean tags to generator which adds # back
     const travelLocation = `${data.travel_country || ""} ${data.travel_city || ""}`.trim() || "국가 미정";
 
@@ -149,12 +298,12 @@ export default function MyPage() {
                 "transition-all duration-500 rounded-brand-xl",
                 isFlashing && "ring-4 ring-brand-primary ring-offset-8 shadow-2xl shadow-brand-primary/20 scale-[1.02]"
             )}>
-                <CrewBannerGenerator 
-                    nickname={data.nickname}
+                <CrewBannerGenerator
+                    nickname={data.nickname ?? ""}
                     travelLocation={travelLocation}
                     hashtags={hashtags}
-                    profileImageUrl={previewUrl || data.banner_image_url}
-                    term={data.batch || "14"}
+                    profileImageUrl={previewUrl ?? data.banner_image_url ?? undefined}
+                    term={data.term ?? "14"}
                 />
             </section>
 
@@ -177,7 +326,7 @@ export default function MyPage() {
                         <div className="space-y-4">
                             <div className="flex flex-col gap-1">
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Batch</label>
-                                <span className="font-black text-slate-900 bg-slate-100 px-4 py-2 rounded-xl w-fit">Tourlive crew {data.batch || "14"}기</span>
+                                <span className="font-black text-slate-900 bg-slate-100 px-4 py-2 rounded-xl w-fit">Tourlive crew {data.term || "14"}기</span>
                             </div>
                             
                             <div className="flex flex-col gap-1">
@@ -201,7 +350,7 @@ export default function MyPage() {
                                     </span>
                                 </label>
                                 <span className="font-black text-brand-primary bg-brand-primary/5 px-4 py-2 rounded-xl w-fit flex items-center gap-2">
-                                    {data.selected_activity === 'naver_cafe' ? '네이버 카페' : '네이버 블로그'}
+                                    {data.team === 'naver_cafe' ? '네이버 카페' : '네이버 블로그'}
                                     <Lock className="w-3 h-3 text-brand-primary/50" />
                                 </span>
                                 <p className="text-[10px] text-slate-300 font-medium mt-0.5">
@@ -327,7 +476,7 @@ export default function MyPage() {
                                              {editingSection === 'section4' ? (
                                                  <Input value={editValues[key] || ""} placeholder="#해시태그" onChange={(e) => setEditValues({ ...editValues, [key]: e.target.value })} className="h-11 rounded-xl border-slate-200 font-bold" />
                                              ) : (
-                                                 <span className="font-black text-slate-900">{data[key] || "-"}</span>
+                                                 <span className="font-black text-slate-900">{(data as Record<string, string | null>)[key] || "-"}</span>
                                              )}
                                          </div>
                                      );
@@ -406,6 +555,9 @@ export default function MyPage() {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Activity Calendar */}
+            <ActivityCalendar />
 
         </div>
     );

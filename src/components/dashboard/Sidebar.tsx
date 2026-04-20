@@ -73,7 +73,7 @@ export default function Sidebar() {
                         </div>
                         <div>
                             <span className="block font-black text-slate-900 leading-tight">Tourlive Crew</span>
-                            <span className="block text-[10px] font-black text-brand-primary uppercase tracking-widest mt-0.5">Portal v2.0</span>
+                            <span className="block text-[10px] font-black text-brand-primary uppercase tracking-widest mt-0.5">크루 포털</span>
                         </div>
                     </div>
 

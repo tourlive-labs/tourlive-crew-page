@@ -153,7 +153,7 @@ export default function AdminMissionsPage() {
                 {links.map((link, idx) => (
                     <Button key={idx} variant="outline" size="xs" className="h-6 px-1.5 text-[10px]" asChild>
                         <a href={link.startsWith('http') ? link : `https://${link}`} target="_blank" rel="noopener noreferrer">
-                            Link {idx + 1}
+                            링크 {idx + 1}
                         </a>
                     </Button>
                 ))}
@@ -225,7 +225,7 @@ export default function AdminMissionsPage() {
                                     <TableRow className="hover:bg-transparent border-slate-100">
                                         <TableHead className="w-[50px]"><Checkbox /></TableHead>
                                         <TableHead className="font-bold text-xs uppercase tracking-tight">User / Team</TableHead>
-                                        <TableHead className="font-bold text-xs uppercase tracking-tight">Mission Links</TableHead>
+                                        <TableHead className="font-bold text-xs uppercase tracking-tight">미션 링크</TableHead>
                                         <TableHead className="font-bold text-xs uppercase tracking-tight">Cafe Reports</TableHead>
                                         <TableHead className="font-bold text-xs uppercase tracking-tight">Survey Summary</TableHead>
                                         <TableHead className="font-bold text-xs uppercase tracking-tight text-right">Actions</TableHead>
@@ -315,7 +315,7 @@ export default function AdminMissionsPage() {
                                             <TableCell>
                                                 <Button variant="ghost" size="sm" className="h-7 text-indigo-500 font-bold text-xs" asChild>
                                                     <a href={sm.proof_url} target="_blank" rel="noopener noreferrer">
-                                                        <ExternalLink className="w-3 h-3 mr-1" /> View Proof
+                                                        <ExternalLink className="w-3 h-3 mr-1" /> 증빙 보기
                                                     </a>
                                                 </Button>
                                             </TableCell>

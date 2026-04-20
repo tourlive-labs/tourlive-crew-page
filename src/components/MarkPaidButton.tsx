@@ -40,7 +40,7 @@ export function MarkPaidButton({ missionId, isPaid }: { missionId: string, isPai
             disabled={loading}
             className="h-8 rounded-full border-blue-200 text-blue-600 hover:bg-blue-50 font-bold text-[10px] px-3 transition-colors"
         >
-            {loading ? "처리 중..." : "Mark Points as Paid"}
+            {loading ? "처리 중..." : "포인트 지급 완료 처리"}
         </Button>
     );
 }
