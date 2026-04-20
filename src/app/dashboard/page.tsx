@@ -444,19 +444,20 @@ function DashboardContent() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        async function loadData() {
-            const res = await getDashboardData();
-            if ('error' in res) {
-                console.error('[Dashboard] loadData error:', res.error);
-                setError(res.error ?? "알 수 없는 오류가 발생했습니다.");
-            } else {
-                setData(res);
-            }
-            setLoading(false);
+    async function loadData() {
+        setError(null);
+        setLoading(true);
+        const res = await getDashboardData();
+        if ('error' in res) {
+            console.error('[Dashboard] loadData error:', res.error);
+            setError(res.error ?? "알 수 없는 오류가 발생했습니다.");
+        } else {
+            setData(res);
         }
-        loadData();
-    }, []);
+        setLoading(false);
+    }
+
+    useEffect(() => { loadData(); }, []);
 
     if (loading) {
         return (
@@ -481,7 +482,7 @@ function DashboardContent() {
                 <p className="text-base font-black text-slate-800 mb-2">데이터를 불러오지 못했습니다</p>
                 <p className="text-sm text-slate-400 font-medium mb-6 text-center max-w-xs">{error}</p>
                 <button
-                    onClick={() => { setError(null); setLoading(true); getDashboardData().then(res => { if ('error' in res) { setError(res.error ?? "알 수 없는 오류가 발생했습니다."); } else { setData(res); } setLoading(false); }); }}
+                    onClick={loadData}
                     className="px-6 py-2.5 rounded-xl bg-brand-primary text-white text-sm font-black hover:bg-brand-primary-hover transition-colors"
                 >
                     다시 시도

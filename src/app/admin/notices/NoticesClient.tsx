@@ -39,7 +39,7 @@ function NoticeFormDialog({
     open: boolean;
     onClose: () => void;
     initial: FormState;
-    onSubmit: (data: FormState) => Promise<void>;
+    onSubmit: (data: FormState) => Promise<string | undefined>;
     mode: "create" | "edit";
 }) {
     const [form, setForm] = useState<FormState>(initial);
@@ -52,13 +52,10 @@ function NoticeFormDialog({
         e.preventDefault();
         if (!form.title.trim()) { toast.error("제목을 입력해 주세요."); return; }
         startTransition(async () => {
-            try {
-                await onSubmit(form);
-                onClose();
-                toast.success(mode === "create" ? "공지가 등록되었습니다." : "공지가 수정되었습니다.");
-            } catch (err) {
-                toast.error((err as Error).message);
-            }
+            const err = await onSubmit(form);
+            if (err) { toast.error(err); return; }
+            onClose();
+            toast.success(mode === "create" ? "공지가 등록되었습니다." : "공지가 수정되었습니다.");
         });
     };
 
@@ -163,19 +160,16 @@ function DeleteConfirmDialog({
     open: boolean;
     title: string;
     onClose: () => void;
-    onConfirm: () => Promise<void>;
+    onConfirm: () => Promise<string | undefined>;
 }) {
     const [isPending, startTransition] = useTransition();
 
     const handleConfirm = () => {
         startTransition(async () => {
-            try {
-                await onConfirm();
-                onClose();
-                toast.success("공지가 삭제되었습니다.");
-            } catch (err) {
-                toast.error((err as Error).message);
-            }
+            const err = await onConfirm();
+            if (err) { toast.error(err); return; }
+            onClose();
+            toast.success("공지가 삭제되었습니다.");
         });
     };
 
@@ -216,8 +210,9 @@ export default function NoticesClient({ initialNotices }: { initialNotices: Noti
         // revalidatePath handles this via the Next.js cache; we just update local state inline
     };
 
-    const handleCreate = async (data: FormState) => {
-        await createNotice(data);
+    const handleCreate = async (data: FormState): Promise<string | undefined> => {
+        const res = await createNotice(data);
+        if (res.error) return res.error;
         // Optimistically prepend
         const optimistic: Notice = {
             id: crypto.randomUUID(),
@@ -230,9 +225,10 @@ export default function NoticesClient({ initialNotices }: { initialNotices: Noti
         setNotices(prev => [optimistic, ...prev]);
     };
 
-    const handleUpdate = async (data: FormState) => {
+    const handleUpdate = async (data: FormState): Promise<string | undefined> => {
         if (!editTarget) return;
-        await updateNotice(editTarget.id, data);
+        const res = await updateNotice(editTarget.id, data);
+        if (res.error) return res.error;
         setNotices(prev => prev.map(n =>
             n.id === editTarget.id
                 ? { ...n, ...data, content: data.content || null, category: data.category || null, updated_at: new Date().toISOString() }
@@ -240,24 +236,24 @@ export default function NoticesClient({ initialNotices }: { initialNotices: Noti
         ));
     };
 
-    const handleDelete = async () => {
+    const handleDelete = async (): Promise<string | undefined> => {
         if (!deleteTarget) return;
-        await deleteNotice(deleteTarget.id);
+        const res = await deleteNotice(deleteTarget.id);
+        if (res.error) return res.error;
         setNotices(prev => prev.filter(n => n.id !== deleteTarget.id));
     };
 
     const handleToggle = async (notice: Notice) => {
         setTogglingId(notice.id);
-        try {
-            await togglePublish(notice.id, notice.is_published);
+        const res = await togglePublish(notice.id, notice.is_published);
+        if (res.error) {
+            toast.error(res.error);
+        } else {
             setNotices(prev => prev.map(n =>
                 n.id === notice.id ? { ...n, is_published: !n.is_published } : n
             ));
-        } catch (err) {
-            toast.error((err as Error).message);
-        } finally {
-            setTogglingId(null);
         }
+        setTogglingId(null);
     };
 
     return (

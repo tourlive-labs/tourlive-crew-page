@@ -22,13 +22,14 @@ export default async function AdminChallengePage() {
     const isAdmin = profile?.role === 'admin' || user.email === "root@tourlive.co.kr";
     if (!isAdmin) redirect("/dashboard");
 
-    let configs: Awaited<ReturnType<typeof getAllChallengeConfigs>> = [];
+    let configs: import("@/app/actions/challenge-config").ChallengeConfig[] = [];
     let fetchError: string | null = null;
 
-    try {
-        configs = await getAllChallengeConfigs();
-    } catch (err) {
-        fetchError = (err as Error).message;
+    const configsResult = await getAllChallengeConfigs();
+    if ('error' in configsResult) {
+        fetchError = configsResult.error;
+    } else {
+        configs = configsResult;
     }
 
     return (

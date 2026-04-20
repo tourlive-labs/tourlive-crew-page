@@ -22,13 +22,14 @@ export default async function AdminNoticesPage() {
     const isAdmin = profile?.role === 'admin' || user.email === "root@tourlive.co.kr";
     if (!isAdmin) redirect("/dashboard");
 
-    let notices: Awaited<ReturnType<typeof getNotices>> = [];
+    let notices: import("@/app/actions/notices").Notice[] = [];
     let fetchError: string | null = null;
 
-    try {
-        notices = await getNotices();
-    } catch (err) {
-        fetchError = (err as Error).message;
+    const noticesResult = await getNotices();
+    if ('error' in noticesResult) {
+        fetchError = noticesResult.error;
+    } else {
+        notices = noticesResult;
     }
 
     return (

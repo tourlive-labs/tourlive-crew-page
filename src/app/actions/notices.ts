@@ -27,14 +27,18 @@ async function assertAdmin() {
     return supabase;
 }
 
-export async function getNotices(): Promise<Notice[]> {
-    const supabase = await assertAdmin();
-    const { data, error } = await supabase
-        .from('notices')
-        .select('id, title, content, category, is_published, created_at, updated_at')
-        .order('created_at', { ascending: false });
-    if (error) throw new Error(error.message);
-    return data ?? [];
+export async function getNotices(): Promise<Notice[] | { error: string }> {
+    try {
+        const supabase = await assertAdmin();
+        const { data, error } = await supabase
+            .from('notices')
+            .select('id, title, content, category, is_published, created_at, updated_at')
+            .order('created_at', { ascending: false });
+        if (error) return { error: error.message };
+        return data ?? [];
+    } catch (err) {
+        return { error: (err as Error).message };
+    }
 }
 
 export async function createNotice(input: {
@@ -42,17 +46,22 @@ export async function createNotice(input: {
     content: string;
     category: string;
     is_published: boolean;
-}) {
-    const supabase = await assertAdmin();
-    const { error } = await supabase.from('notices').insert({
-        title: input.title.trim(),
-        content: input.content.trim() || null,
-        category: input.category.trim() || null,
-        is_published: input.is_published,
-    });
-    if (error) throw new Error(error.message);
-    revalidatePath('/dashboard/notice');
-    revalidatePath('/admin/notices');
+}): Promise<{ error?: string }> {
+    try {
+        const supabase = await assertAdmin();
+        const { error } = await supabase.from('notices').insert({
+            title: input.title.trim(),
+            content: input.content.trim() || null,
+            category: input.category.trim() || null,
+            is_published: input.is_published,
+        });
+        if (error) return { error: error.message };
+        revalidatePath('/dashboard/notice');
+        revalidatePath('/admin/notices');
+        return {};
+    } catch (err) {
+        return { error: (err as Error).message };
+    }
 }
 
 export async function updateNotice(id: string, input: {
@@ -60,34 +69,49 @@ export async function updateNotice(id: string, input: {
     content: string;
     category: string;
     is_published: boolean;
-}) {
-    const supabase = await assertAdmin();
-    const { error } = await supabase.from('notices').update({
-        title: input.title.trim(),
-        content: input.content.trim() || null,
-        category: input.category.trim() || null,
-        is_published: input.is_published,
-    }).eq('id', id);
-    if (error) throw new Error(error.message);
-    revalidatePath('/dashboard/notice');
-    revalidatePath('/admin/notices');
+}): Promise<{ error?: string }> {
+    try {
+        const supabase = await assertAdmin();
+        const { error } = await supabase.from('notices').update({
+            title: input.title.trim(),
+            content: input.content.trim() || null,
+            category: input.category.trim() || null,
+            is_published: input.is_published,
+        }).eq('id', id);
+        if (error) return { error: error.message };
+        revalidatePath('/dashboard/notice');
+        revalidatePath('/admin/notices');
+        return {};
+    } catch (err) {
+        return { error: (err as Error).message };
+    }
 }
 
-export async function deleteNotice(id: string) {
-    const supabase = await assertAdmin();
-    const { error } = await supabase.from('notices').delete().eq('id', id);
-    if (error) throw new Error(error.message);
-    revalidatePath('/dashboard/notice');
-    revalidatePath('/admin/notices');
+export async function deleteNotice(id: string): Promise<{ error?: string }> {
+    try {
+        const supabase = await assertAdmin();
+        const { error } = await supabase.from('notices').delete().eq('id', id);
+        if (error) return { error: error.message };
+        revalidatePath('/dashboard/notice');
+        revalidatePath('/admin/notices');
+        return {};
+    } catch (err) {
+        return { error: (err as Error).message };
+    }
 }
 
-export async function togglePublish(id: string, current: boolean) {
-    const supabase = await assertAdmin();
-    const { error } = await supabase
-        .from('notices')
-        .update({ is_published: !current })
-        .eq('id', id);
-    if (error) throw new Error(error.message);
-    revalidatePath('/dashboard/notice');
-    revalidatePath('/admin/notices');
+export async function togglePublish(id: string, current: boolean): Promise<{ error?: string }> {
+    try {
+        const supabase = await assertAdmin();
+        const { error } = await supabase
+            .from('notices')
+            .update({ is_published: !current })
+            .eq('id', id);
+        if (error) return { error: error.message };
+        revalidatePath('/dashboard/notice');
+        revalidatePath('/admin/notices');
+        return {};
+    } catch (err) {
+        return { error: (err as Error).message };
+    }
 }

@@ -1,6 +1,6 @@
 # Supporters Hub — Beta Launch Status
 
-> Last updated: 2026-04-15  
+> Last updated: 2026-04-20 (커밋 3b17309)
 > TypeScript: ✅ Zero compile errors  
 > Dev server: ✅ Running
 
@@ -15,11 +15,16 @@
 /dashboard/mypage       → Profile Management (read-only activity type)
 /dashboard/guide        → Activity Guidelines
 /dashboard/faq          → FAQ
-/dashboard/notice       → Notices
-/admin/missions         → Admin Mission Approval Dashboard
+/dashboard/notice       → Notices (정적 하드코딩 — DB 연동 미완)
+/admin                  → Admin Root (Crew Member Master List)
+/admin/missions         → Mission Approval Dashboard (필수 + 추가 + 챌린지)
+/admin/notices          → Notice Management (공지 CRUD)
+/admin/challenge        → Challenge Config Management (월별 설정)
 ```
 
 **Data flow:** All pages fetch from `getDashboardData()` → `profiles.selected_activity` determines team UI.
+
+**Challenge config flow:** `challenge_configs` table (Supabase) → `getActiveChallengeConfig()` → `ChallengeContent.tsx` renders museum tabs / tier buttons dynamically.
 
 ---
 
@@ -59,13 +64,43 @@
 
 ---
 
-## 3. Challenge Page (`/dashboard/challenge`)
+## 3. Challenge System
+
+### challenge_configs Table
+- `id`, `month` (YYYY-MM), `badge_label`, `blog_museums` (JSONB array), `cafe_tiers` (JSONB array), `is_active` (bool)
+- `blog_museums`: `[{ name, date_range, keywords[] }]` — 최대 3개 미술관 슬롯
+- `cafe_tiers`: `[{ label, target, points }]` — 최대 3개 카페 등급
+
+### Blog Challenge (`blog_paris`)
+- 크루가 미술관 탭 선택 → 리워드 타입 선택(`points` 5,000P / `naver_pay` 2만원권)
+- `naver_pay` 선택 시 미술관 키워드 목록에서 **3개 필수 선택** (체크마크 유지 UI)
+- 제출 시 `missions` 테이블에 저장:
+  - `post_url`: `[CHALLENGE] https://...`
+  - `rejection_reason` (metaTag): `[CHALLENGE:blog_paris:미술관명:rewardType] kw:키워드1|키워드2|키워드3`
+
+### Cafe Challenge (`cafe_streak`)
+- 네이버 카페 URL 제출 (AI 검증 없음, 어드민 수동 확인)
+
+### Admin Challenge View (`/admin/missions` 추가미션 탭)
+- `getChallengeMissions()`: missions 테이블에서 `[CHALLENGE]%` prefix 행 조회 후 metaTag 파싱
+- `ParsedChallengeMission` 타입: challengeType, challengeName, museum, rewardType, rewardLabel, keywords[]
+- `updateChallengeStatus()`: COMPLETED 승인 시 `points` 타입이면 5,000P 정산 행 자동 생성 (`naver_pay`는 수동)
+
+### Admin Challenge Config (`/admin/challenge`)
+- `ChallengeConfigClient`: 월별 설정 목록 + 편집 폼 (미술관 3슬롯, 카페 등급 3슬롯)
+- 활성화 버튼으로 단일 `is_active` 레코드 유지 (`setActiveConfig()` 트랜잭션)
+
+---
+
+## 3b. Challenge Page (`/dashboard/challenge`)
 
 - Single-column vertical stack layout (`max-w-2xl`)
 - Blog & Cafe challenge cards stacked vertically on all devices
 - Museum tab bar: horizontal scroll on mobile, `grid-cols-3` on desktop
 - Touch targets: all buttons `min-h-[44px]`
 - Keyboard clearance: `pb-32` wrapper + `pb-safe`
+- KeywordPill 컴포넌트: `mode="copy"` (클릭 복사) / `mode="select"` (체크마크 토글, 최대 3개 선택)
+- naver_pay 선택 시 키워드 3개 미선택이면 제출 버튼 비활성화 + "키워드 X/3개 선택 필요" 라벨
 
 ---
 
@@ -140,9 +175,14 @@ The `getStampStatus()` action independently resolves `profile_id` from `crews.us
 |---|---|---|
 | `dashboard/page.tsx` | ~547 | Home page (all components inline) |
 | `dashboard/mypage/page.tsx` | ~413 | Profile editor |
-| `dashboard/challenge/page.tsx` | ~600+ | Challenge Action Hub |
+| `dashboard/challenge/ChallengeContent.tsx` | ~700+ | Challenge Action Hub (Client Component) |
 | `dashboard/mission/page.tsx` | ~800+ | Mission Submission |
 | `actions/dashboard.ts` | ~327 | Server actions (data + stamps + profile) |
+| `actions/admin.ts` | ~406 | Admin server actions (missions, challenge, settlements) |
+| `actions/challenge.ts` | ~129 | Challenge submit server action |
+| `actions/challenge-config.ts` | ~120+ | Challenge config CRUD server actions |
+| `admin/missions/page.tsx` | ~500+ | Admin mission approval dashboard (3 tabs) |
+| `admin/challenge/ChallengeConfigClient.tsx` | ~400+ | Challenge config admin UI |
 
 ---
 
@@ -153,3 +193,6 @@ The `getStampStatus()` action independently resolves `profile_id` from `crews.us
 - [ ] Cafe task details are hardcoded (could be DB-driven)
 - [ ] `getStampStatus()` uses `rejection_reason` field to tag challenge type — not ideal
 - [ ] No automated E2E tests for team-differentiated UI
+- [ ] `rejection_reason` 필드 이중 목적 사용 — 어드민 피드백 + 챌린지 metaTag 저장소로 혼용 중 (향후 전용 컬럼 분리 권장)
+- [ ] `naver_pay` 리워드 챌린지 승인 시 정산 자동화 없음 (수동 지급 필요)
+- [ ] `/dashboard/notice` — 하드코딩된 정적 데이터, Supabase `notices` 테이블 미연동

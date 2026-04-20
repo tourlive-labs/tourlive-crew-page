@@ -791,6 +791,7 @@ function SideMissionBoard() {
 export default function MissionPage() {
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     // States for inputs
     const [cafePostCount, setCafePostCount] = useState<number>(0);
@@ -800,9 +801,12 @@ export default function MissionPage() {
     const [isSurveyOpen, setIsSurveyOpen] = useState(false);
 
     async function loadData() {
+        setError(null);
+        setLoading(true);
         const res = await getDashboardData();
         if ('error' in res) {
-            console.error(res.error);
+            console.error('[MissionPage] loadData error:', res.error);
+            setError(res.error ?? "알 수 없는 오류가 발생했습니다.");
         } else {
             setData(res);
             if (res.currentMission) {
@@ -822,6 +826,18 @@ export default function MissionPage() {
         return (
             <div className="flex items-center justify-center min-h-screen bg-brand-bg">
                 <div className="w-8 h-8 rounded-full border-4 border-brand-primary border-t-transparent animate-spin" />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-brand-bg">
+                <div className="text-center space-y-3">
+                    <AlertCircle className="w-10 h-10 text-rose-500 mx-auto" />
+                    <p className="text-sm text-slate-600">{error}</p>
+                    <Button variant="outline" size="sm" onClick={loadData}>다시 시도</Button>
+                </div>
             </div>
         );
     }

@@ -79,7 +79,7 @@ export default function MyPage() {
     const handleSave = async (sectionId: string) => {
         setIsSaving(true);
         try {
-            let result: { success?: boolean; data?: any; banner_image_url?: string | null; error?: string };
+            let result: { success?: boolean; banner_image_url?: string | null; error?: string };
             
             if (sectionId === 'section0' && selectedFile) {
                 // Special case for image upload

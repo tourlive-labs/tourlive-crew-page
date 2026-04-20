@@ -121,13 +121,15 @@ function DeleteConfirmDialog({
     open: boolean;
     month: string;
     onClose: () => void;
-    onConfirm: () => Promise<void>;
+    onConfirm: () => Promise<string | undefined>;
 }) {
     const [isPending, startTransition] = useTransition();
     const handleConfirm = () => {
         startTransition(async () => {
-            try { await onConfirm(); onClose(); toast.success("구성이 삭제되었습니다."); }
-            catch (err) { toast.error((err as Error).message); }
+            const err = await onConfirm();
+            if (err) { toast.error(err); return; }
+            onClose();
+            toast.success("구성이 삭제되었습니다.");
         });
     };
     return (
@@ -356,28 +358,25 @@ export default function ChallengeConfigClient({ initialConfigs }: { initialConfi
         if (!form.badge_label) { toast.error("배지 레이블을 입력해 주세요."); return; }
 
         startSave(async () => {
-            try {
-                const payload = formToConfig(form);
-                await upsertChallengeConfig({
-                    ...payload,
-                    id: selectedConfig?.id,
-                    is_active: selectedConfig?.is_active ?? false,
-                });
+            const payload = formToConfig(form);
+            const res = await upsertChallengeConfig({
+                ...payload,
+                id: selectedConfig?.id,
+                is_active: selectedConfig?.is_active ?? false,
+            });
+            if (res.error) { toast.error(res.error); return; }
 
-                if (selectedId === "new") {
-                    // Refresh — we don't have the new ID, so just show success
-                    toast.success("새 구성이 저장되었습니다. 페이지를 새로고침하면 목록에 나타납니다.");
-                } else {
-                    // Update local state
-                    setConfigs(prev => prev.map(c =>
-                        c.id === selectedConfig!.id
-                            ? { ...c, ...payload, updated_at: new Date().toISOString() }
-                            : c
-                    ));
-                    toast.success("저장되었습니다.");
-                }
-            } catch (err) {
-                toast.error((err as Error).message);
+            if (selectedId === "new") {
+                // Refresh — we don't have the new ID, so just show success
+                toast.success("새 구성이 저장되었습니다. 페이지를 새로고침하면 목록에 나타납니다.");
+            } else {
+                // Update local state
+                setConfigs(prev => prev.map(c =>
+                    c.id === selectedConfig!.id
+                        ? { ...c, ...payload, updated_at: new Date().toISOString() }
+                        : c
+                ));
+                toast.success("저장되었습니다.");
             }
         });
     };
@@ -385,19 +384,17 @@ export default function ChallengeConfigClient({ initialConfigs }: { initialConfi
     const handleActivate = () => {
         if (!selectedConfig) { toast.error("먼저 저장 후 활성화해 주세요."); return; }
         startActivate(async () => {
-            try {
-                await setActiveConfig(selectedConfig.id);
-                setConfigs(prev => prev.map(c => ({ ...c, is_active: c.id === selectedConfig.id })));
-                toast.success(`${selectedConfig.month} 구성이 활성화되었습니다.`);
-            } catch (err) {
-                toast.error((err as Error).message);
-            }
+            const res = await setActiveConfig(selectedConfig.id);
+            if (res.error) { toast.error(res.error); return; }
+            setConfigs(prev => prev.map(c => ({ ...c, is_active: c.id === selectedConfig.id })));
+            toast.success(`${selectedConfig.month} 구성이 활성화되었습니다.`);
         });
     };
 
-    const handleDelete = async () => {
+    const handleDelete = async (): Promise<string | undefined> => {
         if (!deleteTarget) return;
-        await deleteChallengeConfig(deleteTarget.id);
+        const res = await deleteChallengeConfig(deleteTarget.id);
+        if (res.error) return res.error;
         const remaining = configs.filter(c => c.id !== deleteTarget.id);
         setConfigs(remaining);
         if (selectedId === deleteTarget.id) {
