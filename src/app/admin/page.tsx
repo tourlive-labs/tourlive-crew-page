@@ -1,7 +1,7 @@
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, LogOut } from "lucide-react";
+import { AlertCircle, LogOut, Megaphone, FileText, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { CrewManagementClient } from "@/components/CrewManagementClient";
@@ -100,8 +100,33 @@ export default async function AdminPage() {
                     </form>
                 </div>
 
-                <CrewManagementClient 
-                    initialMembers={crewMembers as any || []} 
+                {/* Quick nav */}
+                <div className="flex gap-3 px-2">
+                    <Link
+                        href="/admin/missions"
+                        className="flex items-center gap-2.5 px-5 py-3 bg-white rounded-2xl border border-slate-100 shadow-sm text-sm font-black text-slate-600 hover:border-orange-200 hover:text-orange-500 transition-all"
+                    >
+                        <FileText className="w-4 h-4" />
+                        미션 관리
+                    </Link>
+                    <Link
+                        href="/admin/notices"
+                        className="flex items-center gap-2.5 px-5 py-3 bg-white rounded-2xl border border-slate-100 shadow-sm text-sm font-black text-slate-600 hover:border-orange-200 hover:text-orange-500 transition-all"
+                    >
+                        <Megaphone className="w-4 h-4" />
+                        공지 관리
+                    </Link>
+                    <Link
+                        href="/admin/challenge"
+                        className="flex items-center gap-2.5 px-5 py-3 bg-white rounded-2xl border border-slate-100 shadow-sm text-sm font-black text-slate-600 hover:border-orange-200 hover:text-orange-500 transition-all"
+                    >
+                        <Trophy className="w-4 h-4" />
+                        챌린지 관리
+                    </Link>
+                </div>
+
+                <CrewManagementClient
+                    initialMembers={crewMembers as any || []}
                     batches={batches}
                 />
             </div>

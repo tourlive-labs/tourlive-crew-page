@@ -257,6 +257,139 @@ export async function getPendingSettlements() {
     return { data: data || [] };
 }
 
+export type ParsedChallengeMission = {
+    id: string;
+    profile_id: string;
+    mission_month: string;
+    post_url: string;
+    status: string;
+    rejection_reason: string | null;
+    created_at: string;
+    updated_at: string;
+    profiles: { role?: string; nickname: string; tourlive_email: string; selected_activity: string } | null;
+    // Parsed fields
+    challengeType: string;
+    challengeName: string;
+    museum: string | null;
+    rewardType: "points" | "naver_pay" | null;
+    rewardLabel: string | null;
+    keywords: string[];
+};
+
+/**
+ * Fetch pending challenge submissions (missions with [CHALLENGE] prefix in post_url)
+ * Also enriches each row with parsed metaTag data and museum keywords from active config.
+ */
+export async function getChallengeMissions(): Promise<{ data: ParsedChallengeMission[] }> {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { data: [] };
+
+    const { data, error } = await supabase
+        .from('missions')
+        .select(`
+            *,
+            profiles (
+                role,
+                nickname,
+                tourlive_email,
+                selected_activity
+            )
+        `)
+        .ilike('post_url', '[CHALLENGE]%')
+        .in('status', [MissionStatus.PENDING_APPROVAL, MissionStatus.REJECTED, 'rejected'])
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error("[Admin] Fetch Challenge Missions Error:", error);
+        return { data: [] };
+    }
+
+    // Fetch active config for keywords lookup
+    const { data: activeConfig } = await supabase
+        .from('challenge_configs')
+        .select('blog_museums')
+        .eq('is_active', true)
+        .maybeSingle();
+
+    const configMuseums: Array<{ name: string; keywords: string[] }> = activeConfig?.blog_museums ?? [];
+
+    // Filter out admin users and parse metaTag
+    const enriched = (data ?? [])
+        .filter((m: any) => m.profiles?.role !== 'admin')
+        .map((m: any) => {
+            // metaTag format: [CHALLENGE:blog_paris:미술관명:rewardType]
+            const metaTag = m.rejection_reason ?? "";
+            const match = metaTag.match(/\[CHALLENGE:([^:\]]+)(?::([^:\]]+))?(?::([^:\]]+))?\]/);
+
+            const challengeType = match?.[1] ?? "unknown";
+            const museum = match?.[2] ?? null;
+            const rewardType = (match?.[3] as "points" | "naver_pay") ?? null;
+
+            const challengeName = challengeType === "blog_paris" ? "블로그 챌린지"
+                : challengeType === "cafe_streak" ? "카페 챌린지"
+                : challengeType;
+
+            const rewardLabel = rewardType === "points" ? "5,000P 확정"
+                : rewardType === "naver_pay" ? "네이버페이 2만원권"
+                : null;
+
+            // Prefer user-selected keywords (stored as "kw:키워드1|키워드2|키워드3" in metaTag string)
+            const noteSection = metaTag.replace(/\[CHALLENGE:[^\]]+\]/, "").trim();
+            const kwMatch = noteSection.match(/kw:([^\s]+)/);
+            const storedKeywords = kwMatch ? kwMatch[1].split("|").filter(Boolean) : [];
+            const museumConfig = museum ? configMuseums.find(mu => mu.name === museum) : null;
+            const keywords = storedKeywords.length > 0 ? storedKeywords : (museumConfig?.keywords?.slice(0, 3) ?? []);
+
+            return { ...m, challengeType, challengeName, museum, rewardType, rewardLabel, keywords } as ParsedChallengeMission;
+        });
+
+    return { data: enriched };
+}
+
+/**
+ * Approve or reject a challenge submission (stored in missions table).
+ * On approval, auto-creates a point_settlements row for "points" reward type.
+ */
+export async function updateChallengeStatus(
+    missionId: string,
+    status: 'COMPLETED' | 'REJECTED',
+    feedback?: string
+) {
+    const supabase = await createClient();
+    const { error } = await supabase
+        .from('missions')
+        .update({ status, admin_feedback: feedback, updated_at: new Date().toISOString() })
+        .eq('id', missionId);
+
+    if (!error && status === 'COMPLETED') {
+        const { data: mission } = await supabase
+            .from('missions')
+            .select('*, profiles(nickname)')
+            .eq('id', missionId)
+            .single();
+
+        if (mission) {
+            const metaTag = mission.rejection_reason ?? "";
+            const match = metaTag.match(/\[CHALLENGE:([^:\]]+)(?::([^:\]]+))?(?::([^:\]]+))?\]/);
+            const rewardType = match?.[3];
+
+            if (rewardType === 'points') {
+                await supabase.from('point_settlements').insert({
+                    profile_id: mission.profile_id,
+                    mission_id: missionId,
+                    amount: 5000,
+                    reason: `[챌린지] 블로그 챌린지 완료 (5,000P)`,
+                    status: 'PENDING'
+                });
+            }
+        }
+    }
+
+    if (!error) revalidatePath("/admin/missions");
+    return { success: !error, error: error?.message };
+}
+
 /**
  * Mark a settlement as paid
  */

@@ -1,14 +1,9 @@
-"use client";
-
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import {
     BookOpen,
     Coffee,
     Target,
-    CheckCircle2,
-    AlertCircle,
     FileText,
     Image as ImageIcon,
     Link as LinkIcon,
@@ -95,7 +90,7 @@ export default function GuidePage() {
                         <CardHeader className="p-10 pb-4">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <CardTitle className="text-2xl font-black tracking-tight">5-Point Checklist</CardTitle>
+                                    <CardTitle className="text-2xl font-black tracking-tight">5대 필수 체크리스트</CardTitle>
                                     <CardDescription className="text-slate-400 font-medium mt-2">
                                         사용후기글 작성 시 반드시 지켜야 할 5가지 규칙입니다.
                                     </CardDescription>

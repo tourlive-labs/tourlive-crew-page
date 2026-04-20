@@ -4,14 +4,15 @@ import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 
 export type ChallengeType = "blog_paris" | "cafe_streak";
-export type MuseumType = "louvre" | "orsay" | "orangerie";
+export type MuseumType = string;
 export type RewardType = "points" | "naver_pay";
 
 interface ChallengeSubmitParams {
     challengeType: ChallengeType;
     postUrl: string;
-    museum?: MuseumType;       // Blog challenge only
-    rewardType?: RewardType;   // Blog challenge only — "points" | "naver_pay"
+    museum?: MuseumType;            // Blog challenge only
+    rewardType?: RewardType;        // Blog challenge only — "points" | "naver_pay"
+    selectedKeywords?: string[];    // Blog naver_pay only — 3 user-selected keywords
     note?: string;
 }
 
@@ -26,6 +27,7 @@ export async function submitChallenge({
     postUrl,
     museum,
     rewardType,
+    selectedKeywords,
     note,
 }: ChallengeSubmitParams) {
     const supabase = await createClient();
@@ -72,10 +74,11 @@ export async function submitChallenge({
     }
 
     // 4. Build metadata tag
-    //    Format: [CHALLENGE:{type}:{museum?}:{rewardType?}]
+    //    Format: [CHALLENGE:{type}:{museum?}:{rewardType?}] kw:{kw1}|{kw2}|{kw3}
     const museumTag   = museum     ? `:${museum}`     : "";
     const rewardTag   = rewardType ? `:${rewardType}` : "";
-    const metaTag = `[CHALLENGE:${challengeType}${museumTag}${rewardTag}]${note ? " " + note : ""}`;
+    const kwStr = selectedKeywords?.length ? ` kw:${selectedKeywords.join("|")}` : "";
+    const metaTag = `[CHALLENGE:${challengeType}${museumTag}${rewardTag}]${kwStr}${note ? " " + note : ""}`;
 
     // 5. Current month key for grouping
     const now = new Date();

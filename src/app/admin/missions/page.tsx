@@ -30,26 +30,30 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { 
-    getPendingEssentialMissions, 
-    getPendingSideMissions, 
+import {
+    getPendingEssentialMissions,
+    getPendingSideMissions,
     updateEssentialStatus,
     updateSideStatus,
     getPendingSettlements,
-    markAsPaid 
+    markAsPaid,
+    getChallengeMissions,
+    updateChallengeStatus,
+    type ParsedChallengeMission,
 } from "@/app/actions/admin";
 import { toast } from "sonner";
-import { ExternalLink, Download, CheckCircle2, XCircle, Search, Filter, ChevronLeft, Copy, CreditCard } from "lucide-react";
+import { ExternalLink, Download, CheckCircle2, XCircle, Search, Filter, ChevronLeft, Copy, CreditCard, Trophy } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function AdminMissionsPage() {
     const [essentialMissions, setEssentialMissions] = useState<any[]>([]);
     const [sideMissions, setSideMissions] = useState<any[]>([]);
+    const [challengeMissions, setChallengeMissions] = useState<ParsedChallengeMission[]>([]);
     const [settlements, setSettlements] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    
-    const [rejectingItem, setRejectingItem] = useState<{ id: string, type: 'essential' | 'side' } | null>(null);
+
+    const [rejectingItem, setRejectingItem] = useState<{ id: string, type: 'essential' | 'side' | 'challenge' } | null>(null);
     const [rejectReason, setRejectReason] = useState("");
     const [isRejecting, setIsRejecting] = useState(false);
 
@@ -64,10 +68,11 @@ export default function AdminMissionsPage() {
     async function loadData() {
         setLoading(true);
         try {
-            const [ess, side, setl] = await Promise.all([
+            const [ess, side, setl, challenge] = await Promise.all([
                 getPendingEssentialMissions(),
                 getPendingSideMissions(),
-                getPendingSettlements()
+                getPendingSettlements(),
+                getChallengeMissions(),
             ]);
             setEssentialMissions((ess.data || []).map(m => ({
                 ...m,
@@ -75,6 +80,7 @@ export default function AdminMissionsPage() {
             })));
             setSideMissions(side.data || []);
             setSettlements(setl.data || []);
+            setChallengeMissions(challenge.data || []);
         } catch (error) {
             console.error("[AdminMissionsPage] loadData Error:", error);
         } finally {
@@ -82,11 +88,13 @@ export default function AdminMissionsPage() {
         }
     }
 
-    const handleApprove = async (id: string, type: 'essential' | 'side') => {
-        const promise = type === 'essential' 
-            ? updateEssentialStatus(id, 'completed') 
+    const handleApprove = async (id: string, type: 'essential' | 'side' | 'challenge') => {
+        const promise = type === 'essential'
+            ? updateEssentialStatus(id, 'completed')
+            : type === 'challenge'
+            ? updateChallengeStatus(id, 'COMPLETED')
             : updateSideStatus(id, 'APPROVED');
-            
+
         toast.promise(promise, {
             loading: '승인 처리 중...',
             success: () => {
@@ -100,9 +108,11 @@ export default function AdminMissionsPage() {
     const handleReject = async () => {
         if (!rejectingItem || !rejectReason.trim()) return;
         setIsRejecting(true);
-        
+
         const promise = rejectingItem.type === 'essential'
             ? updateEssentialStatus(rejectingItem.id, 'REJECTED', rejectReason)
+            : rejectingItem.type === 'challenge'
+            ? updateChallengeStatus(rejectingItem.id, 'REJECTED', rejectReason)
             : updateSideStatus(rejectingItem.id, 'REJECTED', rejectReason);
             
         const res = await promise;
@@ -210,7 +220,7 @@ export default function AdminMissionsPage() {
                             필수 미션 승인 대기 ({essentialMissions.length})
                         </TabsTrigger>
                         <TabsTrigger value="side" className="rounded-xl font-black text-sm data-[state=active]:bg-white data-[state=active]:text-brand-primary h-full px-8">
-                            추가 미션 검증 ({sideMissions.length})
+                            추가 미션 검증 ({sideMissions.length + challengeMissions.length})
                         </TabsTrigger>
                         <TabsTrigger value="settlement" className="rounded-xl font-black text-sm data-[state=active]:bg-white data-[state=active]:text-brand-primary h-full px-8">
                             ⭐ 포인트 정산 도구 ({settlements.length})
@@ -290,50 +300,143 @@ export default function AdminMissionsPage() {
 
                     {/* Side Missions Tab */}
                     <TabsContent value="side">
-                        <div className="bg-white rounded-brand-lg border border-slate-100 shadow-sm overflow-hidden">
-                            <Table>
-                                <TableHeader className="bg-slate-50/50">
-                                    <TableRow className="hover:bg-transparent border-slate-100">
-                                        <TableHead className="font-bold text-xs uppercase tracking-tight">Mission Type</TableHead>
-                                        <TableHead className="font-bold text-xs uppercase tracking-tight">User</TableHead>
-                                        <TableHead className="font-bold text-xs uppercase tracking-tight">Proof</TableHead>
-                                        <TableHead className="font-bold text-xs uppercase tracking-tight">Date</TableHead>
-                                        <TableHead className="font-bold text-xs uppercase tracking-tight text-right">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {sideMissions.length === 0 ? (
-                                        <TableRow><TableCell colSpan={5} className="text-center h-40 font-bold text-slate-300">대기 중인 추가 미션이 없습니다.</TableCell></TableRow>
-                                    ) : sideMissions.map((sm) => (
-                                        <TableRow key={sm.id} className="hover:bg-slate-50/50 border-slate-50">
-                                            <TableCell>
-                                                <Badge variant="outline" className="font-black text-[10px] rounded-lg border-indigo-100 text-indigo-600 bg-indigo-50/50">
-                                                    {sm.mission_type}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="font-black text-sm text-slate-800">{sm.profiles?.nickname}</TableCell>
-                                            <TableCell>
-                                                <Button variant="ghost" size="sm" className="h-7 text-indigo-500 font-bold text-xs" asChild>
-                                                    <a href={sm.proof_url} target="_blank" rel="noopener noreferrer">
-                                                        <ExternalLink className="w-3 h-3 mr-1" /> 증빙 보기
-                                                    </a>
-                                                </Button>
-                                            </TableCell>
-                                            <TableCell className="text-[10px] font-bold text-slate-400">{new Date(sm.created_at).toLocaleDateString()}</TableCell>
-                                            <TableCell className="text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <Button size="sm" variant="outline" className="h-8 rounded-lg font-bold border-green-100 text-green-600 hover:bg-green-50" onClick={() => handleApprove(sm.id, 'side')}>
-                                                        포인트 확정
-                                                    </Button>
-                                                    <Button size="sm" variant="ghost" className="h-8 text-slate-400 hover:text-red-500" onClick={() => setRejectingItem({ id: sm.id, type: 'side' })}>
-                                                        반려
-                                                    </Button>
-                                                </div>
-                                            </TableCell>
+                        <div className="space-y-6">
+                            {/* Challenge Submissions Section */}
+                            {challengeMissions.length > 0 && (
+                                <div className="bg-white rounded-brand-lg border border-orange-100 shadow-sm overflow-hidden">
+                                    <div className="px-6 py-4 border-b border-orange-50 bg-orange-50/40 flex items-center gap-3">
+                                        <Trophy className="w-4 h-4 text-orange-500" />
+                                        <span className="font-black text-slate-800 text-sm">챌린지 제출 검증</span>
+                                        <Badge className="bg-orange-100 text-orange-600 border-none font-black text-[10px] ml-auto">
+                                            {challengeMissions.length}건 대기
+                                        </Badge>
+                                    </div>
+                                    <Table>
+                                        <TableHeader className="bg-slate-50/30">
+                                            <TableRow className="hover:bg-transparent border-slate-100">
+                                                <TableHead className="font-bold text-xs uppercase tracking-tight">챌린지명</TableHead>
+                                                <TableHead className="font-bold text-xs uppercase tracking-tight">User</TableHead>
+                                                <TableHead className="font-bold text-xs uppercase tracking-tight">리워드</TableHead>
+                                                <TableHead className="font-bold text-xs uppercase tracking-tight">미술관</TableHead>
+                                                <TableHead className="font-bold text-xs uppercase tracking-tight">키워드</TableHead>
+                                                <TableHead className="font-bold text-xs uppercase tracking-tight">링크</TableHead>
+                                                <TableHead className="font-bold text-xs uppercase tracking-tight">제출일</TableHead>
+                                                <TableHead className="font-bold text-xs uppercase tracking-tight text-right">Actions</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {challengeMissions.map((cm) => {
+                                                // Extract actual URLs from post_url (strip [CHALLENGE] prefix, handle comma-separated)
+                                                const urls = cm.post_url
+                                                    .split(",")
+                                                    .map(u => u.replace(/^\[CHALLENGE\]\s*/, "").trim())
+                                                    .filter(Boolean);
+                                                return (
+                                                    <TableRow key={cm.id} className="hover:bg-slate-50/50 border-slate-50">
+                                                        <TableCell>
+                                                            <Badge className="bg-orange-50 text-orange-600 border-orange-100 font-black text-[10px] rounded-lg">
+                                                                {cm.challengeName}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell className="font-black text-sm text-slate-800">{cm.profiles?.nickname}</TableCell>
+                                                        <TableCell>
+                                                            {cm.rewardLabel ? (
+                                                                <span className={`text-[11px] font-black px-2 py-0.5 rounded-md ${cm.rewardType === 'points' ? 'bg-blue-50 text-blue-600' : 'bg-green-50 text-green-600'}`}>
+                                                                    {cm.rewardLabel}
+                                                                </span>
+                                                            ) : <span className="text-slate-300 text-xs">-</span>}
+                                                        </TableCell>
+                                                        <TableCell className="text-sm font-bold text-slate-700">
+                                                            {cm.museum ?? <span className="text-slate-300 text-xs">-</span>}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            {cm.keywords.length > 0 ? (
+                                                                <div className="flex flex-wrap gap-1">
+                                                                    {cm.keywords.map((kw, i) => (
+                                                                        <span key={i} className="text-[10px] font-bold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
+                                                                            #{kw}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            ) : <span className="text-slate-300 text-xs">-</span>}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <div className="flex flex-wrap gap-1">
+                                                                {urls.map((url, i) => (
+                                                                    <Button key={i} variant="ghost" size="sm" className="h-7 text-indigo-500 font-bold text-xs px-2" asChild>
+                                                                        <a href={url} target="_blank" rel="noopener noreferrer">
+                                                                            <ExternalLink className="w-3 h-3 mr-1" />
+                                                                            링크{urls.length > 1 ? ` ${i + 1}` : ""}
+                                                                        </a>
+                                                                    </Button>
+                                                                ))}
+                                                            </div>
+                                                        </TableCell>
+                                                        <TableCell className="text-[10px] font-bold text-slate-400">{new Date(cm.created_at).toLocaleDateString()}</TableCell>
+                                                        <TableCell className="text-right">
+                                                            <div className="flex justify-end gap-2">
+                                                                <Button size="sm" variant="outline" className="h-8 rounded-lg font-bold border-green-100 text-green-600 hover:bg-green-50" onClick={() => handleApprove(cm.id, 'challenge')}>
+                                                                    <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> 승인
+                                                                </Button>
+                                                                <Button size="sm" variant="ghost" className="h-8 text-slate-400 hover:text-red-500" onClick={() => setRejectingItem({ id: cm.id, type: 'challenge' })}>
+                                                                    반려
+                                                                </Button>
+                                                            </div>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                );
+                                            })}
+                                        </TableBody>
+                                    </Table>
+                                </div>
+                            )}
+
+                            {/* Regular Side Missions */}
+                            <div className="bg-white rounded-brand-lg border border-slate-100 shadow-sm overflow-hidden">
+                                <Table>
+                                    <TableHeader className="bg-slate-50/50">
+                                        <TableRow className="hover:bg-transparent border-slate-100">
+                                            <TableHead className="font-bold text-xs uppercase tracking-tight">Mission Type</TableHead>
+                                            <TableHead className="font-bold text-xs uppercase tracking-tight">User</TableHead>
+                                            <TableHead className="font-bold text-xs uppercase tracking-tight">Proof</TableHead>
+                                            <TableHead className="font-bold text-xs uppercase tracking-tight">Date</TableHead>
+                                            <TableHead className="font-bold text-xs uppercase tracking-tight text-right">Actions</TableHead>
                                         </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {sideMissions.length === 0 ? (
+                                            <TableRow><TableCell colSpan={5} className="text-center h-40 font-bold text-slate-300">대기 중인 추가 미션이 없습니다.</TableCell></TableRow>
+                                        ) : sideMissions.map((sm) => (
+                                            <TableRow key={sm.id} className="hover:bg-slate-50/50 border-slate-50">
+                                                <TableCell>
+                                                    <Badge variant="outline" className="font-black text-[10px] rounded-lg border-indigo-100 text-indigo-600 bg-indigo-50/50">
+                                                        {sm.mission_type}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="font-black text-sm text-slate-800">{sm.profiles?.nickname}</TableCell>
+                                                <TableCell>
+                                                    <Button variant="ghost" size="sm" className="h-7 text-indigo-500 font-bold text-xs" asChild>
+                                                        <a href={sm.proof_url} target="_blank" rel="noopener noreferrer">
+                                                            <ExternalLink className="w-3 h-3 mr-1" /> 증빙 보기
+                                                        </a>
+                                                    </Button>
+                                                </TableCell>
+                                                <TableCell className="text-[10px] font-bold text-slate-400">{new Date(sm.created_at).toLocaleDateString()}</TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="flex justify-end gap-2">
+                                                        <Button size="sm" variant="outline" className="h-8 rounded-lg font-bold border-green-100 text-green-600 hover:bg-green-50" onClick={() => handleApprove(sm.id, 'side')}>
+                                                            포인트 확정
+                                                        </Button>
+                                                        <Button size="sm" variant="ghost" className="h-8 text-slate-400 hover:text-red-500" onClick={() => setRejectingItem({ id: sm.id, type: 'side' })}>
+                                                            반려
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
                         </div>
                     </TabsContent>
 

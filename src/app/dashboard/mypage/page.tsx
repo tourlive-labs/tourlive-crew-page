@@ -2,9 +2,8 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, Hash, Sparkles, User, Mail, Phone, Calendar, ShieldCheck, Trophy, Edit2, Check, X, Loader2, Globe, Link2, ImageIcon, Upload, Lock } from "lucide-react";
+import { MapPin, Hash, Sparkles, User, Mail, Phone, ShieldCheck, Trophy, Edit2, Check, X, Loader2, Globe, Link2, ImageIcon, Upload, Lock } from "lucide-react";
 import { getDashboardData, updateProfile } from "@/app/actions/dashboard";
-import { getCalendarStamps } from "@/app/actions/calendar";
 
 type ProfileData = {
     nickname: string | null;
@@ -23,14 +22,6 @@ type ProfileData = {
     tourlive_email: string | null;
     contact_email: string | null;
 };
-type StampData = {
-    id: string;
-    type: 'essential' | 'optional';
-    title: string;
-    status: string;
-    date: string;
-    icon?: string;
-};
 
 import { Skeleton } from "@/components/ui/skeleton";
 import CrewBannerGenerator from "@/components/dashboard/CrewBannerGenerator";
@@ -40,126 +31,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-function ActivityCalendar() {
-    const [stamps, setStamps] = useState<StampData[]>([]);
-    const [selectedDate, setSelectedDate] = useState<string | null>(null);
-    const [viewDate, setViewDate] = useState(() => new Date());
-
-    useEffect(() => {
-        getCalendarStamps().then(res => setStamps(res.data || []));
-    }, []);
-
-    const viewYear = viewDate.getFullYear();
-    const viewMonth = viewDate.getMonth();
-    const firstDayOfWeek = new Date(viewYear, viewMonth, 1).getDay();
-    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
-    const todayStr = new Date().toISOString().split('T')[0];
-    const monthStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}`;
-
-    const stampsByDate = stamps.reduce<Record<string, StampData[]>>((acc, s) => {
-        if (!acc[s.date]) acc[s.date] = [];
-        acc[s.date].push(s);
-        return acc;
-    }, {});
-
-    const handlePrev = () => setViewDate(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
-    const handleNext = () => setViewDate(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
-
-    const cells = Array.from({ length: firstDayOfWeek + daysInMonth }, (_, i) =>
-        i < firstDayOfWeek ? null : i - firstDayOfWeek + 1
-    );
-
-    return (
-        <Card className="rounded-brand-xl border-slate-100 shadow-sm overflow-hidden bg-white">
-            <CardHeader className="p-8 flex flex-row items-center justify-between border-b border-slate-50 bg-slate-50/30">
-                <CardTitle className="text-xl font-black flex items-center gap-3 text-slate-800">
-                    <Calendar className="w-6 h-6 text-brand-primary" />
-                    활동 캘린더
-                </CardTitle>
-                <div className="flex items-center gap-2">
-                    <button onClick={handlePrev} className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors text-lg font-black">‹</button>
-                    <span className="text-sm font-black text-slate-800 w-24 text-center">{viewYear}년 {viewMonth + 1}월</span>
-                    <button onClick={handleNext} className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 transition-colors text-lg font-black">›</button>
-                </div>
-            </CardHeader>
-            <CardContent className="p-8">
-                <div className="grid grid-cols-7 mb-2">
-                    {['일', '월', '화', '수', '목', '금', '토'].map(d => (
-                        <div key={d} className="text-center text-[10px] font-black text-slate-300 py-1">{d}</div>
-                    ))}
-                </div>
-                <div className="grid grid-cols-7 gap-1">
-                    {cells.map((day, idx) => {
-                        if (!day) return <div key={`e-${idx}`} />;
-                        const dateStr = `${monthStr}-${String(day).padStart(2, '0')}`;
-                        const dayStamps = stampsByDate[dateStr] || [];
-                        const hasEssential = dayStamps.some(s => s.type === 'essential');
-                        const hasOptional = dayStamps.some(s => s.type === 'optional');
-                        const isToday = dateStr === todayStr;
-                        const isSelected = selectedDate === dateStr;
-
-                        return (
-                            <button
-                                key={dateStr}
-                                onClick={() => dayStamps.length > 0 ? setSelectedDate(isSelected ? null : dateStr) : undefined}
-                                className={cn(
-                                    "relative flex flex-col items-center py-2 rounded-xl transition-all",
-                                    dayStamps.length > 0 ? "cursor-pointer hover:ring-1 hover:ring-slate-200" : "cursor-default",
-                                    isSelected ? "ring-1 ring-brand-primary" : "",
-                                    hasEssential && hasOptional
-                                        ? "bg-gradient-to-br from-[#FFD6E0]/50 to-[#D6E4FF]/50"
-                                        : hasEssential ? "bg-[#FFD6E0]/50"
-                                        : hasOptional ? "bg-[#D6E4FF]/50" : ""
-                                )}
-                            >
-                                <span className={cn(
-                                    "text-[12px] font-bold leading-none",
-                                    isToday ? "text-brand-primary font-black" : dayStamps.length > 0 ? "text-slate-800" : "text-slate-400"
-                                )}>{day}</span>
-                                {isToday && <div className="w-1 h-1 rounded-full bg-brand-primary mt-1" />}
-                                {!isToday && dayStamps.length > 0 && (
-                                    <div className="flex gap-0.5 mt-1">
-                                        {hasEssential && <div className="w-1.5 h-1.5 rounded-full bg-brand-primary" />}
-                                        {hasOptional && <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />}
-                                    </div>
-                                )}
-                            </button>
-                        );
-                    })}
-                </div>
-
-                {selectedDate && stampsByDate[selectedDate] && (
-                    <div className="mt-6 p-4 rounded-2xl bg-slate-50 border border-slate-100 animate-in fade-in slide-in-from-top-2 duration-200 space-y-3">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{selectedDate} 활동 내역</p>
-                        {stampsByDate[selectedDate].map(s => (
-                            <div key={s.id} className={cn(
-                                "flex items-center gap-3 p-3 rounded-xl",
-                                s.type === 'essential' ? "bg-[#FFD6E0]/60 border border-pink-100" : "bg-[#D6E4FF]/60 border border-blue-100"
-                            )}>
-                                <span className="text-lg">{s.icon || (s.type === 'essential' ? '🏆' : '🎯')}</span>
-                                <div>
-                                    <p className="text-xs font-black text-slate-800">{s.title}</p>
-                                    <p className="text-[10px] font-bold text-slate-500">{s.status}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-
-                <div className="mt-6 flex items-center gap-6 justify-center">
-                    <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded-md bg-[#FFD6E0] border border-pink-100" />
-                        <span className="text-[10px] font-bold text-slate-500">필수 활동</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 rounded-md bg-[#D6E4FF] border border-blue-100" />
-                        <span className="text-[10px] font-bold text-slate-500">추가 활동</span>
-                    </div>
-                </div>
-            </CardContent>
-        </Card>
-    );
-}
 
 export default function MyPage() {
     const [data, setData] = useState<ProfileData | null>(null);
@@ -555,9 +426,6 @@ export default function MyPage() {
                     </CardContent>
                 </Card>
             </div>
-
-            {/* Activity Calendar */}
-            <ActivityCalendar />
 
         </div>
     );
