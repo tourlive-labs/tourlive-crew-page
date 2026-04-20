@@ -53,7 +53,9 @@ export function CrewManagementClient({ initialMembers, batches }: CrewManagement
     return initialMembers.filter((m) => {
       // .trim() ensures dirty whitespace in DB values (e.g. "14기 ") still matches clean filter value
       const matchBatch = batchFilter === "all" || m.batch?.trim() === batchFilter;
-      const matchField = fieldFilter === "all" || m.selected_activity === fieldFilter;
+      // "naver_blog" filter mirrors the display logic: anyone who isn't naver_cafe shows as "개인 블로그"
+      const matchField = fieldFilter === "all"
+        || (fieldFilter === "naver_blog" ? m.selected_activity !== "naver_cafe" : m.selected_activity === fieldFilter);
       
       // Graduation Logic: 3 consecutive months (Feb, Mar, Apr)
       const hasFeb = m.missions?.some(ms => ms.mission_month === '2026-02' && ms.status === MissionStatus.COMPLETED);
@@ -133,7 +135,7 @@ export function CrewManagementClient({ initialMembers, batches }: CrewManagement
                               {member.batch || "미지정"}
                             </Badge>
                             <span className="text-slate-600 text-sm font-bold">
-                              {member.selected_activity === 'naver_cafe' ? "지식여행 카페" : "개인 블로그"}
+                              {member.selected_activity === 'naver_cafe' ? "지식여행 카페" : "네이버 블로그"}
                             </span>
                           </div>
                         </TableCell>

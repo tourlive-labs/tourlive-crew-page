@@ -63,7 +63,7 @@ export function AdminFilters({
             </SelectTrigger>
             <SelectContent className="rounded-xl border-slate-100 shadow-xl">
               <SelectItem value="all">전체 분야</SelectItem>
-              <SelectItem value="personal_blog">개인 블로그</SelectItem>
+              <SelectItem value="naver_blog">네이버 블로그</SelectItem>
               <SelectItem value="naver_cafe">지식여행 카페</SelectItem>
             </SelectContent>
           </Select>
