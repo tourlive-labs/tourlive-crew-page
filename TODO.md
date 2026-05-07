@@ -1,6 +1,6 @@
 # Supporters Hub — 잔여 개선 항목
 
-> 마지막 업데이트: 2026-04-20 (커밋 3b17309)  
+> 마지막 업데이트: 2026-04-20 (커밋 c886a21)  
 > 이미 완료된 항목(에러 핸들링 1차, 디자인 토큰 `/dashboard`, PageHeader 컴포넌트, MissionStatus Enum)은 제외됨
 
 ---
@@ -37,15 +37,11 @@
 - 각 카드 `<Link href="/dashboard/notice/${id}">` 래핑
 - `notice/[id]/page.tsx` 상세 페이지 생성 — content 컬럼 ReactMarkdown 렌더링
 
-### #10 `AuthProvider.tsx` — `any` 타입 (CLAUDE.md 규칙 위반)
-- **파일**: `src/components/AuthProvider.tsx`
-- **문제**: `user: any | null` — Supabase `User` 타입 사용 가능한데 `any` 사용
-- **수정 방향**: `import type { User } from '@supabase/supabase-js'` 후 교체
+### ~~#10 `AuthProvider.tsx` — `any` 타입~~ — ✅ 완료
+- `import type { User } from '@supabase/supabase-js'`, `useState<User | null>`, context 타입 적용
 
-### #11 `mypage/page.tsx` — `any` 타입 3곳
-- **파일**: `src/app/dashboard/mypage/page.tsx`
-- **문제**: `useState<any>({})`, `initialValues: any`, `(prev: any) =>` — 구체적 프로필 타입 정의 필요
-- **수정 방향**: Supabase 자동생성 타입 또는 로컬 인터페이스 적용
+### ~~#11 `mypage/page.tsx` — `any` 타입 3곳~~ — ✅ 완료
+- `ProfileData` 타입 정의, `useState<Record<string, string | null>>`, `result` 타입 내 `data?: any` 제거
 
 ### ~~#12 `calendar.ts` — `stamps: any[]`~~ — ✅ 삭제됨 (2026-04-20)
 - `calendar.ts` 파일 자체가 제거되어 해당 사항 없음
@@ -54,35 +50,21 @@
 
 ## 🔵 낮음 (Low)
 
-### #15 어드민 페이지 `bg-[#F8F9FA]` 하드코딩
-- **파일**: `src/app/admin/notices/page.tsx:35`, `src/app/admin/challenge/page.tsx:35`
-- **문제**: `bg-[#F8F9FA]` 하드코딩 — 다른 어드민 페이지는 `bg-brand-bg` 사용
-- **수정 방향**: `bg-brand-bg`로 교체
+### ~~#15 어드민 페이지 `bg-[#F8F9FA]` 하드코딩~~ — ✅ 완료
+- `admin/notices/page.tsx:36`, `admin/challenge/page.tsx:36` → `bg-slate-50` 교체
 
-### #16 네이티브 `<button>` 혼용
-- **파일**:
-  - `src/components/CrewOnboardingForm.tsx:364` — 다음 단계 이동 버튼
-  - `src/app/dashboard/mission/page.tsx:925` — 새로고침 아이콘 버튼
-- **문제**: shadcn/ui `<Button>` 컴포넌트 대신 네이티브 `<button>` 사용
-- **수정 방향**: `<Button variant="...">` 또는 `<Button size="icon">` 교체
+### ~~#16 네이티브 `<button>` 혼용~~ — ✅ 완료
+- `CrewOnboardingForm.tsx:364` 배너 삭제 버튼 → `<Button variant="ghost" size="icon">`
+- `mission/page.tsx:941` 새로고침 버튼 → `<Button variant="ghost" size="icon">`
 
-### #17 하드코딩된 파란색 계열 hex 값
-- **파일**:
-  - `src/components/CrewOnboardingForm.tsx:148–165` — 스텝 진행 바: `bg-[#FFD6E0]`, `bg-[#D6E4FF]`, `bg-[#FFF0F3]`, `bg-[#F0F5FF]` 등
-  - `src/app/dashboard/guide/page.tsx:64` — `bg-[#F0F5FF]`, `text-[#0052CC]`
-  - `src/app/dashboard/mission/page.tsx:974` — `bg-[#F0F5FF]/50`, `text-[#0052CC]`
-- **문제**: 브랜드 토큰 미적용 — 색상 변경 시 각 위치 개별 수정 필요
-- **수정 방향**: `bg-indigo-50`, `text-indigo-700` 등 Tailwind 시맨틱 클래스 또는 신규 brand 토큰으로 교체
+### ~~#17 하드코딩된 파란색 계열 hex 값~~ — ✅ 완료
+- `CrewOnboardingForm.tsx` 스텝 진행 바/인디케이터: `rose-50/100/600`, `indigo-50/100/700` 교체
+- `guide/page.tsx:64`: `bg-indigo-50 text-indigo-700` 교체
+- `mission/page.tsx`: `text-indigo-700`, `bg-indigo-50/50 border-indigo-100` 교체
 
-### #3 영어/한국어 텍스트 혼용
-- **문제**: 관리자/내부 UI에 영어 텍스트가 섞여 있음
-
-| 위치 | 현재 텍스트 | 제안 |
-|---|---|---|
-| `MarkPaidButton.tsx:43` | `"Mark Points as Paid"` | `"포인트 지급 완료 처리"` |
-| `admin/missions/page.tsx` 링크 버튼 | `"Link 1"`, `"Link 2"` | `"링크 1"`, `"링크 2"` |
-| `admin/page.tsx:69` | `"Admin Portal"` 뱃지 | `"관리자"` |
-| `Sidebar.tsx:76` | `"Portal v2.0"` | `"크루 포털"` 또는 제거 |
+### ~~#3 영어/한국어 텍스트 혼용~~ — ✅ 완료
+- `admin/missions/page.tsx` 테이블 헤더 전량 한국어화 (User/Team, Cafe Reports, Survey Summary, Actions, Mission Type, Proof, Date, Tourlive Account, Name, Amount, Reason 등)
+- `Sidebar.tsx`: "Tourlive Admin" → "투어라이브 어드민", "Support Center" → "서포트 센터"
 
 ---
 
@@ -104,15 +86,16 @@
 
 ### 코드 품질
 
-- [ ] **#5 `faq/page.tsx` — 마크다운 파싱** — `react-markdown` 도입 또는 FAQ 데이터 JSX 전환
+- ✅ **#5 `faq/page.tsx` — 마크다운 파싱** — `react-markdown@10.1.0` 설치, `faqMarkdownComponents` 적용 완료
 - ✅ **#10 `AuthProvider.tsx` — `any` 타입** — `import type { User } from '@supabase/supabase-js'`, `useState<User | null>`, context 타입 적용 완료
 - ✅ **#11 `mypage/page.tsx` — `any` 타입** — `ProfileData` 타입 정의, `useState<Record<string, string | null>>`, `result` 타입 내 `data?: any` 제거 완료
-- [ ] **#3 영어/한국어 텍스트 혼용** — `MarkPaidButton`, 어드민 링크 버튼, Sidebar 등 잔여 영문 텍스트 한국어화
 - ✅ **#13 `mission/page.tsx` — 에러 시 공백 화면** — `error` state + AlertCircle UI 추가 완료
 - ✅ **#14 `notices.ts`/`challenge-config.ts` — throw 패턴 불일치** — `return { error }` 패턴 통일 완료
-- [ ] **#15 어드민 페이지 `bg-[#F8F9FA]`** — `admin/notices`, `admin/challenge` → `bg-brand-bg` 교체
-- [ ] **#16 네이티브 `<button>` 혼용** — `CrewOnboardingForm.tsx`, `mission/page.tsx` → shadcn/ui `<Button>` 교체
-- [ ] **#17 하드코딩 파란색 hex** — `CrewOnboardingForm.tsx`, `guide/page.tsx`, `mission/page.tsx` → Tailwind 시맨틱 클래스로 교체
+- ✅ **어드민 크루 명단 분야 필터 버그** — 필터 값 `personal_blog` → `naver_blog` 수정, 비교 로직을 표시 로직과 동일하게 변경, "개인 블로그" → "네이버 블로그" 텍스트 통일
+- ✅ **#3 영어/한국어 텍스트 혼용** — `MarkPaidButton`, 어드민 링크 버튼, Sidebar 등 잔여 영문 텍스트 한국어화
+- ✅ **#15 어드민 페이지 `bg-[#F8F9FA]`** — `admin/notices`, `admin/challenge` → `bg-slate-50` 교체
+- ✅ **#16 네이티브 `<button>` 혼용** — `CrewOnboardingForm.tsx`, `mission/page.tsx` → shadcn/ui `<Button>` 교체
+- ✅ **#17 하드코딩 파란색 hex** — `CrewOnboardingForm.tsx`, `guide/page.tsx`, `mission/page.tsx` → Tailwind 시맨틱 클래스로 교체
 
 ### E2E / QA
 

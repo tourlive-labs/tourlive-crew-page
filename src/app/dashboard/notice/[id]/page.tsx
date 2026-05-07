@@ -44,7 +44,7 @@ export default async function NoticeDetailPage({
 
     const { data: notice, error } = await supabase
         .from('notices')
-        .select('id, title, content, category, created_at')
+        .select('id, title, content, category, image_url, created_at')
         .eq('id', id)
         .single();
 
@@ -80,6 +80,17 @@ export default async function NoticeDetailPage({
                     {formattedDate}
                 </span>
             </div>
+
+            {notice.image_url && (
+                <div className="rounded-brand overflow-hidden border border-slate-100 shadow-sm">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                        src={notice.image_url}
+                        alt={notice.title}
+                        className="w-full max-h-[480px] object-cover"
+                    />
+                </div>
+            )}
 
             <div className="bg-white rounded-brand p-8 shadow-sm border border-slate-100">
                 {notice.content ? (

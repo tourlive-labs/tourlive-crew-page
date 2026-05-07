@@ -935,19 +935,21 @@ export default function MissionPage() {
                                 <div className="flex items-center justify-between mb-1">
                                     <div className="flex items-center gap-3">
                                         <CardTitle className="text-lg font-black text-slate-800 flex items-center tracking-tight">
-                                            {!isBlog ? <Coffee className="w-5 h-5 mr-3 text-brand-primary" /> : <BookOpen className="w-5 h-5 mr-3 text-[#0052CC]" />}
+                                            {!isBlog ? <Coffee className="w-5 h-5 mr-3 text-brand-primary" /> : <BookOpen className="w-5 h-5 mr-3 text-indigo-700" />}
                                             활동 목표
                                         </CardTitle>
-                                        <button 
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
                                             onClick={() => {
                                                 loadData();
                                                 toast.success("상태를 새로고침했습니다.");
                                             }}
-                                            className="p-1 hover:bg-slate-100 rounded-md transition-colors text-slate-400 hover:text-slate-600"
+                                            className="w-7 h-7 text-slate-400 hover:text-slate-600"
                                             title="새로고침"
                                         >
                                             <RefreshCcw className="w-3.5 h-3.5" />
-                                        </button>
+                                        </Button>
                                     </div>
                                     <Badge variant="outline" className="text-[10px] font-black uppercase tracking-widest">
                                         {!isBlog ? "Cafe Team" : "Blog Team"}
@@ -987,7 +989,7 @@ export default function MissionPage() {
                                         </>
                                     ) : null}
 
-                                    <div className="flex items-center justify-between p-4 rounded-xl bg-[#F0F5FF]/50 text-sm font-black text-[#0052CC] border border-[#D6E4FF]">
+                                    <div className="flex items-center justify-between p-4 rounded-xl bg-indigo-50/50 text-sm font-black text-indigo-700 border border-indigo-100">
                                         <div className="flex items-center gap-3">
                                             <BookOpen className="w-5 h-5" />
                                             <span>가이드북 사용후기</span>

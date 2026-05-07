@@ -145,8 +145,8 @@ export default function CrewOnboardingForm() {
             <Card className="w-full max-w-6xl shadow-[0_4px_24px_rgba(0,0,0,0.04)] border-none rounded-brand-lg bg-white overflow-hidden p-0">
                 {/* Minimal Step Progress Bar */}
                 <div className="flex w-full h-1.5 bg-slate-50">
-                    <div className={cn("h-full transition-all duration-500 bg-[#FFD6E0]", currentStep === 1 ? "w-1/2" : "w-1/2")} />
-                    <div className={cn("h-full transition-all duration-500", currentStep === 2 ? "bg-[#D6E4FF] w-1/2" : "bg-slate-100 w-1/2")} />
+                    <div className={cn("h-full transition-all duration-500 bg-rose-100", currentStep === 1 ? "w-1/2" : "w-1/2")} />
+                    <div className={cn("h-full transition-all duration-500", currentStep === 2 ? "bg-indigo-100 w-1/2" : "bg-slate-100 w-1/2")} />
                 </div>
 
                 <CardHeader className="p-12 pb-6 flex flex-col items-center">
@@ -154,7 +154,7 @@ export default function CrewOnboardingForm() {
                         <div className={cn(
                             "px-6 py-2 rounded-full text-sm font-bold transition-all border",
                             currentStep === 1
-                                ? "bg-[#FFF0F3] border-[#FFD6E0] text-[#E63946]"
+                                ? "bg-rose-50 border-rose-100 text-rose-600"
                                 : "bg-slate-50 border-slate-100 text-slate-400"
                         )}>
                             Step 1. 기본 정보
@@ -162,7 +162,7 @@ export default function CrewOnboardingForm() {
                         <div className={cn(
                             "px-6 py-2 rounded-full text-sm font-bold transition-all border",
                             currentStep === 2
-                                ? "bg-[#F0F5FF] border-[#D6E4FF] text-[#0052CC]"
+                                ? "bg-indigo-50 border-indigo-100 text-indigo-700"
                                 : "bg-slate-50 border-slate-100 text-slate-400"
                         )}>
                             Step 2. 활동 정보
@@ -361,18 +361,20 @@ export default function CrewOnboardingForm() {
                                                         )}
                                                     </Label>
                                                     {previewUrl && (
-                                                        <button
+                                                        <Button
                                                             type="button"
+                                                            variant="ghost"
+                                                            size="icon"
                                                             onClick={(e) => {
                                                                 e.preventDefault();
                                                                 setPreviewUrl(null);
                                                                 setSelectedFile(null);
                                                                 form.setValue("bannerImage", undefined);
                                                             }}
-                                                            className="absolute -top-2 -right-2 p-1.5 bg-white shadow-md border border-slate-100 rounded-full text-slate-400 hover:text-slate-600 transition-colors"
+                                                            className="absolute -top-2 -right-2 w-7 h-7 bg-white shadow-md border border-slate-100 rounded-full text-slate-400 hover:text-slate-600"
                                                         >
                                                             <X className="w-4 h-4" />
-                                                        </button>
+                                                        </Button>
                                                     )}
                                                 </div>
                                             </FormControl>

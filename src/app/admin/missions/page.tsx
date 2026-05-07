@@ -234,11 +234,11 @@ export default function AdminMissionsPage() {
                                 <TableHeader className="bg-slate-50/50">
                                     <TableRow className="hover:bg-transparent border-slate-100">
                                         <TableHead className="w-[50px]"><Checkbox /></TableHead>
-                                        <TableHead className="font-bold text-xs uppercase tracking-tight">User / Team</TableHead>
+                                        <TableHead className="font-bold text-xs uppercase tracking-tight">사용자 / 팀</TableHead>
                                         <TableHead className="font-bold text-xs uppercase tracking-tight">미션 링크</TableHead>
-                                        <TableHead className="font-bold text-xs uppercase tracking-tight">Cafe Reports</TableHead>
-                                        <TableHead className="font-bold text-xs uppercase tracking-tight">Survey Summary</TableHead>
-                                        <TableHead className="font-bold text-xs uppercase tracking-tight text-right">Actions</TableHead>
+                                        <TableHead className="font-bold text-xs uppercase tracking-tight">카페 리포트</TableHead>
+                                        <TableHead className="font-bold text-xs uppercase tracking-tight">설문 요약</TableHead>
+                                        <TableHead className="font-bold text-xs uppercase tracking-tight text-right">관리</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -315,13 +315,13 @@ export default function AdminMissionsPage() {
                                         <TableHeader className="bg-slate-50/30">
                                             <TableRow className="hover:bg-transparent border-slate-100">
                                                 <TableHead className="font-bold text-xs uppercase tracking-tight">챌린지명</TableHead>
-                                                <TableHead className="font-bold text-xs uppercase tracking-tight">User</TableHead>
+                                                <TableHead className="font-bold text-xs uppercase tracking-tight">사용자</TableHead>
                                                 <TableHead className="font-bold text-xs uppercase tracking-tight">리워드</TableHead>
                                                 <TableHead className="font-bold text-xs uppercase tracking-tight">미술관</TableHead>
                                                 <TableHead className="font-bold text-xs uppercase tracking-tight">키워드</TableHead>
                                                 <TableHead className="font-bold text-xs uppercase tracking-tight">링크</TableHead>
                                                 <TableHead className="font-bold text-xs uppercase tracking-tight">제출일</TableHead>
-                                                <TableHead className="font-bold text-xs uppercase tracking-tight text-right">Actions</TableHead>
+                                                <TableHead className="font-bold text-xs uppercase tracking-tight text-right">관리</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -396,11 +396,11 @@ export default function AdminMissionsPage() {
                                 <Table>
                                     <TableHeader className="bg-slate-50/50">
                                         <TableRow className="hover:bg-transparent border-slate-100">
-                                            <TableHead className="font-bold text-xs uppercase tracking-tight">Mission Type</TableHead>
-                                            <TableHead className="font-bold text-xs uppercase tracking-tight">User</TableHead>
-                                            <TableHead className="font-bold text-xs uppercase tracking-tight">Proof</TableHead>
-                                            <TableHead className="font-bold text-xs uppercase tracking-tight">Date</TableHead>
-                                            <TableHead className="font-bold text-xs uppercase tracking-tight text-right">Actions</TableHead>
+                                            <TableHead className="font-bold text-xs uppercase tracking-tight">미션 유형</TableHead>
+                                            <TableHead className="font-bold text-xs uppercase tracking-tight">사용자</TableHead>
+                                            <TableHead className="font-bold text-xs uppercase tracking-tight">증빙</TableHead>
+                                            <TableHead className="font-bold text-xs uppercase tracking-tight">제출일</TableHead>
+                                            <TableHead className="font-bold text-xs uppercase tracking-tight text-right">관리</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -456,11 +456,11 @@ export default function AdminMissionsPage() {
                             <Table>
                                 <TableHeader>
                                     <TableRow className="bg-slate-50/30 border-slate-100">
-                                        <TableHead className="font-bold text-[10px] uppercase tracking-widest px-6">Tourlive Account (ID)</TableHead>
-                                        <TableHead className="font-bold text-[10px] uppercase tracking-widest">Name</TableHead>
-                                        <TableHead className="font-bold text-[10px] uppercase tracking-widest">Amount (P)</TableHead>
-                                        <TableHead className="font-bold text-[10px] uppercase tracking-widest">Reason (ETC field)</TableHead>
-                                        <TableHead className="font-bold text-[10px] uppercase tracking-widest text-right px-6">Action</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase tracking-widest px-6">투어라이브 계정 (ID)</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase tracking-widest">이름</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase tracking-widest">금액 (P)</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase tracking-widest">사유 (기타 항목)</TableHead>
+                                        <TableHead className="font-bold text-[10px] uppercase tracking-widest text-right px-6">관리</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>

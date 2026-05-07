@@ -33,7 +33,7 @@ export default async function AdminNoticesPage() {
     }
 
     return (
-        <div className="min-h-screen bg-[#F8F9FA] font-sans antialiased text-slate-900 border-t-[12px] border-orange-500">
+        <div className="min-h-screen bg-slate-50 font-sans antialiased text-slate-900 border-t-[12px] border-orange-500">
             <div className="max-w-4xl mx-auto px-8 py-10 space-y-8">
 
                 {/* Header */}

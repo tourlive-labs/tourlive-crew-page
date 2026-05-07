@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { type Notice, createNotice, updateNotice, deleteNotice, togglePublish } from "@/app/actions/notices";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Eye, EyeOff, Megaphone } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, EyeOff, Megaphone, ImageIcon, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const CATEGORIES = ["공지", "안내", "이벤트", "업데이트"];
@@ -33,26 +33,59 @@ function NoticeFormDialog({
     open,
     onClose,
     initial,
+    initialImageUrl,
     onSubmit,
     mode,
 }: {
     open: boolean;
     onClose: () => void;
     initial: FormState;
-    onSubmit: (data: FormState) => Promise<string | undefined>;
+    initialImageUrl?: string | null;
+    onSubmit: (formData: FormData) => Promise<string | undefined>;
     mode: "create" | "edit";
 }) {
     const [form, setForm] = useState<FormState>(initial);
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(initialImageUrl ?? null);
+    const [removeImage, setRemoveImage] = useState(false);
     const [isPending, startTransition] = useTransition();
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const set = (field: keyof FormState, value: string | boolean) =>
         setForm(prev => ({ ...prev, [field]: value }));
+
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] ?? null;
+        setImageFile(file);
+        setRemoveImage(false);
+        if (file) {
+            setImagePreview(URL.createObjectURL(file));
+        } else {
+            setImagePreview(initialImageUrl ?? null);
+        }
+    };
+
+    const handleRemoveImage = () => {
+        setImageFile(null);
+        setImagePreview(null);
+        setRemoveImage(true);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         if (!form.title.trim()) { toast.error("제목을 입력해 주세요."); return; }
         startTransition(async () => {
-            const err = await onSubmit(form);
+            const fd = new FormData();
+            fd.append('title', form.title);
+            fd.append('content', form.content);
+            fd.append('category', form.category);
+            fd.append('is_published', String(form.is_published));
+            if (imageFile) fd.append('noticeImage', imageFile);
+            if (removeImage) fd.append('removeImage', 'true');
+            if (initialImageUrl && !removeImage && !imageFile) fd.append('existingImageUrl', initialImageUrl);
+
+            const err = await onSubmit(fd);
             if (err) { toast.error(err); return; }
             onClose();
             toast.success(mode === "create" ? "공지가 등록되었습니다." : "공지가 수정되었습니다.");
@@ -106,6 +139,55 @@ function NoticeFormDialog({
                                 className="h-8 w-28 rounded-full text-xs border-slate-200 font-bold px-3"
                             />
                         </div>
+                    </div>
+
+                    {/* Image upload */}
+                    <div className="space-y-1.5">
+                        <Label className="text-xs font-black text-slate-500 uppercase tracking-widest">
+                            이미지 첨부 <span className="normal-case font-medium text-slate-300">(선택)</span>
+                        </Label>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handleImageChange}
+                        />
+                        {imagePreview ? (
+                            <div className="relative rounded-xl overflow-hidden border border-slate-200">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                    src={imagePreview}
+                                    alt="첨부 이미지 미리보기"
+                                    className="w-full max-h-56 object-cover"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleRemoveImage}
+                                    className="absolute top-2 right-2 w-7 h-7 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow border border-slate-200 text-slate-500 hover:text-red-500 transition-colors"
+                                    title="이미지 제거"
+                                >
+                                    <X className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    className="absolute bottom-2 right-2 px-3 py-1.5 bg-white/90 hover:bg-white rounded-lg text-xs font-black text-slate-600 border border-slate-200 shadow transition-colors"
+                                >
+                                    이미지 변경
+                                </button>
+                            </div>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="w-full h-28 border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center gap-2 text-slate-400 hover:border-slate-300 hover:text-slate-500 transition-colors"
+                            >
+                                <ImageIcon className="w-6 h-6" />
+                                <span className="text-xs font-black">클릭하여 이미지 첨부</span>
+                                <span className="text-[10px] font-medium text-slate-300">JPG, PNG, GIF, WEBP 지원</span>
+                            </button>
+                        )}
                     </div>
 
                     {/* Content */}
@@ -205,35 +287,17 @@ export default function NoticesClient({ initialNotices }: { initialNotices: Noti
     const [deleteTarget, setDeleteTarget] = useState<Notice | null>(null);
     const [togglingId, setTogglingId] = useState<string | null>(null);
 
-    const refresh = async () => {
-        // Re-fetch via server action after mutation
-        // revalidatePath handles this via the Next.js cache; we just update local state inline
-    };
-
-    const handleCreate = async (data: FormState): Promise<string | undefined> => {
-        const res = await createNotice(data);
+    const handleCreate = async (fd: FormData): Promise<string | undefined> => {
+        const res = await createNotice(fd);
         if (res.error) return res.error;
-        // Optimistically prepend
-        const optimistic: Notice = {
-            id: crypto.randomUUID(),
-            ...data,
-            content: data.content || null,
-            category: data.category || null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-        };
-        setNotices(prev => [optimistic, ...prev]);
+        if (res.notice) setNotices(prev => [res.notice!, ...prev]);
     };
 
-    const handleUpdate = async (data: FormState): Promise<string | undefined> => {
+    const handleUpdate = async (fd: FormData): Promise<string | undefined> => {
         if (!editTarget) return;
-        const res = await updateNotice(editTarget.id, data);
+        const res = await updateNotice(editTarget.id, fd);
         if (res.error) return res.error;
-        setNotices(prev => prev.map(n =>
-            n.id === editTarget.id
-                ? { ...n, ...data, content: data.content || null, category: data.category || null, updated_at: new Date().toISOString() }
-                : n
-        ));
+        if (res.notice) setNotices(prev => prev.map(n => n.id === editTarget.id ? res.notice! : n));
     };
 
     const handleDelete = async (): Promise<string | undefined> => {
@@ -300,11 +364,20 @@ export default function NoticesClient({ initialNotices }: { initialNotices: Noti
                                     notice.is_published ? "border-slate-100" : "border-dashed border-slate-200 opacity-60"
                                 )}
                             >
-                                {/* Status dot */}
-                                <div className={cn(
-                                    "w-2 h-2 rounded-full shrink-0",
-                                    notice.is_published ? "bg-emerald-400" : "bg-slate-300"
-                                )} />
+                                {/* Thumbnail */}
+                                {notice.image_url ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img
+                                        src={notice.image_url}
+                                        alt=""
+                                        className="w-10 h-10 rounded-lg object-cover shrink-0 border border-slate-100"
+                                    />
+                                ) : (
+                                    <div className={cn(
+                                        "w-2 h-2 rounded-full shrink-0",
+                                        notice.is_published ? "bg-emerald-400" : "bg-slate-300"
+                                    )} />
+                                )}
 
                                 {/* Main info */}
                                 <div className="flex-1 min-w-0">
@@ -367,6 +440,7 @@ export default function NoticesClient({ initialNotices }: { initialNotices: Noti
                 open={createOpen}
                 onClose={() => setCreateOpen(false)}
                 initial={defaultForm()}
+                initialImageUrl={null}
                 onSubmit={handleCreate}
                 mode="create"
             />
@@ -382,6 +456,7 @@ export default function NoticesClient({ initialNotices }: { initialNotices: Noti
                         category: editTarget.category ?? "",
                         is_published: editTarget.is_published,
                     }}
+                    initialImageUrl={editTarget.image_url}
                     onSubmit={handleUpdate}
                     mode="edit"
                 />

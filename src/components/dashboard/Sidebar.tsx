@@ -123,8 +123,8 @@ export default function Sidebar() {
                         <div className="mt-6 px-5 py-6 rounded-2xl bg-slate-50 flex items-center gap-3 border border-slate-100">
                              <div className="w-8 h-8 rounded-full bg-slate-200 shrink-0" />
                              <div className="overflow-hidden">
-                                 <span className="block text-[11px] font-black text-slate-800 leading-none">Tourlive Admin</span>
-                                 <span className="block text-[10px] font-bold text-slate-400 mt-1 leading-none">Support Center</span>
+                                 <span className="block text-[11px] font-black text-slate-800 leading-none">투어라이브 어드민</span>
+                                 <span className="block text-[10px] font-bold text-slate-400 mt-1 leading-none">서포트 센터</span>
                              </div>
                         </div>
                     </div>

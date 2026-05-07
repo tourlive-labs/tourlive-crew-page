@@ -61,7 +61,7 @@ export default function GuidePage() {
                     {/* Blog Section */}
                     <Card className="shadow-[0_4px_24px_rgba(0,0,0,0.04)] border-none rounded-brand-xl overflow-hidden bg-white p-2">
                         <CardHeader className="p-10 pb-4">
-                            <div className="w-16 h-16 rounded-brand bg-[#F0F5FF] flex items-center justify-center text-[#0052CC] mb-6">
+                            <div className="w-16 h-16 rounded-brand bg-indigo-50 flex items-center justify-center text-indigo-700 mb-6">
                                 <BookOpen className="w-8 h-8" />
                             </div>
                             <CardTitle className="text-2xl font-black text-slate-800 tracking-tight">네이버 블로그 활동</CardTitle>
