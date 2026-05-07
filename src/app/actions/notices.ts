@@ -9,7 +9,7 @@ export type Notice = {
     content: string | null;
     category: string | null;
     is_published: boolean;
-    image_url: string | null;
+    image_urls: string[];
     created_at: string;
     updated_at: string;
 };
@@ -28,7 +28,10 @@ async function assertAdmin() {
     return supabase;
 }
 
-async function uploadNoticeImage(supabase: Awaited<ReturnType<typeof assertAdmin>>, file: File): Promise<{ url: string } | { error: string }> {
+async function uploadNoticeImage(
+    supabase: Awaited<ReturnType<typeof assertAdmin>>,
+    file: File,
+): Promise<{ url: string } | { error: string }> {
     const ext = file.name.split('.').pop() ?? 'jpg';
     const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
     const { error } = await supabase.storage.from('notices').upload(fileName, file);
@@ -42,10 +45,10 @@ export async function getNotices(): Promise<Notice[] | { error: string }> {
         const supabase = await assertAdmin();
         const { data, error } = await supabase
             .from('notices')
-            .select('id, title, content, category, is_published, image_url, created_at, updated_at')
+            .select('id, title, content, category, is_published, image_urls, created_at, updated_at')
             .order('created_at', { ascending: false });
         if (error) return { error: error.message };
-        return data ?? [];
+        return (data ?? []).map(n => ({ ...n, image_urls: n.image_urls ?? [] }));
     } catch (err) {
         return { error: (err as Error).message };
     }
@@ -59,31 +62,27 @@ export async function createNotice(formData: FormData): Promise<{ error?: string
         const content = (formData.get('content') as string ?? '').trim();
         const category = (formData.get('category') as string ?? '').trim();
         const is_published = formData.get('is_published') === 'true';
-        const imageFile = formData.get('noticeImage') as File | null;
+        const imageFiles = formData.getAll('noticeImages') as File[];
 
-        let image_url: string | null = null;
-        if (imageFile && imageFile.size > 0) {
-            const result = await uploadNoticeImage(supabase, imageFile);
-            if ('error' in result) return { error: result.error };
-            image_url = result.url;
+        const image_urls: string[] = [];
+        for (const file of imageFiles) {
+            if (file && file.size > 0) {
+                const result = await uploadNoticeImage(supabase, file);
+                if ('error' in result) return { error: result.error };
+                image_urls.push(result.url);
+            }
         }
 
         const { data, error } = await supabase
             .from('notices')
-            .insert({
-                title,
-                content: content || null,
-                category: category || null,
-                is_published,
-                image_url,
-            })
-            .select('id, title, content, category, is_published, image_url, created_at, updated_at')
+            .insert({ title, content: content || null, category: category || null, is_published, image_urls })
+            .select('id, title, content, category, is_published, image_urls, created_at, updated_at')
             .single();
 
         if (error) return { error: error.message };
         revalidatePath('/dashboard/notice');
         revalidatePath('/admin/notices');
-        return { notice: data };
+        return { notice: { ...data, image_urls: data.image_urls ?? [] } };
     } catch (err) {
         return { error: (err as Error).message };
     }
@@ -97,37 +96,29 @@ export async function updateNotice(id: string, formData: FormData): Promise<{ er
         const content = (formData.get('content') as string ?? '').trim();
         const category = (formData.get('category') as string ?? '').trim();
         const is_published = formData.get('is_published') === 'true';
-        const imageFile = formData.get('noticeImage') as File | null;
-        const removeImage = formData.get('removeImage') === 'true';
-        const existingImageUrl = (formData.get('existingImageUrl') as string | null) || null;
+        const imageFiles = formData.getAll('noticeImages') as File[];
+        const existingUrls = formData.getAll('existingImageUrl') as string[];
 
-        let image_url: string | null = existingImageUrl;
-
-        if (removeImage) {
-            image_url = null;
-        } else if (imageFile && imageFile.size > 0) {
-            const result = await uploadNoticeImage(supabase, imageFile);
-            if ('error' in result) return { error: result.error };
-            image_url = result.url;
+        const image_urls: string[] = [...existingUrls];
+        for (const file of imageFiles) {
+            if (file && file.size > 0) {
+                const result = await uploadNoticeImage(supabase, file);
+                if ('error' in result) return { error: result.error };
+                image_urls.push(result.url);
+            }
         }
 
         const { data, error } = await supabase
             .from('notices')
-            .update({
-                title,
-                content: content || null,
-                category: category || null,
-                is_published,
-                image_url,
-            })
+            .update({ title, content: content || null, category: category || null, is_published, image_urls })
             .eq('id', id)
-            .select('id, title, content, category, is_published, image_url, created_at, updated_at')
+            .select('id, title, content, category, is_published, image_urls, created_at, updated_at')
             .single();
 
         if (error) return { error: error.message };
         revalidatePath('/dashboard/notice');
         revalidatePath('/admin/notices');
-        return { notice: data };
+        return { notice: { ...data, image_urls: data.image_urls ?? [] } };
     } catch (err) {
         return { error: (err as Error).message };
     }

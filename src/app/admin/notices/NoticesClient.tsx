@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { type Notice, createNotice, updateNotice, deleteNotice, togglePublish } from "@/app/actions/notices";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,10 +10,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, Eye, EyeOff, Megaphone, ImageIcon, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Eye, EyeOff, Megaphone, ImageIcon, X, Images } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const CATEGORIES = ["공지", "안내", "이벤트", "업데이트"];
+const MAX_IMAGES = 5;
 
 type FormState = {
     title: string;
@@ -29,47 +30,61 @@ const defaultForm = (): FormState => ({
     is_published: true,
 });
 
+type NewImageEntry = { file: File; preview: string };
+
 function NoticeFormDialog({
     open,
     onClose,
     initial,
-    initialImageUrl,
+    initialImageUrls,
     onSubmit,
     mode,
 }: {
     open: boolean;
     onClose: () => void;
     initial: FormState;
-    initialImageUrl?: string | null;
+    initialImageUrls: string[];
     onSubmit: (formData: FormData) => Promise<string | undefined>;
     mode: "create" | "edit";
 }) {
     const [form, setForm] = useState<FormState>(initial);
-    const [imageFile, setImageFile] = useState<File | null>(null);
-    const [imagePreview, setImagePreview] = useState<string | null>(initialImageUrl ?? null);
-    const [removeImage, setRemoveImage] = useState(false);
+    const [existingUrls, setExistingUrls] = useState<string[]>(initialImageUrls);
+    const [newImages, setNewImages] = useState<NewImageEntry[]>([]);
     const [isPending, startTransition] = useTransition();
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        return () => { newImages.forEach(e => URL.revokeObjectURL(e.preview)); };
+        // cleanup blob URLs on unmount
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const totalImages = existingUrls.length + newImages.length;
+    const canAddMore = totalImages < MAX_IMAGES;
 
     const set = (field: keyof FormState, value: string | boolean) =>
         setForm(prev => ({ ...prev, [field]: value }));
 
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0] ?? null;
-        setImageFile(file);
-        setRemoveImage(false);
-        if (file) {
-            setImagePreview(URL.createObjectURL(file));
-        } else {
-            setImagePreview(initialImageUrl ?? null);
-        }
+    const handleImageAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files ?? []);
+        const remaining = MAX_IMAGES - totalImages;
+        const accepted = files.slice(0, remaining);
+        setNewImages(prev => [
+            ...prev,
+            ...accepted.map(file => ({ file, preview: URL.createObjectURL(file) })),
+        ]);
+        e.target.value = "";
     };
 
-    const handleRemoveImage = () => {
-        setImageFile(null);
-        setImagePreview(null);
-        setRemoveImage(true);
-        if (fileInputRef.current) fileInputRef.current.value = "";
+    const handleRemoveExisting = (url: string) => {
+        setExistingUrls(prev => prev.filter(u => u !== url));
+    };
+
+    const handleRemoveNew = (index: number) => {
+        setNewImages(prev => {
+            URL.revokeObjectURL(prev[index].preview);
+            return prev.filter((_, i) => i !== index);
+        });
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -81,9 +96,8 @@ function NoticeFormDialog({
             fd.append('content', form.content);
             fd.append('category', form.category);
             fd.append('is_published', String(form.is_published));
-            if (imageFile) fd.append('noticeImage', imageFile);
-            if (removeImage) fd.append('removeImage', 'true');
-            if (initialImageUrl && !removeImage && !imageFile) fd.append('existingImageUrl', initialImageUrl);
+            existingUrls.forEach(url => fd.append('existingImageUrl', url));
+            newImages.forEach(({ file }) => fd.append('noticeImages', file));
 
             const err = await onSubmit(fd);
             if (err) { toast.error(err); return; }
@@ -91,6 +105,11 @@ function NoticeFormDialog({
             toast.success(mode === "create" ? "공지가 등록되었습니다." : "공지가 수정되었습니다.");
         });
     };
+
+    const allPreviews: { src: string; onRemove: () => void }[] = [
+        ...existingUrls.map(url => ({ src: url, onRemove: () => handleRemoveExisting(url) })),
+        ...newImages.map((e, i) => ({ src: e.preview, onRemove: () => handleRemoveNew(i) })),
+    ];
 
     return (
         <Dialog open={open} onOpenChange={v => !v && onClose()}>
@@ -143,39 +162,53 @@ function NoticeFormDialog({
 
                     {/* Image upload */}
                     <div className="space-y-1.5">
-                        <Label className="text-xs font-black text-slate-500 uppercase tracking-widest">
-                            이미지 첨부 <span className="normal-case font-medium text-slate-300">(선택)</span>
-                        </Label>
+                        <div className="flex items-center justify-between">
+                            <Label className="text-xs font-black text-slate-500 uppercase tracking-widest">
+                                이미지 첨부 <span className="normal-case font-medium text-slate-300">(최대 {MAX_IMAGES}장)</span>
+                            </Label>
+                            {totalImages > 0 && (
+                                <span className="text-[10px] font-black text-slate-400">{totalImages} / {MAX_IMAGES}</span>
+                            )}
+                        </div>
+
                         <input
                             ref={fileInputRef}
                             type="file"
                             accept="image/*"
+                            multiple
                             className="hidden"
-                            onChange={handleImageChange}
+                            onChange={handleImageAdd}
                         />
-                        {imagePreview ? (
-                            <div className="relative rounded-xl overflow-hidden border border-slate-200">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                    src={imagePreview}
-                                    alt="첨부 이미지 미리보기"
-                                    className="w-full max-h-56 object-cover"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={handleRemoveImage}
-                                    className="absolute top-2 right-2 w-7 h-7 bg-white/90 hover:bg-white rounded-full flex items-center justify-center shadow border border-slate-200 text-slate-500 hover:text-red-500 transition-colors"
-                                    title="이미지 제거"
-                                >
-                                    <X className="w-3.5 h-3.5" />
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => fileInputRef.current?.click()}
-                                    className="absolute bottom-2 right-2 px-3 py-1.5 bg-white/90 hover:bg-white rounded-lg text-xs font-black text-slate-600 border border-slate-200 shadow transition-colors"
-                                >
-                                    이미지 변경
-                                </button>
+
+                        {allPreviews.length > 0 ? (
+                            <div className="grid grid-cols-3 gap-2">
+                                {allPreviews.map(({ src, onRemove }, idx) => (
+                                    <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 group">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            src={src}
+                                            alt=""
+                                            className="w-full h-full object-cover"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={onRemove}
+                                            className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center text-white transition-colors opacity-0 group-hover:opacity-100"
+                                        >
+                                            <X className="w-3 h-3" />
+                                        </button>
+                                    </div>
+                                ))}
+                                {canAddMore && (
+                                    <button
+                                        type="button"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="aspect-square rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-1.5 text-slate-400 hover:border-slate-300 hover:text-slate-500 transition-colors"
+                                    >
+                                        <Plus className="w-5 h-5" />
+                                        <span className="text-[10px] font-black">추가</span>
+                                    </button>
+                                )}
                             </div>
                         ) : (
                             <button
@@ -185,7 +218,7 @@ function NoticeFormDialog({
                             >
                                 <ImageIcon className="w-6 h-6" />
                                 <span className="text-xs font-black">클릭하여 이미지 첨부</span>
-                                <span className="text-[10px] font-medium text-slate-300">JPG, PNG, GIF, WEBP 지원</span>
+                                <span className="text-[10px] font-medium text-slate-300">JPG, PNG, GIF, WEBP · 최대 {MAX_IMAGES}장</span>
                             </button>
                         )}
                     </div>
@@ -355,6 +388,7 @@ export default function NoticesClient({ initialNotices }: { initialNotices: Noti
                         const date = new Date(notice.created_at).toLocaleDateString('ko-KR', {
                             year: 'numeric', month: 'short', day: 'numeric'
                         });
+                        const thumb = notice.image_urls[0];
 
                         return (
                             <div
@@ -365,13 +399,21 @@ export default function NoticesClient({ initialNotices }: { initialNotices: Noti
                                 )}
                             >
                                 {/* Thumbnail */}
-                                {notice.image_url ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
-                                    <img
-                                        src={notice.image_url}
-                                        alt=""
-                                        className="w-10 h-10 rounded-lg object-cover shrink-0 border border-slate-100"
-                                    />
+                                {thumb ? (
+                                    <div className="relative shrink-0">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            src={thumb}
+                                            alt=""
+                                            className="w-10 h-10 rounded-lg object-cover border border-slate-100"
+                                        />
+                                        {notice.image_urls.length > 1 && (
+                                            <span className="absolute -bottom-1 -right-1 bg-slate-800 text-white text-[9px] font-black px-1 py-0.5 rounded-full leading-none flex items-center gap-0.5">
+                                                <Images className="w-2 h-2" />
+                                                {notice.image_urls.length}
+                                            </span>
+                                        )}
+                                    </div>
                                 ) : (
                                     <div className={cn(
                                         "w-2 h-2 rounded-full shrink-0",
@@ -440,7 +482,7 @@ export default function NoticesClient({ initialNotices }: { initialNotices: Noti
                 open={createOpen}
                 onClose={() => setCreateOpen(false)}
                 initial={defaultForm()}
-                initialImageUrl={null}
+                initialImageUrls={[]}
                 onSubmit={handleCreate}
                 mode="create"
             />
@@ -456,7 +498,7 @@ export default function NoticesClient({ initialNotices }: { initialNotices: Noti
                         category: editTarget.category ?? "",
                         is_published: editTarget.is_published,
                     }}
-                    initialImageUrl={editTarget.image_url}
+                    initialImageUrls={editTarget.image_urls}
                     onSubmit={handleUpdate}
                     mode="edit"
                 />

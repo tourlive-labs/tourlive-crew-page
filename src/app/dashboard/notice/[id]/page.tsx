@@ -1,5 +1,6 @@
 import { createClient } from "@/utils/supabase/server";
 import { notFound } from "next/navigation";
+import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
 import PageHeader from "@/components/shared/PageHeader";
@@ -44,7 +45,7 @@ export default async function NoticeDetailPage({
 
     const { data: notice, error } = await supabase
         .from('notices')
-        .select('id, title, content, category, image_url, created_at')
+        .select('id, title, content, category, image_urls, created_at')
         .eq('id', id)
         .single();
 
@@ -81,14 +82,27 @@ export default async function NoticeDetailPage({
                 </span>
             </div>
 
-            {notice.image_url && (
-                <div className="rounded-brand overflow-hidden border border-slate-100 shadow-sm">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                        src={notice.image_url}
-                        alt={notice.title}
-                        className="w-full max-h-[480px] object-cover"
-                    />
+            {notice.image_urls?.length > 0 && (
+                <div className={cn(
+                    "grid gap-2",
+                    notice.image_urls.length === 1 ? "grid-cols-1" : "grid-cols-2"
+                )}>
+                    {notice.image_urls.map((url: string, i: number) => (
+                        <div
+                            key={i}
+                            className={cn(
+                                "rounded-brand overflow-hidden border border-slate-100 shadow-sm",
+                                notice.image_urls.length === 1 ? "" : "aspect-square"
+                            )}
+                        >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                                src={url}
+                                alt={`${notice.title} 이미지 ${i + 1}`}
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
+                    ))}
                 </div>
             )}
 
