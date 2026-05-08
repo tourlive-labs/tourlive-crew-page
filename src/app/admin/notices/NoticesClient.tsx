@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { type Notice, createNotice, updateNotice, deleteNotice, togglePublish } from "@/app/actions/notices";
+import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -91,13 +92,28 @@ function NoticeFormDialog({
         e.preventDefault();
         if (!form.title.trim()) { toast.error("제목을 입력해 주세요."); return; }
         startTransition(async () => {
+            // Upload images directly from browser to Supabase Storage (original file, no server hop)
+            const supabase = createClient();
+            const uploadedUrls: string[] = [];
+            for (const { file } of newImages) {
+                const ext = file.name.split('.').pop() ?? 'jpg';
+                const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+                const { error } = await supabase.storage.from('notices').upload(fileName, file, {
+                    contentType: file.type,
+                    cacheControl: '3600',
+                });
+                if (error) { toast.error(`이미지 업로드 실패: ${error.message}`); return; }
+                const { data } = supabase.storage.from('notices').getPublicUrl(fileName);
+                uploadedUrls.push(data.publicUrl);
+            }
+
             const fd = new FormData();
             fd.append('title', form.title);
             fd.append('content', form.content);
             fd.append('category', form.category);
             fd.append('is_published', String(form.is_published));
             existingUrls.forEach(url => fd.append('existingImageUrl', url));
-            newImages.forEach(({ file }) => fd.append('noticeImages', file));
+            uploadedUrls.forEach(url => fd.append('newImageUrl', url));
 
             const err = await onSubmit(fd);
             if (err) { toast.error(err); return; }

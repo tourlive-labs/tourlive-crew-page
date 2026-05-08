@@ -28,18 +28,6 @@ async function assertAdmin() {
     return supabase;
 }
 
-async function uploadNoticeImage(
-    supabase: Awaited<ReturnType<typeof assertAdmin>>,
-    file: File,
-): Promise<{ url: string } | { error: string }> {
-    const ext = file.name.split('.').pop() ?? 'jpg';
-    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-    const { error } = await supabase.storage.from('notices').upload(fileName, file);
-    if (error) return { error: `이미지 업로드 실패: ${error.message}` };
-    const { data } = supabase.storage.from('notices').getPublicUrl(fileName);
-    return { url: data.publicUrl };
-}
-
 export async function getNotices(): Promise<Notice[] | { error: string }> {
     try {
         const supabase = await assertAdmin();
@@ -62,16 +50,7 @@ export async function createNotice(formData: FormData): Promise<{ error?: string
         const content = (formData.get('content') as string ?? '').trim();
         const category = (formData.get('category') as string ?? '').trim();
         const is_published = formData.get('is_published') === 'true';
-        const imageFiles = formData.getAll('noticeImages') as File[];
-
-        const image_urls: string[] = [];
-        for (const file of imageFiles) {
-            if (file && file.size > 0) {
-                const result = await uploadNoticeImage(supabase, file);
-                if ('error' in result) return { error: result.error };
-                image_urls.push(result.url);
-            }
-        }
+        const image_urls = (formData.getAll('newImageUrl') as string[]).filter(Boolean);
 
         const { data, error } = await supabase
             .from('notices')
@@ -96,17 +75,9 @@ export async function updateNotice(id: string, formData: FormData): Promise<{ er
         const content = (formData.get('content') as string ?? '').trim();
         const category = (formData.get('category') as string ?? '').trim();
         const is_published = formData.get('is_published') === 'true';
-        const imageFiles = formData.getAll('noticeImages') as File[];
-        const existingUrls = formData.getAll('existingImageUrl') as string[];
-
-        const image_urls: string[] = [...existingUrls];
-        for (const file of imageFiles) {
-            if (file && file.size > 0) {
-                const result = await uploadNoticeImage(supabase, file);
-                if ('error' in result) return { error: result.error };
-                image_urls.push(result.url);
-            }
-        }
+        const existingUrls = (formData.getAll('existingImageUrl') as string[]).filter(Boolean);
+        const newImageUrls = (formData.getAll('newImageUrl') as string[]).filter(Boolean);
+        const image_urls = [...existingUrls, ...newImageUrls];
 
         const { data, error } = await supabase
             .from('notices')
