@@ -1,6 +1,6 @@
 # Supporters Hub — Beta Launch Status
 
-> Last updated: 2026-04-20 (커밋 3b17309)
+> Last updated: 2026-05-13 (커밋 490a09d)
 > TypeScript: ✅ Zero compile errors  
 > Dev server: ✅ Running
 
@@ -10,15 +10,16 @@
 
 ```
 /dashboard              → Home (Stamp Board + Essential Task List)
-/dashboard/mission      → Mission Submission Page
+/dashboard/mission      → Mission Submission Page (+ 추가미션 사진 첨부)
 /dashboard/challenge    → Challenge Action Hub (Blog/Cafe missions)
 /dashboard/mypage       → Profile Management (read-only activity type)
 /dashboard/guide        → Activity Guidelines
 /dashboard/faq          → FAQ
-/dashboard/notice       → Notices (정적 하드코딩 — DB 연동 미완)
+/dashboard/notice       → Notices (DB 연동 완료)
+/dashboard/notice/[id]  → Notice Detail (ReactMarkdown + 이미지 라이트박스)
 /admin                  → Admin Root (Crew Member Master List)
-/admin/missions         → Mission Approval Dashboard (필수 + 추가 + 챌린지)
-/admin/notices          → Notice Management (공지 CRUD)
+/admin/missions         → Mission Approval Dashboard (필수 + 추가 + 챌린지 + 설문 xlsx 추출)
+/admin/notices          → Notice Management (공지 CRUD + 이미지 첨부)
 /admin/challenge        → Challenge Config Management (월별 설정)
 ```
 
@@ -186,7 +187,18 @@ The `getStampStatus()` action independently resolves `profile_id` from `crews.us
 
 ---
 
-## 8. Known Tech Debt
+## 8. Recent Features (2026-05)
+
+| 기능 | 커밋 | 설명 |
+|---|---|---|
+| 공지 이미지 라이트박스 | `08e9c8e` | `NoticeImageViewer` — 줌/드래그/핀치/탐색 |
+| 정산 기수 동적 반영 | `08e9c8e` | `[14기]` 하드코딩 → `profiles.batch` 동적 참조 |
+| 설문 xlsx 추출 | `490a09d` | `getSurveyExportData()` + SheetJS 내보내기 버튼 |
+| 추가미션 사진 첨부 | `490a09d` | `side-missions` 버킷, `proof_images text[]`, 업로드 UI |
+
+---
+
+## 9. Known Tech Debt
 
 - [ ] `dashboard/page.tsx` components are inline (not extracted to `/components/`)
 - [ ] Blog checklist items are hardcoded constants (could be DB-driven)
@@ -195,4 +207,4 @@ The `getStampStatus()` action independently resolves `profile_id` from `crews.us
 - [ ] No automated E2E tests for team-differentiated UI
 - [ ] `rejection_reason` 필드 이중 목적 사용 — 어드민 피드백 + 챌린지 metaTag 저장소로 혼용 중 (향후 전용 컬럼 분리 권장)
 - [ ] `naver_pay` 리워드 챌린지 승인 시 정산 자동화 없음 (수동 지급 필요)
-- [ ] `/dashboard/notice` — 하드코딩된 정적 데이터, Supabase `notices` 테이블 미연동
+- [ ] `CrewManagementClient.tsx` 수료 판정 로직 (`hasFeb/hasMar/hasApr`) — 14기 전용 하드코딩, 15기 활동월 확정 시 업데이트 필요

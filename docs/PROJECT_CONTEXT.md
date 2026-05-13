@@ -46,10 +46,35 @@
 ## Point Settlement System
 - **Trigger**: Setting mission status to `completed` (Essential) or `APPROVED` (Side) inserts a `PENDING` row into `point_settlements`.
 - **Amounts**: Essential missions = 50,000 P | Side missions = Based on `pointMap`.
-- **Reasons**:
-  - Essential: `[14기] {n}월 필수활동 완료`
-  - Side: `[14기] 추가미션: {Mission Type}`
+- **Reasons** (기수 동적 반영 — `profiles.batch` 참조):
+  - Essential: `[{batch}] {n}월 필수활동 완료`
+  - Side: `[{batch}] 추가미션: {Mission Type}`
+  - Challenge: `[챌린지] 블로그 챌린지 완료 (5,000P)`
 - **Payout UI**: Dedicated tab in Admin Missions with Individual Copy buttons for fast entry.
+
+## Notice System
+
+- `notices` 테이블: `id, title, content, category, image_urls text[], is_published, created_at`
+- **어드민 등록**: `/admin/notices` — `NoticesClient` (CRUD + 이미지 최대 5장 Supabase Storage `notices` 버킷 업로드)
+- **크루 목록**: `/dashboard/notice` — Supabase에서 fetch, 카드 클릭 시 `/dashboard/notice/[id]`
+- **상세 페이지**: ReactMarkdown 렌더링 + `NoticeImageViewer` 컴포넌트
+  - 라이트박스: 줌 1×~5×(버튼/휠), 드래그 패닝, 모바일 핀치줌, 앞뒤 탐색, 도트 인디케이터
+
+## Side Mission Photo Upload
+
+- `side_missions` 테이블에 `proof_images text[]` 컬럼 추가 (2026-05-13)
+- **스토리지**: `side-missions` Supabase Storage 버킷 (Public)
+- **제출 UI** (`/dashboard/mission` SideMissionBoard):
+  - 파일 선택 → 브라우저에서 직접 업로드 → 미리보기 썸네일 + 개별 삭제
+  - URL 입력란은 선택사항으로 변경 (사진 또는 URL 중 하나 이상 필수)
+- **어드민 뷰** (`/admin/missions` 추가미션 탭):
+  - 증빙 컬럼에 URL 링크 + 이미지 썸네일 동시 표시, 클릭 시 원본 새 탭
+
+## Survey Export
+
+- `getSurveyExportData()` 서버 액션: `missions` 테이블에서 `survey_completed = true` 전체 조회
+- `/admin/missions` 헤더 우측 "설문 xlsx" 버튼 → SheetJS (`xlsx` 패키지) 로 `.xlsx` 다운로드
+- 컬럼: 기수/이름/닉네임/이메일/활동분야/미션월/투어명/별점/아쉬운점/개선사항/자유의견/제출일
 
 ## Challenge System (추가됨 2026-04-20)
 

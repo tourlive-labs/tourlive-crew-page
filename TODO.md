@@ -1,6 +1,6 @@
 # Supporters Hub — 잔여 개선 항목
 
-> 마지막 업데이트: 2026-04-20 (커밋 c886a21)  
+> 마지막 업데이트: 2026-05-13 (커밋 490a09d)  
 > 이미 완료된 항목(에러 핸들링 1차, 디자인 토큰 `/dashboard`, PageHeader 컴포넌트, MissionStatus Enum)은 제외됨
 
 ---
@@ -72,6 +72,16 @@
 
 ## 🆕 앞으로의 TODO
 
+### 포인트 & 정산
+
+- ✅ **정산 기수 동적 반영** — `[14기]` 하드코딩 → `profiles.batch` 동적 참조 (Essential + Side 두 곳 모두)
+- ✅ **설문 xlsx 추출** — `getSurveyExportData()` 서버 액션 + 어드민 헤더 "설문 xlsx" 버튼 (SheetJS)
+
+### 추가 미션 (Side Mission)
+
+- ✅ **사진 첨부 증빙** — 사이드미션 제출 시 이미지 직접 업로드 지원 (`side-missions` 스토리지 버킷, `proof_images text[]` 컬럼)
+- ✅ **어드민 증빙 이미지 뷰** — 추가미션 테이블 증빙 컬럼에 썸네일 표시 + 클릭 원본 오픈
+
 ### 챌린지 시스템 후속 작업
 
 - [ ] **카페 챌린지 URL 검증** — 제출 시 실제 카페 포스팅 존재 여부 AI 검증 (블로그와 동일 패턴)
@@ -83,6 +93,7 @@
 
 - ✅ **#4 `notice/page.tsx` — DB 연동** — Supabase `notices` 테이블 연동, `/dashboard/notice/[id]` 상세 페이지 완료
 - ✅ **공지 카드 클릭 동작** — `<Link href="/dashboard/notice/${id}">` 래핑, 상세 페이지에서 ReactMarkdown 렌더링
+- ✅ **공지 이미지 라이트박스** — `NoticeImageViewer` 컴포넌트: 썸네일 그리드 + 풀스크린 라이트박스(줌/드래그/핀치/앞뒤 탐색)
 
 ### 코드 품질
 
