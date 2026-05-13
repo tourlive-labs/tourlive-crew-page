@@ -1,9 +1,9 @@
 import { createClient } from "@/utils/supabase/server";
 import { notFound } from "next/navigation";
-import { cn } from "@/lib/utils";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
 import PageHeader from "@/components/shared/PageHeader";
+import NoticeImageViewer from "@/components/shared/NoticeImageViewer";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "lucide-react";
 
@@ -82,29 +82,7 @@ export default async function NoticeDetailPage({
                 </span>
             </div>
 
-            {notice.image_urls?.length > 0 && (
-                <div className={cn(
-                    "grid gap-2",
-                    notice.image_urls.length === 1 ? "grid-cols-1" : "grid-cols-2"
-                )}>
-                    {notice.image_urls.map((url: string, i: number) => (
-                        <div
-                            key={i}
-                            className={cn(
-                                "rounded-brand overflow-hidden border border-slate-100 shadow-sm",
-                                notice.image_urls.length === 1 ? "" : "aspect-square"
-                            )}
-                        >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                                src={url}
-                                alt={`${notice.title} 이미지 ${i + 1}`}
-                                className="w-full h-full object-cover"
-                            />
-                        </div>
-                    ))}
-                </div>
-            )}
+            <NoticeImageViewer imageUrls={notice.image_urls ?? []} title={notice.title} />
 
             <div className="bg-white rounded-brand p-8 shadow-sm border border-slate-100">
                 {notice.content ? (
