@@ -7,7 +7,7 @@ import { SideMissionStatus } from "@/types/mission";
 /**
  * Submits a new side mission
  */
-export async function submitSideMission(missionType: string, proofUrl: string) {
+export async function submitSideMission(missionType: string, proofUrl: string, imageUrls?: string[]) {
     const supabase = await createClient();
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -62,7 +62,8 @@ export async function submitSideMission(missionType: string, proofUrl: string) {
         .insert({
             profile_id: profile.id,
             mission_type: missionType,
-            proof_url: proofUrl,
+            proof_url: proofUrl || null,
+            proof_images: imageUrls && imageUrls.length > 0 ? imageUrls : null,
             status: SideMissionStatus.PENDING
         });
 

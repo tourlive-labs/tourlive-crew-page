@@ -41,6 +41,7 @@ import { signOut } from "@/app/actions/auth";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
 
 function MissionSubmissionCard({ currentMission, goalCount, isCafeTeam, onRefresh }: { currentMission: any, goalCount: number, isCafeTeam: boolean, onRefresh: () => void }) {
     const verifiedLinks = currentMission?.post_url ? currentMission.post_url.split(',').map((u: string) => u.trim()).filter(Boolean) : [];
@@ -617,12 +618,14 @@ function SideMissionBoard() {
     const [missions, setMissions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    
+
     // Modal State
     const [selectedMission, setSelectedMission] = useState<any>(null);
     const [proofUrl, setProofUrl] = useState("");
     const [challengeTarget, setChallengeTarget] = useState("Cafe");
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [proofImages, setProofImages] = useState<string[]>([]);
+    const [isUploading, setIsUploading] = useState(false);
 
     const fetchMissions = async () => {
         setLoading(true);
@@ -635,15 +638,43 @@ function SideMissionBoard() {
         fetchMissions();
     }, []);
 
+    const openModal = (sm: any) => {
+        setSelectedMission(sm);
+        setProofUrl("");
+        setProofImages([]);
+        setIsModalOpen(true);
+    };
+
+    const handleImageUpload = async (files: FileList) => {
+        setIsUploading(true);
+        const supabase = createClient();
+        const urls: string[] = [];
+        for (const file of Array.from(files)) {
+            const ext = file.name.split('.').pop() ?? 'jpg';
+            const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+            const { error } = await supabase.storage.from('side-missions').upload(fileName, file, {
+                contentType: file.type,
+                cacheControl: '3600',
+            });
+            if (error) {
+                toast.error(`이미지 업로드 실패: ${error.message}`);
+                continue;
+            }
+            const { data } = supabase.storage.from('side-missions').getPublicUrl(fileName);
+            urls.push(data.publicUrl);
+        }
+        setProofImages(prev => [...prev, ...urls]);
+        setIsUploading(false);
+    };
+
     const handleSubmit = async () => {
-        if (!proofUrl.trim()) {
-            toast.error("증빙 자료(링크)를 입력해 주세요.");
+        if (!proofUrl.trim() && proofImages.length === 0) {
+            toast.error("URL 또는 사진 중 하나는 제출해 주세요.");
             return;
         }
 
         setIsSubmitting(true);
-        const finalTitle = selectedMission.title;
-        const res = await submitSideMission(finalTitle, proofUrl);
+        const res = await submitSideMission(selectedMission.title, proofUrl, proofImages);
         setIsSubmitting(false);
 
         if (res.error) {
@@ -652,7 +683,8 @@ function SideMissionBoard() {
             toast.success("추가 포인트 활동이 성공적으로 접수되었습니다!");
             setIsModalOpen(false);
             setProofUrl("");
-            fetchMissions(); // Instant state update
+            setProofImages([]);
+            fetchMissions();
         }
     };
 
@@ -710,10 +742,7 @@ function SideMissionBoard() {
                             "group p-4 rounded-2xl border transition-all duration-300",
                             isLocked ? "bg-slate-50 border-slate-100" : "bg-white border-slate-100 hover:border-indigo-200 hover:shadow-md cursor-pointer"
                         )} onClick={() => {
-                            if (!isLocked) {
-                                setSelectedMission(sm);
-                                setIsModalOpen(true);
-                            }
+                            if (!isLocked) openModal(sm);
                         }}>
                             <div className="flex items-center justify-between mb-2">
                                 <h4 className={cn("font-black text-sm", isLocked ? "text-slate-400" : "text-slate-800")}>{sm.title}</h4>
@@ -761,21 +790,61 @@ function SideMissionBoard() {
                                 {selectedMission?.desc} 미션을 완료하셨나요? 증빙 자료를 제출해 포인트를 획득하세요!
                             </DialogDescription>
                         </div>
-                        <div className="p-8 pt-6 space-y-6">
+                        <div className="p-8 pt-6 space-y-5">
+                            {/* Image upload */}
                             <div className="space-y-3">
-                                <Label className="text-sm font-bold text-slate-700">증빙 자료 (URL 등)</Label>
-                                <Input 
-                                    value={proofUrl}
-                                    onChange={(e) => setProofUrl(e.target.value)}
-                                    placeholder="인증할 수 있는 링크(캡쳐본 링크, 블로그 주소 등) 입력" 
-                                    className="h-12 rounded-xl border-slate-200 bg-slate-50 focus:bg-white text-sm shadow-none transition-all"
-                                />
-                                <p className="text-[11px] text-slate-400 font-medium">* 캡쳐 이미지는 구글 드라이브나 임시 게시글 링크로 변환 후 입력해 주세요.</p>
+                                <Label className="text-sm font-bold text-slate-700">증빙 사진 첨부</Label>
+                                <label className={cn(
+                                    "flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-5 cursor-pointer transition-colors",
+                                    isUploading ? "border-indigo-200 bg-indigo-50/50" : "border-slate-200 bg-slate-50 hover:border-indigo-300 hover:bg-indigo-50/30"
+                                )}>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        className="hidden"
+                                        disabled={isUploading}
+                                        onChange={(e) => e.target.files && handleImageUpload(e.target.files)}
+                                    />
+                                    <span className="text-xs font-bold text-slate-500">
+                                        {isUploading ? "업로드 중..." : "사진 선택 (여러 장 가능)"}
+                                    </span>
+                                    <span className="text-[10px] font-medium text-slate-400">PNG, JPG, GIF 등</span>
+                                </label>
+                                {proofImages.length > 0 && (
+                                    <div className="flex flex-wrap gap-2">
+                                        {proofImages.map((url, i) => (
+                                            <div key={i} className="relative group">
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img src={url} alt={`증빙 ${i + 1}`} className="w-16 h-16 object-cover rounded-lg border border-slate-200" />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setProofImages(prev => prev.filter((_, j) => j !== i))}
+                                                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
 
-                            <Button 
-                                onClick={handleSubmit} 
-                                disabled={isSubmitting}
+                            {/* URL input */}
+                            <div className="space-y-2">
+                                <Label className="text-sm font-bold text-slate-700">증빙 URL <span className="text-slate-400 font-medium">(선택)</span></Label>
+                                <Input
+                                    value={proofUrl}
+                                    onChange={(e) => setProofUrl(e.target.value)}
+                                    placeholder="블로그 주소, 게시글 링크 등"
+                                    className="h-12 rounded-xl border-slate-200 bg-slate-50 focus:bg-white text-sm shadow-none transition-all"
+                                />
+                                <p className="text-[11px] text-slate-400 font-medium">* 사진과 URL 중 하나 이상 제출하면 됩니다.</p>
+                            </div>
+
+                            <Button
+                                onClick={handleSubmit}
+                                disabled={isSubmitting || isUploading}
                                 className="w-full h-14 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black shadow-lg shadow-indigo-100/50"
                             >
                                 {isSubmitting ? "제출 중..." : "제출 완료하기"}

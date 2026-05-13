@@ -39,6 +39,7 @@ import {
     markAsPaid,
     getChallengeMissions,
     updateChallengeStatus,
+    getSurveyExportData,
     type ParsedChallengeMission,
 } from "@/app/actions/admin";
 import { toast } from "sonner";
@@ -145,6 +146,52 @@ export default function AdminMissionsPage() {
         });
     };
 
+    const handleSurveyExport = async () => {
+        const toastId = toast.loading('설문 데이터 준비 중...');
+        try {
+            const { data } = await getSurveyExportData();
+            if (!data || data.length === 0) {
+                toast.dismiss(toastId);
+                toast.error('내보낼 설문 데이터가 없습니다.');
+                return;
+            }
+
+            const rows = data.map((m: any) => {
+                let s: any = {};
+                try { s = typeof m.survey_data === 'string' ? JSON.parse(m.survey_data) : (m.survey_data ?? {}); } catch { /* empty */ }
+                const teamLabel = m.profiles?.selected_activity === 'naver_blog' ? '블로그 팀'
+                    : m.profiles?.selected_activity === 'naver_cafe' ? '카페 팀'
+                    : m.profiles?.selected_activity ?? '';
+                return {
+                    기수: m.profiles?.batch ?? '',
+                    이름: m.profiles?.full_name ?? '',
+                    닉네임: m.profiles?.nickname ?? '',
+                    이메일: m.profiles?.tourlive_email ?? '',
+                    활동분야: teamLabel,
+                    미션월: m.mission_month ?? '',
+                    투어명: s.tour_name ?? '',
+                    별점: s.rating ?? '',
+                    아쉬운점: Array.isArray(s.pain_points) ? s.pain_points.join(', ') : (s.pain_points ?? ''),
+                    개선사항: s.ideal_fix ?? '',
+                    자유의견: s.feedback ?? '',
+                    제출일: m.updated_at ? new Date(m.updated_at).toLocaleDateString('ko-KR') : '',
+                };
+            });
+
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const XLSX = require('xlsx') as typeof import('xlsx');
+            const ws = XLSX.utils.json_to_sheet(rows);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, '설문결과');
+            XLSX.writeFile(wb, `survey_export_${new Date().toISOString().slice(0, 10)}.xlsx`);
+            toast.dismiss(toastId);
+            toast.success(`${rows.length}건 내보내기 완료`);
+        } catch (e) {
+            toast.dismiss(toastId);
+            toast.error('내보내기 실패');
+        }
+    };
+
     const formatSurvey = (data: any) => {
         if (!data) return "-";
         try {
@@ -194,8 +241,8 @@ export default function AdminMissionsPage() {
                     <div className="flex items-center gap-3">
                         <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                            <Input 
-                                placeholder="사용자 검색..." 
+                            <Input
+                                placeholder="사용자 검색..."
                                 className="pl-9 w-64 h-10 bg-white border-slate-200 rounded-xl"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -211,6 +258,15 @@ export default function AdminMissionsPage() {
                                 <SelectItem value="naver_cafe">카페 팀</SelectItem>
                             </SelectContent>
                         </Select>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleSurveyExport}
+                            className="h-10 px-4 bg-white border-slate-200 rounded-xl font-bold text-slate-700 hover:bg-slate-50 gap-2"
+                        >
+                            <Download className="w-4 h-4" />
+                            설문 xlsx
+                        </Button>
                     </div>
                 </div>
 
@@ -415,11 +471,32 @@ export default function AdminMissionsPage() {
                                                 </TableCell>
                                                 <TableCell className="font-black text-sm text-slate-800">{sm.profiles?.nickname}</TableCell>
                                                 <TableCell>
-                                                    <Button variant="ghost" size="sm" className="h-7 text-indigo-500 font-bold text-xs" asChild>
-                                                        <a href={sm.proof_url} target="_blank" rel="noopener noreferrer">
-                                                            <ExternalLink className="w-3 h-3 mr-1" /> 증빙 보기
-                                                        </a>
-                                                    </Button>
+                                                    <div className="flex flex-col gap-1.5">
+                                                        {sm.proof_url && (
+                                                            <Button variant="ghost" size="sm" className="h-7 text-indigo-500 font-bold text-xs w-fit" asChild>
+                                                                <a href={sm.proof_url} target="_blank" rel="noopener noreferrer">
+                                                                    <ExternalLink className="w-3 h-3 mr-1" /> URL 보기
+                                                                </a>
+                                                            </Button>
+                                                        )}
+                                                        {sm.proof_images && sm.proof_images.length > 0 && (
+                                                            <div className="flex gap-1 flex-wrap">
+                                                                {sm.proof_images.map((url: string, i: number) => (
+                                                                    <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="block">
+                                                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                                        <img
+                                                                            src={url}
+                                                                            alt={`증빙 ${i + 1}`}
+                                                                            className="w-10 h-10 object-cover rounded-lg border border-slate-200 hover:border-indigo-300 hover:scale-110 transition-all cursor-zoom-in"
+                                                                        />
+                                                                    </a>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                        {!sm.proof_url && (!sm.proof_images || sm.proof_images.length === 0) && (
+                                                            <span className="text-[11px] text-slate-300 font-medium">없음</span>
+                                                        )}
+                                                    </div>
                                                 </TableCell>
                                                 <TableCell className="text-[10px] font-bold text-slate-400">{new Date(sm.created_at).toLocaleDateString()}</TableCell>
                                                 <TableCell className="text-right">

@@ -393,6 +393,39 @@ export async function updateChallengeStatus(
 }
 
 /**
+ * Fetch all completed survey submissions for xlsx export
+ */
+export async function getSurveyExportData() {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { data: [] };
+
+    const { data, error } = await supabase
+        .from('missions')
+        .select(`
+            mission_month,
+            survey_data,
+            updated_at,
+            profiles (
+                full_name,
+                nickname,
+                batch,
+                tourlive_email,
+                selected_activity
+            )
+        `)
+        .eq('survey_completed', true)
+        .order('mission_month', { ascending: true });
+
+    if (error) {
+        console.error('[Survey Export]', error);
+        return { data: [] };
+    }
+
+    return { data: data || [] };
+}
+
+/**
  * Mark a settlement as paid
  */
 export async function markAsPaid(settlementId: string) {
