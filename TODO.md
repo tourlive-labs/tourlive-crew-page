@@ -72,6 +72,11 @@
 
 ## 🆕 앞으로의 TODO
 
+### 인증
+
+- [ ] **비밀번호 찾기 (로그인 페이지)** — 크루 대상 비밀번호 재설정 플로우. Supabase `resetPasswordForEmail()` 호출 → 이메일 발송 → `/reset-password` 페이지에서 새 비밀번호 설정 (현재 로그인 페이지에 링크 없음)
+
+
 ### 포인트 & 정산
 
 - ✅ **정산 기수 동적 반영** — `[14기]` 하드코딩 → `profiles.batch` 동적 참조 (Essential + Side 두 곳 모두)
