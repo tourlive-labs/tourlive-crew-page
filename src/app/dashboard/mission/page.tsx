@@ -574,7 +574,7 @@ function SurveyView({
 }
 
 
-function AdditionalTasks() {
+function AdditionalTasks({ term }: { term: number }) {
     return (
         <Card className="shadow-sm border-slate-100 rounded-brand overflow-hidden bg-white">
             <CardHeader className="p-8 pb-4">
@@ -593,7 +593,7 @@ function AdditionalTasks() {
                             Q
                         </div>
                         <div className="overflow-hidden">
-                            <span className="text-sm font-black text-slate-800 block truncate">14기 크루 만족도 조사</span>
+                            <span className="text-sm font-black text-slate-800 block truncate">{term}기 크루 만족도 조사</span>
                             <span className="text-[10px] font-bold text-slate-400 block tracking-widest uppercase mt-0.5">진행 중 (~03/31)</span>
                         </div>
                     </div>

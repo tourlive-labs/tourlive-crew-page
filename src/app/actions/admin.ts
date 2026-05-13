@@ -84,19 +84,20 @@ export async function updateEssentialStatus(missionId: string, status: typeof Mi
         console.log('[Settlement] Essential mission approved. Fetching mission data for settlement...', missionId);
         const { data: mission, error: fetchError } = await supabase
             .from('missions')
-            .select('*, profiles(tourlive_email, nickname)')
+            .select('*, profiles(tourlive_email, nickname, batch)')
             .eq('id', missionId)
             .single();
-            
+
         if (fetchError) {
             console.error('[Settlement] Fetch mission error:', fetchError.message);
         } else if (mission) {
             console.log('[Settlement] Creating settlement row for profile:', mission.profile_id);
+            const batchLabel = mission.profiles?.batch ?? '기수 미상';
             const { error: insertError } = await supabase.from('point_settlements').insert({
                 profile_id: mission.profile_id,
                 mission_id: missionId,
                 amount: 50000,
-                reason: `[14기] ${mission.mission_month}월 필수활동 완료`,
+                reason: `[${batchLabel}] ${mission.mission_month}월 필수활동 완료`,
                 status: 'PENDING'
             });
             
@@ -130,7 +131,7 @@ export async function updateSideStatus(missionId: string, status: typeof SideMis
         console.log('[Settlement] Side mission approved. Fetching mission data for settlement...', missionId);
         const { data: mission, error: fetchError } = await supabase
             .from('side_missions')
-            .select('*, profiles(tourlive_email, nickname)')
+            .select('*, profiles(tourlive_email, nickname, batch)')
             .eq('id', missionId)
             .single();
 
@@ -148,11 +149,12 @@ export async function updateSideStatus(missionId: string, status: typeof SideMis
             const amount = pointMap[mission.mission_type] || 0;
             if (amount > 0) {
                 console.log('[Settlement] Creating settlement row for side mission:', mission.mission_type);
+                const batchLabel = mission.profiles?.batch ?? '기수 미상';
                 const { error: insertError } = await supabase.from('point_settlements').insert({
                     profile_id: mission.profile_id,
                     mission_id: missionId,
                     amount: amount,
-                    reason: `[14기] 추가미션: ${mission.mission_type}`,
+                    reason: `[${batchLabel}] 추가미션: ${mission.mission_type}`,
                     status: 'PENDING'
                 });
 
