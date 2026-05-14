@@ -1,20 +1,35 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { signIn } from "@/app/actions/auth";
+import { signIn, requestPasswordReset } from "@/app/actions/auth";
 import { toast } from "sonner";
 import Link from "next/link";
-import { Loader2, LogIn, Lock } from "lucide-react";
-import { createClient } from "@/utils/supabase/client";
+import { Loader2, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
     const [isPending, setIsPending] = useState(false);
+    const [showReset, setShowReset] = useState(false);
+    const [resetEmail, setResetEmail] = useState("");
+    const [isResetPending, setIsResetPending] = useState(false);
+    const [resetSent, setResetSent] = useState(false);
     const router = useRouter();
+
+    async function handleResetSubmit(e: React.FormEvent) {
+        e.preventDefault();
+        setIsResetPending(true);
+        const result = await requestPasswordReset(resetEmail);
+        setIsResetPending(false);
+        if (result?.error) {
+            toast.error(result.error);
+        } else {
+            setResetSent(true);
+        }
+    }
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -77,7 +92,49 @@ export default function LoginPage() {
                             {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : "로그인"}
                         </Button>
                     </form>
-                    <div className="mt-10 text-center border-t border-slate-50 pt-8">
+
+                    <div className="mt-6 text-center">
+                        <button
+                            type="button"
+                            onClick={() => { setShowReset(!showReset); setResetSent(false); setResetEmail(""); }}
+                            className="text-sm text-slate-400 hover:text-slate-600 transition-colors"
+                        >
+                            비밀번호를 잊으셨나요?
+                        </button>
+                    </div>
+
+                    {showReset && (
+                        <div className="mt-4 p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                            {resetSent ? (
+                                <p className="text-sm text-center text-slate-600 font-medium">
+                                    ✉️ 재설정 링크를 이메일로 보내드렸어요.<br />
+                                    <span className="text-slate-400 text-xs">메일함을 확인해 주세요.</span>
+                                </p>
+                            ) : (
+                                <form onSubmit={handleResetSubmit} className="space-y-3">
+                                    <p className="text-xs text-slate-500 font-medium mb-2">가입하신 이메일로 재설정 링크를 보내드려요.</p>
+                                    <Input
+                                        type="email"
+                                        value={resetEmail}
+                                        onChange={(e) => setResetEmail(e.target.value)}
+                                        placeholder="가입한 이메일 입력"
+                                        required
+                                        className="h-11 rounded-xl border-slate-200 bg-white text-sm placeholder:text-slate-300"
+                                    />
+                                    <Button
+                                        type="submit"
+                                        disabled={isResetPending}
+                                        variant="outline"
+                                        className="w-full h-11 rounded-xl border-slate-200 text-slate-700 text-sm font-bold"
+                                    >
+                                        {isResetPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "재설정 링크 보내기"}
+                                    </Button>
+                                </form>
+                            )}
+                        </div>
+                    )}
+
+                    <div className="mt-8 text-center border-t border-slate-50 pt-8">
                         <p className="text-sm text-slate-400 font-medium">
                             아직 크루 신청을 안 하셨나요?{" "}
                             <Link href="/onboarding" className="text-brand-primary font-bold hover:underline transition-all">

@@ -58,3 +58,13 @@ export async function signOut() {
     redirect("/login");
 }
 
+export async function requestPasswordReset(email: string) {
+    const supabase = await createClient();
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${siteUrl}/reset-password`,
+    });
+    if (error) return { error: "이메일 전송에 실패했습니다. 가입된 이메일인지 확인해 주세요." };
+    return { success: true };
+}
+

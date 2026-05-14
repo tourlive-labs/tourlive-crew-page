@@ -37,11 +37,12 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     const isLoginPath = url.pathname === "/login";
     const isOnboardingPath = url.pathname === "/onboarding";
+    const isResetPasswordPath = url.pathname === "/reset-password";
     const isAdminPath = url.pathname.startsWith("/admin") || url.pathname === "/manage";
 
     // 1. Root and All Routes Default to /login
-    // EXCEPTION: Allow /onboarding for new sign-ups
-    if (!user && !isLoginPath && !isOnboardingPath) {
+    // EXCEPTION: Allow /onboarding for new sign-ups, /reset-password for email recovery
+    if (!user && !isLoginPath && !isOnboardingPath && !isResetPasswordPath) {
         return NextResponse.redirect(new URL("/login", request.url), 307);
     }
 
@@ -76,7 +77,7 @@ export async function middleware(request: NextRequest) {
         }
 
         // 5. Missing Account Pillar: Regular users without profile stay on /login (if they try to access other pages)
-        if (!isAnyAdmin && !profile && !isLoginPath && !isOnboardingPath) {
+        if (!isAnyAdmin && !profile && !isLoginPath && !isOnboardingPath && !isResetPasswordPath) {
             return NextResponse.redirect(new URL("/login", request.url), 307);
         }
     }
